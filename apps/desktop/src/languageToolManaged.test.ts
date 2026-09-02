@@ -9,7 +9,7 @@ import {
   sanitizeLanguageToolSettings,
   DEFAULT_LANGUAGE_TOOL_SETTINGS,
 } from './languageTool';
-import { parseJavaMajorVersion } from './languageToolManaged';
+import { parseJavaMajorVersion } from './languageToolJre';
 
 describe('languageTool managed helpers', () => {
   test('parseJavaMajorVersion reads modern and legacy formats', () => {

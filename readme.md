@@ -1,6 +1,6 @@
 # Le Jean-Baptiste
 
-<img src=".github/splash.png" alt="Le Jean-Baptiste — XML avec du corps" width="50%">
+![Le Jean-Baptiste — XML avec du corps](.github/splash.png)
 
 Le Jean-Baptiste is a desktop XML markup editor forked from the in-browser tool [LEAF-Writer](https://leaf-writer.leaf-vre.org/), part of [The Linked Editing Academic Framework](https://www.leaf-vre.org/) (LEAF) tool suite. LEAF-Writer is an enhancement of the CWRC-Writer developed by the [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca), and was developed alongside the [Named Entity Recognition Vetting Environment](https://nerve.lincsproject.ca/en) (NERVE). The project website is [github.com/lejeanbaptiste/lejeanbaptiste](https://github.com/lejeanbaptiste/lejeanbaptiste). Le Jean-Baptiste wraps the web app in Electron for offline, individual desktop use and includes workflow changes aimed particularly at local editing and East Asian documents.
 
@@ -45,6 +45,8 @@ Le Jean-Baptiste is the desktop, offline-first fork of LEAF-Writer. The current 
 - Working with translation companions in split-pane form for paired source/translation editing.
 - Auto-tagging and disambiguation with local authority packs (CBDB, DILA, Wikidata, NDL, …) and plugins such as Sanmiao and Norbert.
 
+
+
 ## Install
 
 Download the installer for your platform from the [latest release](https://github.com/lejeanbaptiste/lejeanbaptiste/releases/latest). All release assets can be verified as described in [SECURITY.md](SECURITY.md).
@@ -56,12 +58,16 @@ Download the installer for your platform from the [latest release](https://githu
 3. The application will be installed to `/Applications/Le Jean-Baptiste.app`.
 4. Signed updates are checked automatically when the application starts and every four hours. A downloaded update is installed when the application quits. The `.pkg` is only needed for the first installation.
 
+
+
 ### Windows
 
 1. Download the installer for your machine: `arm64` for Windows on Arm or `x64` for Intel/AMD (`Le-Jean-Baptiste-win-Setup-<version>-<arch>.exe`).
 2. Run the installer and follow the prompts. Choose your installation directory and start-menu shortcut preferences.
 3. **Note:** The installer is not signed by a certificate authority. Windows Defender SmartScreen may show a warning. To proceed, click "More info" → "Run anyway". A signed package through the Microsoft Store is planned.
 4. Updates are checked automatically when the application starts and every four hours. A downloaded update is installed when the application quits.
+
+
 
 ### Linux
 
@@ -107,7 +113,7 @@ Use the zips from the release that matches your installed LJB version (for examp
 ### Before you install the extension
 
 1. **Install Le Jean-Baptiste** (see [Install](#install) above).
-2. **Launch LJB at least once** before loading the extension. On first start the app registers a _native-messaging host_ on your machine so the browser can talk to the running editor. If you skip this step, the extension icon may appear but **Import** will not reach LJB.
+2. **Launch LJB at least once** before loading the extension. On first start the app registers a *native-messaging host* on your machine so the browser can talk to the running editor. If you skip this step, the extension icon may appear but **Import** will not reach LJB.
 3. **Keep LJB running** when you use the extension (it sends the page to the app that is already open).
 
 The extension only reads the page URL to decide what to import — it does not scrape page text in the browser.
@@ -119,9 +125,9 @@ These steps are the same on all three operating systems; only the browser’s ex
 1. Download `ljb-browser-extension-chromium-<version>.zip` from the release page.
 2. Unzip it. You should get a folder named `ljb-browser-extension-chromium-<version>` containing `manifest.json`, `popup.html`, and other files.
 3. Open your browser’s extensions page:
-   - **Chrome:** `chrome://extensions`
-   - **Brave:** `brave://extensions`
-   - **Edge:** `edge://extensions`
+  - **Chrome:** `chrome://extensions`
+  - **Brave:** `brave://extensions`
+  - **Edge:** `edge://extensions`
 4. Turn on **Developer mode** (toggle usually in the top-right corner).
 5. Click **Load unpacked** (Chrome/Brave) or **Load unpacked extension** (Edge).
 6. Select the **unzipped folder** from step 2 (the folder that contains `manifest.json`, not the zip file itself).
@@ -137,7 +143,7 @@ Firefox does not use the Chromium zip. Use the Firefox asset from the same relea
 2. Launch **Le Jean-Baptiste** once if you have not already (see above).
 3. Open `about:debugging#/runtime/this-firefox` in Firefox.
 4. Click **Load Temporary Add-on…**
-5. Open the unzipped folder and choose **`manifest.json`** inside it.
+5. Open the unzipped folder and choose `manifest.json` inside it.
 
 This is a **temporary** add-on: Firefox removes it when you quit the browser. Repeat step 3–5 after each Firefox restart, or keep using **File → Import from URL…** in LJB without the extension.
 
@@ -147,14 +153,15 @@ For a permanent Firefox install you would need a signed package from Mozilla (no
 
 1. Open LJB and your project.
 2. In the browser, go to a supported page:
-   - **Wikisource** — a chapter or work page on `*.wikisource.org`
-   - **Kanripo** — a text URL with a `#KR…` fragment (juan or work)
-   - **BDRC** — an etext reader on `library.bdrc.io` with `openEtext=bdr:VE…` in the URL
+  - **Wikisource** — a chapter or work page on `*.wikisource.org`
+  - **Kanripo** — a text URL with a `#KR…` fragment (juan or work)
+  - **BDRC** — an etext reader on `library.bdrc.io` with `openEtext=bdr:VE…` in the URL
 3. Click the **LJB corpus import** toolbar button, then **Import**.
 
 LJB should receive the import dialog for that source. More detail on what each source sends: [docs/wikisource-import.md](docs/wikisource-import.md) (Wikisource), [docs/kanripo-import-plugin-planning.md](docs/kanripo-import-plugin-planning.md) (Kanripo), [docs/bdrc-import-planning.md](docs/bdrc-import-planning.md) (BDRC).
 
 ### Troubleshooting
+
 
 | Problem                                           | What to try                                                                                                                                                                                                              |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -163,16 +170,21 @@ LJB should receive the import dialog for that source. More detail on what each s
 | Wrong or empty import                             | Check the URL matches the supported patterns above; use **File → Import from URL…** in LJB with the same link to compare.                                                                                                |
 | SmartScreen or security warning                   | The extension is not from a store; you install it manually from the LJB release. Only download zips from [github.com/lejeanbaptiste/lejeanbaptiste/releases](https://github.com/lejeanbaptiste/lejeanbaptiste/releases). |
 
+
+
+
 ## Entity database — cloud backup and multi-machine sync
 
 Le Jean-Baptiste keeps the live `entities.sqlite` on **local disk** on every
 machine. Cloud services are optional and aimed at **type C** users (advanced
 backup + sync):
 
+
 | Piece                    | What it does                                                                       | Setup doc                                                                 |
 | ------------------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | **R2 cloud backup**      | Compressed snapshots on a timer and on quit; restore after corruption or data loss | [entity-db-cloud-backup-setup.md](docs/entity-db-cloud-backup-setup.md)   |
 | **D1 cross-device sync** | Row-level two-way entity sync between your machines                                | [entity-db-multi-machine-setup.md](docs/entity-db-multi-machine-setup.md) |
+
 
 **Do not** put `entities.sqlite` in Dropbox, iCloud, or Nextcloud — that
 corrupts SQLite. A lone `achievements.json` in a synced folder is usually fine,
@@ -187,23 +199,30 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ### Future
 
-- [ ] `createCompoundAnchor` (`packages/cwrc-leafwriter/src/autoTagging/anchor.ts:247-248`) computes `localEnd` — the search-index equivalent of `localStart`, which the sibling `createAnchor` function's `rawRange` helper (same file) uses to convert a search-index back to a snapped raw text-node offset — but then never uses it: `endOffset: endRaw` (line 275) returns the _raw, unsnapped_ input instead of the computed-and-normalized value, unlike `offset: startSearch.map[localStart]` a few lines above it, which does apply that snapping for the start boundary. `localEnd` is assigned and read nowhere. This looks like an incomplete port of the pattern `createAnchor`/`rawRange` establish elsewhere in the file, not a deliberate choice — but the existing test (`apply.test.ts:72`) exercises exactly the case where `endRaw` equals the node's full length, where `localEnd`'s `findIndex` would miss (hit the `-1` fallback) and `endRaw` happens to already be correct, so the gap may not be as visible as it should be. This only affects `createCompoundAnchor`'s callers (the post-component person-wrapper pass) and only when the end boundary isn't at a node's natural end, where whitespace-policy snapping could shift the offset. **2026-08-24: low real-world priority** — Asian-script sources normally carry no whitespace, so the whitespace-policy snapping this gap would affect essentially doesn't come up in practice for this project's actual corpus. Still worth fixing for correctness/robustness, but not urgent.
+- [ ] `createCompoundAnchor` (`packages/cwrc-leafwriter/src/autoTagging/anchor.ts:247-248`) computes `localEnd` — the search-index equivalent of `localStart`, which the sibling `createAnchor` function's `rawRange` helper (same file) uses to convert a search-index back to a snapped raw text-node offset — but then never uses it: `endOffset: endRaw` (line 275) returns the *raw, unsnapped* input instead of the computed-and-normalized value, unlike `offset: startSearch.map[localStart]` a few lines above it, which does apply that snapping for the start boundary. `localEnd` is assigned and read nowhere. This looks like an incomplete port of the pattern `createAnchor`/`rawRange` establish elsewhere in the file, not a deliberate choice — but the existing test (`apply.test.ts:72`) exercises exactly the case where `endRaw` equals the node's full length, where `localEnd`'s `findIndex` would miss (hit the `-1` fallback) and `endRaw` happens to already be correct, so the gap may not be as visible as it should be. This only affects `createCompoundAnchor`'s callers (the post-component person-wrapper pass) and only when the end boundary isn't at a node's natural end, where whitespace-policy snapping could shift the offset. **2026-08-24: low real-world priority** — Asian-script sources normally carry no whitespace, so the whitespace-policy snapping this gap would affect essentially doesn't come up in practice for this project's actual corpus. Still worth fixing for correctness/robustness, but not urgent.
 - [ ] Figure out how to accommodate both segmented and unsegmented Tibetan texts.
+
 - Full CBETA integration
   - [ ] Include Bingenheimer's tagged bios
+
+
 
 ### 'LJBtero' (After testing)
 
 - [ ] Clean up and rationalise options, UI, document and global settings. (Settings dialog reorganised into sections — `authorities`, `editor`, `entity-lookups`, `guardrails`, `markup-panel`, `profile`, `ui`, `reset` — and shipped in beta.2. Still open: the document-level vs global split; everything today is global.)
 - [ ] Figure out how best to handle the insertion of entities NOT in said paragraph.
 - [ ] Keyboard shortcut for insert entity
-- [ ] Build Word and LibreOffice plugins on the same model.
+- [ ] Rationalise Word and LibreOffice plugins.
 - [ ] Live passage citations in Word / LibreOffice: insert a refreshable field (source unit + optional translation + bibl + nearest page cue) that Syncs from LJB like Zotero — pointers only, no second copy of the edition ([live-passage-citation-planning.md](docs/live-passage-citation-planning.md))
+
+
 
 ### Database viewer
 
 - [ ] Think about how to organise for rapid data entry
 - [ ] Filters beyond entity kind (the kind filter ships and persists via `databaseViewPrefs`; no field-level or faceted filtering yet)
+
+
 
 #### UX
 
@@ -211,13 +230,16 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Persist last find query across sessions (match-case / ignore-case and regex toggles already ship; the query itself resets to `''` on mount)
 - [ ] Milestone-aware auto-tagging (projection match + wrap around `<lb>` / infrastructure) — [autotagging-milestone-projection-planning.md](docs/autotagging-milestone-projection-planning.md); interim: strip `<lb>` on CBETA import or accept missed spans
 - [ ] Re-explore Tag-boundary Bugs B/C/H (typing/delete at edges) keeping us from full Oxygen parity.
-- [ ] Finish Japanese, German, and Spanish localisation
+
+
 
 #### Dates
 
 - [ ] Allow the setting and display of Sanmiao-style CJK dates in the place of/parallel to Western dates.
 - [ ] Scan DILA for markers into Sanmiao
 - [ ] AI assist for Sanmiao to identify beginning of dynasties, reigns, era
+
+
 
 #### AI
 
@@ -227,16 +249,22 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] AI-inferred import profiles
 - [ ] AI auto-tag: gold harness / residual gaps for `roleName` / `orgName` audit apply (remove/retag/redraw, schema-driven tag picker, and prompt-profile UI already ship)
 
+
+
 #### Norbert
 
 - [ ] Consider implementing works/editions
 - [ ] Use 'knowledge' category?
 - [ ] Consider second-order, relational tags, kinship, appointment, death, knowledge
 
+
+
 #### Push limits
 
 - [ ] Instead of relying on Markup panel to navigate the xml tree, introduce some sort of toggle where the keyboard arrow keys move you between siblings, parent, and first child. Preferably a keyboard toggle.
 - [ ] Make TinyMCE even faster to load.
+
+
 
 #### Technical / collaboration
 
@@ -251,7 +279,11 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ---
 
+
+
 ### Pending
+
+
 
 #### Maps (pending feedback from historian of geography)
 
@@ -259,10 +291,14 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Click on map to select in panel
 - [ ] Placename Phase 4–5: persisted coordinate/id place entities; mint from merged periods ([placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
 
+
+
 #### Database cards
 
 - [ ] place (pending feedback from historian of geography)
 - [ ] title (pending decisions on how to treat works)
+
+
 
 ### Deferred
 

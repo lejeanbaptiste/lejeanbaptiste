@@ -409,6 +409,7 @@
 
 ### UI and settings
 
+- **LanguageTool: managed Java on macOS and Windows.** When Java 17+ is missing or too old, Settings → AI → LanguageTool offers **Download Java for LanguageTool** — a pinned Temurin 17 JRE (~40 MB) into app user data, checksum-verified like the managed LanguageTool install. `probeJava` checks the LJB-managed runtime before system `JAVA_HOME` / PATH; a **Refresh** button re-probes after a manual Temurin or Homebrew install. Linux still requires Java installed separately.
 - Translation policy panel: **brackets policy** control; language buckets extended with **zh** / **ja** / **ko** (CJK date typography defaults). Per-mention overrides (brackets, title order, show/hide parts) via the entity format popup on a chip in the translation pane.
 - Chinese project resources dialog: new **Script conversion (OpenCC)** checkbox.
 

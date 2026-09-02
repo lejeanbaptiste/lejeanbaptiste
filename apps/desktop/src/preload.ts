@@ -185,7 +185,9 @@ export interface LanguageToolInstallStatus {
   path: string | null;
   port: number;
   ngrams: { en: boolean };
-  java: { ok: boolean; version?: string; major?: number; error?: string };
+  java: { ok: boolean; version?: string; major?: number; error?: string; managed?: boolean };
+  javaInstallOffered: boolean;
+  managedJavaInstalled: boolean;
   server: 'stopped' | 'starting' | 'running' | 'failed';
   serverError?: string;
 }
@@ -866,6 +868,7 @@ export interface ElectronAPI {
   ) => Promise<LanguageToolConnectionResult>;
   checkLanguageTool: (request: LanguageToolCheckRequest) => Promise<LanguageToolCheckResult>;
   languageToolGetInstallStatus: () => Promise<LanguageToolInstallStatus>;
+  languageToolInstallJava: () => Promise<LanguageToolInstallStatus>;
   languageToolInstall: () => Promise<LanguageToolInstallStatus>;
   languageToolRemove: () => Promise<LanguageToolInstallStatus>;
   languageToolInstallNgrams: () => Promise<LanguageToolInstallStatus>;
@@ -1323,6 +1326,7 @@ const electronAPI: ElectronAPI = {
   checkLanguageTool: (request: LanguageToolCheckRequest) =>
     ipcRenderer.invoke('checkLanguageTool', request),
   languageToolGetInstallStatus: () => ipcRenderer.invoke('languageToolGetInstallStatus'),
+  languageToolInstallJava: () => ipcRenderer.invoke('languageToolInstallJava'),
   languageToolInstall: () => ipcRenderer.invoke('languageToolInstall'),
   languageToolRemove: () => ipcRenderer.invoke('languageToolRemove'),
   languageToolInstallNgrams: () => ipcRenderer.invoke('languageToolInstallNgrams'),

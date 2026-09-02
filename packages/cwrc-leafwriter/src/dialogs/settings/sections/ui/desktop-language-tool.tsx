@@ -38,7 +38,9 @@ interface LanguageToolInstallStatus {
   installed: boolean;
   version: string | null;
   ngrams: { en: boolean };
-  java: { ok: boolean; version?: string; error?: string };
+  java: { ok: boolean; version?: string; error?: string; managed?: boolean };
+  javaInstallOffered: boolean;
+  managedJavaInstalled: boolean;
   server: 'stopped' | 'starting' | 'running' | 'failed';
   serverError?: string;
 }
@@ -164,6 +166,27 @@ export const DesktopLanguageTool = () => {
     }
   };
 
+  const runInstallJava = async () => {
+    setBusy(true);
+    setProgressMessage(t('LW.settings.language_tool.java_downloading'));
+    setStatus(null);
+    try {
+      const next = await window.electronAPI?.languageToolInstallJava?.();
+      if (next) setInstallStatus(next);
+      await refreshInstallStatus();
+      setStatus({ severity: 'success', message: t('LW.settings.language_tool.java_install_ok') });
+    } catch (error) {
+      setStatus({
+        severity: 'error',
+        message:
+          error instanceof Error ? error.message : t('LW.settings.language_tool.java_install_failed'),
+      });
+    } finally {
+      setBusy(false);
+      setProgressMessage(null);
+    }
+  };
+
   const runInstall = async () => {
     setBusy(true);
     setProgressMessage(t('LW.settings.language_tool.installing'));
@@ -241,9 +264,32 @@ export const DesktopLanguageTool = () => {
             {installStatus?.java.ok
               ? t('LW.settings.language_tool.java_ok', {
                   version: installStatus.java.version ?? '17+',
-                })
+                }) +
+                (installStatus.java.managed
+                  ? ` (${t('LW.settings.language_tool.java_managed')})`
+                  : '')
               : (installStatus?.java.error ?? t('LW.settings.language_tool.java_missing'))}
           </Alert>
+
+          {installStatus?.javaInstallOffered ? (
+            <Stack direction="row" flexWrap="wrap" spacing={1}>
+              <Button
+                disabled={busy}
+                onClick={() => void runInstallJava()}
+                size="small"
+                variant="contained"
+              >
+                {t('LW.settings.language_tool.java_download')}
+              </Button>
+              <Button disabled={busy} onClick={() => void refreshInstallStatus()} size="small" variant="outlined">
+                {t('LW.settings.language_tool.java_refresh')}
+              </Button>
+            </Stack>
+          ) : (
+            <Button disabled={busy} onClick={() => void refreshInstallStatus()} size="small" variant="outlined">
+              {t('LW.settings.language_tool.java_refresh')}
+            </Button>
+          )}
 
           <Typography variant="body2">
             {installStatus?.installed

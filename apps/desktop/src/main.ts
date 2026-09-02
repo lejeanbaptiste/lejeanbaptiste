@@ -124,6 +124,7 @@ import { applyWhitelistToMatches, loadLanguageToolEntityWhitelist } from './lang
 import { resolveLanguageToolCheckBaseUrl, sanitizeLanguageToolSettings } from './languageTool';
 import {
   downloadAndInstallLanguageTool,
+  downloadAndInstallManagedJre,
   downloadEnglishNgrams,
   ensureManagedLanguageToolServer,
   getLanguageToolInstallStatus,
@@ -3782,6 +3783,13 @@ const registerIpcHandlers = () => {
   );
 
   ipcMain.handle('languageToolGetInstallStatus', async () => getLanguageToolInstallStatus());
+
+  ipcMain.handle('languageToolInstallJava', async (event) => {
+    await downloadAndInstallManagedJre((progress) => {
+      event.sender.send('languageTool:installProgress', progress);
+    });
+    return getLanguageToolInstallStatus();
+  });
 
   ipcMain.handle('languageToolInstall', async (event) => {
     const status = await downloadAndInstallLanguageTool((progress) => {

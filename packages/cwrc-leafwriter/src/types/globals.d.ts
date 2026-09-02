@@ -497,7 +497,21 @@ declare global {
       path?: string | null;
       port?: number;
       ngrams: { en: boolean };
-      java: { ok: boolean; version?: string; major?: number; error?: string };
+      java: { ok: boolean; version?: string; major?: number; error?: string; managed?: boolean };
+      javaInstallOffered: boolean;
+      managedJavaInstalled: boolean;
+      server: 'stopped' | 'starting' | 'running' | 'failed';
+      serverError?: string;
+    }>;
+    languageToolInstallJava?: () => Promise<{
+      installed: boolean;
+      version: string | null;
+      path?: string | null;
+      port?: number;
+      ngrams: { en: boolean };
+      java: { ok: boolean; version?: string; major?: number; error?: string; managed?: boolean };
+      javaInstallOffered: boolean;
+      managedJavaInstalled: boolean;
       server: 'stopped' | 'starting' | 'running' | 'failed';
       serverError?: string;
     }>;
@@ -507,7 +521,9 @@ declare global {
       path?: string | null;
       port?: number;
       ngrams: { en: boolean };
-      java: { ok: boolean; version?: string; major?: number; error?: string };
+      java: { ok: boolean; version?: string; major?: number; error?: string; managed?: boolean };
+      javaInstallOffered: boolean;
+      managedJavaInstalled: boolean;
       server: 'stopped' | 'starting' | 'running' | 'failed';
       serverError?: string;
     }>;
@@ -517,7 +533,9 @@ declare global {
       path?: string | null;
       port?: number;
       ngrams: { en: boolean };
-      java: { ok: boolean; version?: string; major?: number; error?: string };
+      java: { ok: boolean; version?: string; major?: number; error?: string; managed?: boolean };
+      javaInstallOffered: boolean;
+      managedJavaInstalled: boolean;
       server: 'stopped' | 'starting' | 'running' | 'failed';
       serverError?: string;
     }>;
@@ -527,7 +545,9 @@ declare global {
       path?: string | null;
       port?: number;
       ngrams: { en: boolean };
-      java: { ok: boolean; version?: string; major?: number; error?: string };
+      java: { ok: boolean; version?: string; major?: number; error?: string; managed?: boolean };
+      javaInstallOffered: boolean;
+      managedJavaInstalled: boolean;
       server: 'stopped' | 'starting' | 'running' | 'failed';
       serverError?: string;
     }>;

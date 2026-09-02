@@ -8,6 +8,15 @@ import path from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { testLanguageToolConnection } from './languageToolClient';
+import {
+  canOfferManagedJreInstall,
+  hasManagedJreInstalled,
+  probeJava,
+  type LanguageToolJavaStatus,
+} from './languageToolJre';
+
+export { downloadAndInstallManagedJre, parseJavaMajorVersion, probeJava } from './languageToolJre';
+export type { LanguageToolJavaStatus };
 
 /** Final numbered ZIP release (LT moved to snapshots after 6.6). */
 export const LANGUAGE_TOOL_RELEASE = {
@@ -36,14 +45,6 @@ const DOWNLOAD_TIMEOUT_MS = 60 * 60 * 1000;
 const MAX_LT_DOWNLOAD_BYTES = 512 * 1024 * 1024;
 const MAX_NGRAM_DOWNLOAD_BYTES = 12 * 1024 * 1024 * 1024;
 
-export interface LanguageToolJavaStatus {
-  ok: boolean;
-  version?: string;
-  major?: number;
-  error?: string;
-  javaPath?: string;
-}
-
 export interface LanguageToolInstallManifest {
   version: string;
   installedAt: string;
@@ -59,6 +60,9 @@ export interface LanguageToolInstallStatus {
   port: number;
   ngrams: { en: boolean };
   java: LanguageToolJavaStatus;
+  /** LJB can download Temurin JRE on macOS / Windows when Java is missing or too old. */
+  javaInstallOffered: boolean;
+  managedJavaInstalled: boolean;
   server: 'stopped' | 'starting' | 'running' | 'failed';
   serverError?: string;
 }
@@ -124,65 +128,6 @@ const downloadToFile = async (
   );
 };
 
-/** Parse `java -version` stderr (e.g. openjdk version "17.0.9"). Exported for tests. */
-export const parseJavaMajorVersion = (versionOutput: string): number | null => {
-  const match = versionOutput.match(/version\s+"?(\d+)(?:\.(\d+))?/i);
-  if (!match) return null;
-  const major = Number(match[1]);
-  const minor = match[2] !== undefined ? Number(match[2]) : undefined;
-  if (!Number.isFinite(major)) return null;
-  // Legacy: "1.8.0_381" → 8
-  if (major === 1 && typeof minor === 'number' && Number.isFinite(minor)) return minor;
-  return major;
-};
-
-export const probeJava = async (): Promise<LanguageToolJavaStatus> => {
-  const javaPath = process.env.JAVA_HOME
-    ? path.join(process.env.JAVA_HOME, 'bin', process.platform === 'win32' ? 'java.exe' : 'java')
-    : 'java';
-
-  return new Promise((resolve) => {
-    execFile(javaPath, ['-version'], { timeout: 15_000 }, (error, _stdout, stderr) => {
-      const output = `${stderr ?? ''}\n${error instanceof Error ? error.message : ''}`;
-      if (error && !stderr) {
-        resolve({
-          ok: false,
-          error:
-            'Java was not found. Install Java 17 or newer (e.g. Temurin or Homebrew openjdk@17), then retry.',
-          javaPath,
-        });
-        return;
-      }
-      const major = parseJavaMajorVersion(stderr || output);
-      if (major === null) {
-        resolve({
-          ok: false,
-          error: 'Could not parse the Java version. Install Java 17 or newer.',
-          javaPath,
-          version: (stderr || '').trim().split('\n')[0],
-        });
-        return;
-      }
-      if (major < 17) {
-        resolve({
-          ok: false,
-          major,
-          version: `Java ${major}`,
-          error: `LanguageTool needs Java 17 or newer (found ${major}).`,
-          javaPath,
-        });
-        return;
-      }
-      resolve({
-        ok: true,
-        major,
-        version: `Java ${major}`,
-        javaPath,
-      });
-    });
-  });
-};
-
 const readManifest = async (): Promise<LanguageToolInstallManifest | null> => {
   try {
     const raw = await fsp.readFile(getLanguageToolManifestPath(), 'utf-8');
@@ -231,6 +176,7 @@ export const getLanguageToolInstallStatus = async (): Promise<LanguageToolInstal
   const jar = manifest ? await findServerJar(manifest.distDir) : null;
   const installed = Boolean(manifest && jar);
   const en = await hasEnglishNgrams();
+  const managedJavaInstalled = await hasManagedJreInstalled();
 
   return {
     installed,
@@ -239,6 +185,8 @@ export const getLanguageToolInstallStatus = async (): Promise<LanguageToolInstal
     port: LANGUAGE_TOOL_MANAGED_PORT,
     ngrams: { en },
     java,
+    javaInstallOffered: !java.ok && canOfferManagedJreInstall(),
+    managedJavaInstalled,
     server: serverState,
     serverError,
   };
