@@ -38,15 +38,15 @@ describe('aiPromptProfiles', () => {
       version: 2,
       suggestTaskText: 'Edited',
     };
-    expect(promptVersionWithProfile(SUGGEST_PROMPT_VERSION, profile)).toBe('suggest.v3+defaultv2');
+    expect(promptVersionWithProfile(SUGGEST_PROMPT_VERSION, profile)).toBe('suggest.v4+defaultv2');
     expect(promptVersionWithProfile(AUDIT_CLEAN_PROMPT_VERSION, profile)).toBe(
-      'audit-clean.v2+defaultv2',
+      'audit-clean.v3+defaultv2',
     );
   });
 
   it('keeps shipped version for untouched default profile', () => {
     expect(promptVersionWithProfile(SUGGEST_PROMPT_VERSION, createDefaultAiPromptProfile())).toBe(
-      'suggest.v3',
+      'suggest.v4',
     );
   });
 

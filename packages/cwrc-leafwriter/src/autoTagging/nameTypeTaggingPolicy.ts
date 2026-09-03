@@ -19,6 +19,19 @@ export interface NameTypeTaggingPolicy {
 
 export const DEFAULT_ART_MIN_CODEPOINTS = 3;
 
+/**
+ * `art`'s phase-1 gate counts Unicode code points (see `bucketForTypedName`).
+ * A single Tibetan syllable is 2–3 letter code points plus its trailing tsheg
+ * (U+0F0B), so the default of 3 waves every one-syllable string through — and
+ * one Tibetan syllable is almost never a work title worth phase-1 tagging.
+ * Requiring 4 keeps genuine multi-syllable titles in phase 1 while dropping
+ * bare syllables to phase 2. Han/kana titles are dense enough that 3 already
+ * works, so only `bo` moves.
+ */
+export function defaultArtMinCodePointsForLanguage(lang: string | null): number {
+  return languagePresetKey(lang) === 'bo' ? 4 : DEFAULT_ART_MIN_CODEPOINTS;
+}
+
 const CUSTOM_ID_RE = /^[a-z][a-z0-9_-]*$/;
 
 type LanguagePresetKey = 'zh' | 'ja' | 'bo' | 'en';
@@ -47,6 +60,10 @@ export function defaultPolicyForLanguage(
       buckets.birth = 'phase2';
       break;
     case 'bo':
+      // Tibetan has no family/given split, and personal reference is dominated
+      // by multi-syllable religious and incarnation-lineage names; the parts a
+      // Chinese-shaped model would guess as given/courtesy/birth/variant are
+      // unreliable here, so they wait for phase 2 review.
       buckets.given = 'phase2';
       buckets.variant = 'phase2';
       buckets.courtesy = 'phase2';
@@ -106,7 +123,8 @@ export function resolveNameTypeTaggingPolicy(
   return {
     buckets,
     customTypes,
-    artMinCodePoints: settings?.artMinCodePoints ?? DEFAULT_ART_MIN_CODEPOINTS,
+    artMinCodePoints:
+      settings?.artMinCodePoints ?? defaultArtMinCodePointsForLanguage(sourceLanguage ?? null),
   };
 }
 

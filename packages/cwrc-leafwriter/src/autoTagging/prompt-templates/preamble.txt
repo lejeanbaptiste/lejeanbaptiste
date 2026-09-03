@@ -10,5 +10,12 @@ For each entity you find, report:
 - "confidence": a number from 0 to 1
 - "rationale": one short clause, not a full sentence
 
+Tibetan chunks (Unicode uchen script): the intersyllabic tsheg "་" (U+0F0B)
+separates syllables, not words. A personal name, place name or title normally
+spans several syllables — keep every interior tsheg in "surface" and never
+split a mention at one. Do not put a leading or trailing tsheg in "surface",
+and never include a shad ("།", "༎", "༏") — those are punctuation, not part of
+the name.
+
 Do not invent text that is not present in the chunk. Do not use character
 offsets. Return only JSON matching the schema — no prose, no markdown fences.

@@ -68,6 +68,7 @@ import {
   refreshExtractedEntityDataForDocumentSqlite,
 } from './sqliteEntityExtraction';
 import { autoRomanizeForKind } from '../utilities/romanize';
+import { isTibetanLanguageCode } from '../utilities/languageCodes';
 import { checkWellFormedness } from '../utilities/checkWellFormedness';
 import { applyPurge, type PurgeOptions } from './purge';
 import * as Comlink from 'comlink';
@@ -720,6 +721,7 @@ export class AutoTaggingSession {
     onChunk?: (suggestions: Suggestion[]) => void,
   ): Promise<LlmSuggestResult> {
     const doc = await this.getDocument();
+    const tibetanTolerant = isTibetanLanguageCode(await this.projectLanguage());
     const result = await llmSuggest(doc, {
       tags,
       client,
@@ -730,6 +732,7 @@ export class AutoTaggingSession {
       signal,
       range,
       onChunk,
+      tibetanTolerant,
     });
     const { suggestions, droppedNested } = prepareSuggestionsForReview(
       doc,
@@ -756,6 +759,7 @@ export class AutoTaggingSession {
     onChunk?: (suggestions: Suggestion[]) => void,
   ): Promise<LlmAuditResult> {
     const doc = await this.getDocument();
+    const tibetanTolerant = isTibetanLanguageCode(await this.projectLanguage());
     const result = await llmAudit(doc, {
       tags,
       client,
@@ -766,6 +770,7 @@ export class AutoTaggingSession {
       signal,
       range,
       onChunk,
+      tibetanTolerant,
     });
     const { suggestions, droppedNested } = prepareSuggestionsForReview(
       doc,

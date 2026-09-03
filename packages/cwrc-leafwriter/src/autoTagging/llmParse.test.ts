@@ -1,5 +1,10 @@
 import { buildDocIndex } from './anchor';
-import { findOccurrenceOffset, locateInDoc, parseValidItems } from './llmParse';
+import {
+  findOccurrenceMatch,
+  findOccurrenceOffset,
+  locateInDoc,
+  parseValidItems,
+} from './llmParse';
 import { normalizeDomText } from './normalize';
 
 const parse = (xml: string) => {
@@ -142,6 +147,40 @@ describe('findOccurrenceOffset', () => {
 
   it('returns null when there are fewer occurrences than requested', () => {
     expect(findOccurrenceOffset('ababab', 'ab', 4)).toBeNull();
+  });
+});
+
+describe('findOccurrenceMatch', () => {
+  it('returns offset and surface length on an exact match', () => {
+    expect(findOccurrenceMatch('alpha beta beta', 'beta', 2)).toEqual({ offset: 11, length: 4 });
+  });
+
+  it('without tibetanTolerant, does not retry a near miss', () => {
+    // Model added a trailing shad the source text does not carry.
+    expect(findOccurrenceMatch('བོད་ཡིག་ལ', 'བོད་ཡིག་ལ།', 1)).toBeNull();
+  });
+
+  it('tolerates a trailing shad the model added to a Tibetan surface', () => {
+    const match = findOccurrenceMatch('བོད་ཡིག་ལ', 'བོད་ཡིག་ལ།', 1, { tibetanTolerant: true });
+    expect(match).toEqual({ offset: 0, length: 9 });
+  });
+
+  it('folds the non-breaking tsheg (U+0F0C) to the plain tsheg (U+0F0B)', () => {
+    // Source uses U+0F0C, model returns the U+0F0B spelling.
+    const match = findOccurrenceMatch('ཡིན་དཀོན༌མཆོག', 'དཀོན་མཆོག', 1, {
+      tibetanTolerant: true,
+    });
+    expect(match).not.toBeNull();
+    expect(match).toEqual({ offset: 4, length: 9 });
+  });
+
+  it('honours the occurrence index on the tolerant path', () => {
+    const match = findOccurrenceMatch('བོ་བོ', 'བོ།', 2, { tibetanTolerant: true });
+    expect(match).toEqual({ offset: 3, length: 2 });
+  });
+
+  it('returns null when the trimmed surface still is not present', () => {
+    expect(findOccurrenceMatch('བོད་ཡིག', 'རྒྱ་གར།', 1, { tibetanTolerant: true })).toBeNull();
   });
 });
 

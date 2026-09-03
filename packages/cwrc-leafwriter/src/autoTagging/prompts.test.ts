@@ -10,12 +10,23 @@ import {
 } from './prompts';
 
 describe('prompts', () => {
-  it('uses suggest.v3 with tag definitions for persName and placeName', () => {
-    expect(SUGGEST_PROMPT_VERSION).toBe('suggest.v3');
+  it('uses suggest.v4 with tag definitions for persName and placeName', () => {
+    expect(SUGGEST_PROMPT_VERSION).toBe('suggest.v4');
     const guide = buildSuggestTagGuide(['persName', 'placeName']);
     expect(guide).toContain('persName');
     expect(guide).toContain('placeName');
     expect(guide).toContain('京兆');
+  });
+
+  it('tells the model not to split Tibetan mentions on the tsheg', () => {
+    const { system } = buildSuggestPrompt({
+      tags: ['persName', 'placeName'],
+      chunkText: 'test',
+      before: '',
+      after: '',
+    });
+    expect(system).toContain('tsheg');
+    expect(system).toMatch(/never\s+split a mention/);
   });
 
   it('omits definitions for unlisted tags', () => {
@@ -43,8 +54,8 @@ describe('prompts', () => {
   });
 
   it('uses split audit prompts for clean and add passes', () => {
-    expect(AUDIT_CLEAN_PROMPT_VERSION).toBe('audit-clean.v2');
-    expect(AUDIT_ADD_PROMPT_VERSION).toBe('audit-add.v1');
+    expect(AUDIT_CLEAN_PROMPT_VERSION).toBe('audit-clean.v3');
+    expect(AUDIT_ADD_PROMPT_VERSION).toBe('audit-add.v2');
     const clean = buildAuditCleanPrompt({
       tags: ['persName', 'placeName'],
       taggedChunkText: '<persName>張衡</persName>',

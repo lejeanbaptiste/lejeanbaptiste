@@ -6,7 +6,7 @@ import { chunkDocument, llmChunkOptions, type ChunkOptions } from './chunk';
 import { findTeiBodyRoot } from './dateTeiHelpers';
 import type { LlmCache } from './llmCache';
 import type { LlmClient } from './llmClient';
-import { findOccurrenceOffset, locateInDoc, parseValidItems } from './llmParse';
+import { findOccurrenceMatch, locateInDoc, parseValidItems } from './llmParse';
 import { buildSuggestPrompt, SUGGEST_PROMPT_VERSION, suggestionResponseSchema } from './prompts';
 import type { Suggestion } from './types';
 
@@ -21,6 +21,12 @@ export interface LlmSuggestOptions extends ChunkOptions {
   onChunk?: (suggestions: Suggestion[]) => void;
   /** Stops between chunks and aborts the in-flight request when triggered. */
   signal?: AbortSignal;
+  /**
+   * Tibetan projects: when a surface fails an exact match, retry it with the
+   * non-breaking tsheg folded and edge tsheg/shad trimmed (see
+   * `findOccurrenceMatch`). Off for CJK, where those marks do not occur.
+   */
+  tibetanTolerant?: boolean;
 }
 
 export interface LlmSuggestResult {
@@ -72,9 +78,11 @@ export async function llmSuggest(
 
     const chunkSuggestions: Suggestion[] = [];
     for (const item of items) {
-      const offset = findOccurrenceOffset(chunk.text, item.surface, item.occurrence);
+      const match = findOccurrenceMatch(chunk.text, item.surface, item.occurrence, {
+        tibetanTolerant: options.tibetanTolerant,
+      });
       const located =
-        offset === null ? null : locateInDoc(index, chunk.start + offset, item.surface.length);
+        match === null ? null : locateInDoc(index, chunk.start + match.offset, match.length);
       if (!located) {
         unverifiableCount++;
         continue;
