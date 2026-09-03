@@ -1,5 +1,6 @@
 import type { DocIndex } from './anchor';
 import type { RawLlmItem } from './llmCache';
+import { foldNonBreakingTsheg, trimTibetanEdgeMarks } from './normalize';
 
 /**
  * Parse and schema-validate a model response. Anything malformed — bad JSON,
@@ -84,16 +85,6 @@ export interface OccurrenceMatch {
 }
 
 /**
- * Tibetan mark block, tsheg (U+0F0B) through gter-tsheg (U+0F14): the
- * intersyllabic tsheg, the non-breaking tsheg, and the shad family.
- */
-const TIBETAN_EDGE_MARKS = /^[་-༔\s]+|[་-༔\s]+$/g;
-
-/** Non-breaking tsheg U+0F0C → plain tsheg U+0F0B (display variant; length-preserving). */
-const NON_BREAKING_TSHEG = /༌/g;
-const PLAIN_TSHEG = '་';
-
-/**
  * Offset + length of the nth occurrence of `surface` in `text`. Exact match
  * first (identical to `findOccurrenceOffset`, length === surface.length).
  *
@@ -117,8 +108,8 @@ export function findOccurrenceMatch(
   if (exact !== null) return { offset: exact, length: surface.length };
   if (!options?.tibetanTolerant) return null;
 
-  const folded = text.replace(NON_BREAKING_TSHEG, PLAIN_TSHEG);
-  const trimmed = surface.replace(NON_BREAKING_TSHEG, PLAIN_TSHEG).replace(TIBETAN_EDGE_MARKS, '');
+  const folded = foldNonBreakingTsheg(text);
+  const trimmed = trimTibetanEdgeMarks(foldNonBreakingTsheg(surface));
   if (!trimmed || (trimmed === surface && folded === text)) return null;
 
   const offset = findOccurrenceOffset(folded, trimmed, occurrence);

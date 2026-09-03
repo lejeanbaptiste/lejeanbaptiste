@@ -191,3 +191,46 @@ describe('dictionaryTag', () => {
     expect(suggestions).toHaveLength(0);
   });
 });
+
+describe('dictionaryTag — Tibetan', () => {
+  const tei = (body: string) =>
+    parse(
+      `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>${body}</p></body></text></TEI>`,
+    );
+
+  it('matches an authority headword whose stored form carries a terminal shad', () => {
+    // Pattern as it sits in the pack ("…མཚོ།"); running text drops the shad.
+    const doc = tei('ཐུབ་བསྟན་རྒྱ་མཚོ་ནི་བོད་ཀྱི་མི་ཡིན།');
+    const suggestions = dictionaryTag(
+      doc,
+      [{ string: 'ཐུབ་བསྟན་རྒྱ་མཚོ།', tag: 'persName' }],
+      'ignore',
+    );
+    expect(suggestions.map((s) => s.anchor.surface)).toEqual(['ཐུབ་བསྟན་རྒྱ་མཚོ']);
+  });
+
+  it('does not tag a pattern that ends inside a syllable', () => {
+    // "རྒྱ" (rgya) must not match inside "རྒྱལ" (rgyal) — no tsheg after it.
+    const doc = tei('རྒྱལ་པོ་ཆེན་པོ།');
+    expect(dictionaryTag(doc, [{ string: 'རྒྱ', tag: 'placeName' }], 'ignore')).toHaveLength(0);
+  });
+
+  it('still tags the same pattern when a tsheg closes the syllable', () => {
+    const doc = tei('རྒྱ་གར་གྱི་ཡུལ།');
+    const suggestions = dictionaryTag(doc, [{ string: 'རྒྱ', tag: 'placeName' }], 'ignore');
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0]!.anchor.surface).toBe('རྒྱ');
+  });
+
+  it('allows a following a-chung (genitive particle fuses without a tsheg)', () => {
+    const doc = tei('པོ་ཏ་ལའི་རྩེ་མོ།');
+    const suggestions = dictionaryTag(doc, [{ string: 'པོ་ཏ་ལ།', tag: 'placeName' }], 'ignore');
+    expect(suggestions.map((s) => s.anchor.surface)).toEqual(['པོ་ཏ་ལ']);
+  });
+
+  it('folds the non-breaking tsheg in the pattern', () => {
+    const doc = tei('ཀ་ཁ་ག');
+    const suggestions = dictionaryTag(doc, [{ string: 'ཀ༌ཁ', tag: 'persName' }], 'ignore');
+    expect(suggestions).toHaveLength(1);
+  });
+});

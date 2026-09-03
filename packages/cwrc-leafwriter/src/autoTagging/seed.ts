@@ -14,6 +14,7 @@ import {
   LJB_AUTOTAG_RESP,
 } from './entities';
 import { isLatinSurface } from './disambiguationMatch';
+import { normalizeMatchPattern } from './normalize';
 import { romanizeFromAuthorityMetadata } from '../utilities/romanize';
 import { rationaleForCandidates } from './packLoader';
 import type { Suggestion, WhitespacePolicy } from './types';
@@ -178,7 +179,8 @@ export function compoundWrapperSuggestions(
   let counter = 0;
   for (const candidate of candidates) {
     if (!candidate.metadata?.wrapper) continue;
-    for (const surface of candidate.searchStrings) {
+    for (const rawSurface of candidate.searchStrings) {
+      const surface = normalizeMatchPattern(rawSurface);
       // A genuine wrapper concatenation (fief + rank + name, optionally with a
       // nationality or dynasty prefix) runs to at least three characters. The
       // two-character forms — a bare rank glyph plus a one-character personal
@@ -347,7 +349,13 @@ export function addCandidateToSeedIndex(
   candidate: AuthorityCandidate,
 ): void {
   const tag = teiTagForCandidate(candidate);
-  for (const surface of candidate.searchStrings) {
+  for (const rawSurface of candidate.searchStrings) {
+    // Match the document search text: NFC, and for Tibetan fold the
+    // non-breaking tsheg and drop a terminal tsheg/shad the running text will
+    // not carry. The lookup key must use the same form the matcher will report
+    // back as `anchor.surface`, or `seedSuggestionsFromIndex` loses the row.
+    const surface = normalizeMatchPattern(rawSurface);
+    if (!surface) continue;
     index.entries.push({ string: surface, tag });
     const key = seedKeyOf(tag, surface);
     const list = index.lookup.get(key);

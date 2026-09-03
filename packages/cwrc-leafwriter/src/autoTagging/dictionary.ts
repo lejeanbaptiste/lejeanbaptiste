@@ -7,7 +7,18 @@ import {
 } from './projectionIndex';
 import { isWrappedByEntityTag } from './suggestionFilters';
 import { MultiStringMatcher } from './matcher';
+import { hasTibetan, isTibetanEdgeChar, normalizeMatchPattern } from './normalize';
 import type { Suggestion, WhitespacePolicy } from './types';
+
+/**
+ * Reject a match that begins or ends inside a Tibetan syllable. Tibetan is
+ * written with no word spacing, so a bare substring matcher will otherwise tag
+ * "རྒྱ" inside "རྒྱལ". A real full-name match is always flanked by a tsheg, a
+ * shad, whitespace, a string edge, or the a-chung that starts a fused particle
+ * (see `isTibetanEdgeChar`). Non-Tibetan patterns are unaffected.
+ */
+const tibetanEdgesOk = (text: string, start: number, end: number, pattern: string): boolean =>
+  !hasTibetan(pattern) || (isTibetanEdgeChar(text[start - 1]) && isTibetanEdgeChar(text[end]));
 
 /**
  * One row of an imported table. Tag-stage only: a string and the tag to wrap
@@ -99,9 +110,14 @@ const buildTagsByString = (
 ): Map<string, string[]> => {
   const tagsByString = new Map<string, string[]>();
   for (const entry of entries) {
-    if ([...entry.string].length < minLength) continue;
-    const tags = tagsByString.get(entry.string);
-    if (!tags) tagsByString.set(entry.string, [entry.tag]);
+    // Normalize the pattern the same way the document search text is normalized
+    // (NFC everywhere; for Tibetan also fold the non-breaking tsheg and drop a
+    // terminal tsheg/shad) so an authority headword like "བཀྲ་ཤིས།" matches the
+    // running-text form "བཀྲ་ཤིས". Length-gate the normalized form.
+    const pattern = normalizeMatchPattern(entry.string);
+    if ([...pattern].length < minLength) continue;
+    const tags = tagsByString.get(pattern);
+    if (!tags) tagsByString.set(pattern, [entry.tag]);
     else if (!tags.includes(entry.tag)) tags.push(entry.tag);
   }
   return tagsByString;
@@ -146,6 +162,7 @@ export function dictionaryTag(
     const alreadyTagged = (tag: string) => isWrappedByEntityTag(node, tag);
 
     for (const match of matcher.scan(search.text)) {
+      if (!tibetanEdgesOk(search.text, match.start, match.end, match.pattern)) continue;
       const tags = tagsByString.get(match.pattern)!.filter((tag) => !alreadyTagged(tag));
       if (tags.length === 0) continue;
 
@@ -194,6 +211,7 @@ export function dictionaryTagProjection(
   let counter = 0;
 
   for (const match of matcher.scan(projection.text)) {
+    if (!tibetanEdgesOk(projection.text, match.start, match.end, match.pattern)) continue;
     const length = match.end - match.start;
     const startNode = projection.points[match.start]?.node;
     if (!startNode) continue;

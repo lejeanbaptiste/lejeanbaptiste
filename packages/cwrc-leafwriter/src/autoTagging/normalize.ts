@@ -80,3 +80,54 @@ export function hashText(text: string): string {
   }
   return (hash >>> 0).toString(16).padStart(8, '0');
 }
+
+// --- Tibetan mark handling (shared by the LLM matcher and the string matcher) ---
+
+/** Non-breaking tsheg U+0F0C → plain tsheg U+0F0B: a display variant, length-preserving. */
+const NON_BREAKING_TSHEG = /༌/g;
+const PLAIN_TSHEG = '་';
+
+/**
+ * Tibetan mark block, tsheg (U+0F0B) through gter-tsheg (U+0F14) — the
+ * intersyllabic tsheg, the non-breaking tsheg and the shad family — plus
+ * whitespace, anchored to a string edge.
+ */
+const TIBETAN_EDGE_MARKS = /^[་-༔\s]+|[་-༔\s]+$/g;
+
+/** Any Tibetan code point (used to gate Tibetan-only rules cheaply). */
+export const hasTibetan = (text: string): boolean => /[ༀ-࿿]/.test(text);
+
+/** Fold the non-breaking tsheg to the plain tsheg everywhere in `text`. */
+export const foldNonBreakingTsheg = (text: string): string =>
+  text.replace(NON_BREAKING_TSHEG, PLAIN_TSHEG);
+
+/** Strip tsheg / shad / whitespace from both ends of `text`. */
+export const trimTibetanEdgeMarks = (text: string): string => text.replace(TIBETAN_EDGE_MARKS, '');
+
+/**
+ * Normalize an authority / dictionary string into a match key: NFC, fold the
+ * non-breaking tsheg, and drop a leading or trailing tsheg / shad (authority
+ * headwords are cited with a terminal shad the running text almost never
+ * carries at that spot). A no-op for text without Tibetan marks.
+ */
+export function normalizeMatchPattern(pattern: string): string {
+  const nfc = pattern.normalize('NFC');
+  if (!hasTibetan(nfc)) return nfc;
+  return trimTibetanEdgeMarks(foldNonBreakingTsheg(nfc));
+}
+
+/**
+ * True when `char` (or end-of-string, passed as undefined) is a legitimate
+ * right/left edge for a Tibetan match: a tsheg, a shad, whitespace, the
+ * string edge, or the a-chung U+0F60 that begins the genitive/agentive
+ * particles which fuse onto the previous syllable without a tsheg. Anything
+ * else — a base letter, a vowel sign, a subjoined consonant — means the match
+ * cut a syllable in half.
+ */
+export function isTibetanEdgeChar(char: string | undefined): boolean {
+  if (char === undefined) return true;
+  if (/\s/.test(char)) return true;
+  const cp = char.codePointAt(0)!;
+  if (cp >= 0x0f0b && cp <= 0x0f14) return true;
+  return cp === 0x0f60;
+}
