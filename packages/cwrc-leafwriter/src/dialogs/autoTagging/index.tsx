@@ -154,7 +154,13 @@ const visibleAuthorityPackIdsForLanguage = (language: string | null): AuthorityP
           'wikidata-works-ja',
         ]
       : isTibetanLanguageCode(language)
-        ? ['wikidata-persons-bo', 'wikidata-places-bo', 'wikidata-orgs-bo']
+        ? [
+            'wikidata-persons-bo',
+            'bdrc-persons-bo',
+            'wikidata-places-bo',
+            'bdrc-places-bo',
+            'wikidata-orgs-bo',
+          ]
         : isChineseLanguageCode(language) || !language
           ? [
               'cbdb-persons',

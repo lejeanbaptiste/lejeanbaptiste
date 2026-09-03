@@ -443,7 +443,7 @@ CBETA and similar texts often split a running string across milestones, e.g. `ใ€
 - Design note [`docs/mention-entity-rendering-planning.md`](docs/mention-entity-rendering-planning.md); smoke-test checklist ยง10d for mention manifest + CJK cases.
 - Milestone-aware auto-tagging planning and acceptance cases: [`docs/autotagging-milestone-projection-planning.md`](docs/autotagging-milestone-projection-planning.md).
 
-## Upstream
+## 0.1.0-beta.10
 
 ### BDRC import (2026-09-03)
 

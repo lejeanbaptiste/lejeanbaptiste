@@ -119,7 +119,7 @@ export async function expandPagesTranscription(wikitext, apiHost, opts = {}) {
     for (let n = lo; n <= hi; n += 1) {
       if (!first) await sleepImpl(delayMs);
       first = false;
-      let content = '';
+      let content;
       try {
         const fetched = await fetchWikitext(apiHost, `Page:${tag.index}/${n}`);
         content = extractPageContent(fetched.wikitext, {
