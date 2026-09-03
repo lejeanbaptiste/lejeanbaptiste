@@ -174,6 +174,7 @@
         "match_across_line_breaks_description": "在空的 <lb>、<pb> 等里程碑兩側尋找標記炸彈比對；套用標籤時保留這些標記。預設關閉。",
         "match_across_line_breaks_enable": "為此專案啟用",
         "asset_packs_note": "離線權威套件和地圖圖磚現在位於資產套件分頁。",
+        "bdrc_closed_note": "BDRC（BUDA）為封閉目錄，禁止爬取其網站。Le Jean-Baptiste 不會檢索 library.bdrc.io。查詢透過維基數據識別號（屬性 P2477，已收入藏文維基數據套件）；連結仍開啟官方 BUDA 頁面。",
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>確定要刪除權威資料 </0><1>{{name}}</1><2> 嗎？</2>",
           "Authority deleted successfully": "權威資料已刪除",

@@ -286,6 +286,16 @@ describe('parseAuthorityUri', () => {
       crosswalkKey: 'cbdb',
       value: '42',
     });
+    expect(parseAuthorityUri('https://library.bdrc.io/show/bdr:P1KG18539?s=ignored')).toEqual({
+      idnoType: 'BDRC',
+      crosswalkKey: 'bdrc',
+      value: 'P1KG18539',
+    });
+    expect(parseAuthorityUri('http://purl.bdrc.io/resource/G1234')).toEqual({
+      idnoType: 'BDRC',
+      crosswalkKey: 'bdrc',
+      value: 'G1234',
+    });
   });
 
   it('returns null for unknown URIs', () => {

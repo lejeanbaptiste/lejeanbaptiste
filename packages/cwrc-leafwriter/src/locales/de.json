@@ -614,7 +614,8 @@
         "match_across_line_breaks": "Über Zeilen- und Seitenumbrüche hinweg suchen",
         "match_across_line_breaks_description": "Findet Tag-Bomben-Treffer über leere <lb>-, <pb>- und ähnliche Markierungen hinweg. Behält Markierungen in angewendeten Tags. Standardmäßig aus.",
         "match_across_line_breaks_enable": "Für dieses Projekt aktivieren",
-        "asset_packs_note": "Offline-Autoritätspakete und Kartenkacheln sind jetzt auf der Registerkarte Asset-Pakete verfügbar."
+        "asset_packs_note": "Offline-Autoritätspakete und Kartenkacheln sind jetzt auf der Registerkarte Asset-Pakete verfügbar.",
+        "bdrc_closed_note": "BDRC (BUDA) ist ein geschlossener Katalog und verbietet das Auslesen der Website. Le Jean-Baptiste durchsucht library.bdrc.io nicht. Der Zugriff läuft über Wikidata-Kennungen (Eigenschaft P2477) in den tibetischen Wikidata-Paketen; Links öffnen weiterhin die offizielle BUDA-Seite."
       },
       "editor": {
         "Show Raw XML panel": "Rohes-XML-Panel anzeigen",

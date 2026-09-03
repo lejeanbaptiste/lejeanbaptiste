@@ -124,10 +124,10 @@ These steps are the same on all three operating systems; only the browser’s ex
 - **Brave:** `brave://extensions`
 - **Edge:** `edge://extensions`
 
-4. Turn on **Developer mode** (toggle usually in the top-right corner).
-5. Click **Load unpacked** (Chrome/Brave) or **Load unpacked extension** (Edge).
-6. Select the **unzipped folder** from step 2 (the folder that contains `manifest.json`, not the zip file itself).
-7. Pin the **LJB corpus import** icon to the toolbar if you like (puzzle-piece menu → pin).
+1. Turn on **Developer mode** (toggle usually in the top-right corner).
+2. Click **Load unpacked** (Chrome/Brave) or **Load unpacked extension** (Edge).
+3. Select the **unzipped folder** from step 2 (the folder that contains `manifest.json`, not the zip file itself).
+4. Pin the **LJB corpus import** icon to the toolbar if you like (puzzle-piece menu → pin).
 
 After an LJB upgrade, download the matching extension zip from the new release and repeat steps 1–6 (you can remove the old unpacked copy from the extensions page first, or load the new folder alongside it and remove the old one).
 
@@ -154,7 +154,7 @@ For a permanent Firefox install you would need a signed package from Mozilla (no
 - **Kanripo** — a text URL with a `#KR…` fragment (juan or work)
 - **BDRC** — an etext reader on `library.bdrc.io` with `openEtext=bdr:VE…` in the URL
 
-3. Click the **LJB corpus import** toolbar button, then **Import**.
+1. Click the **LJB corpus import** toolbar button, then **Import**.
 
 LJB should receive the import dialog for that source. More detail on what each source sends: [docs/wikisource-import.md](docs/wikisource-import.md) (Wikisource), [docs/kanripo-import-plugin-planning.md](docs/kanripo-import-plugin-planning.md) (Kanripo), [docs/bdrc-import-planning.md](docs/bdrc-import-planning.md) (BDRC).
 
@@ -188,96 +188,3 @@ Implementation planning: [entity-sync-planning.md](docs/entity-sync-planning.md)
 ## Build From Source
 
 See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and packaging instructions.
-
-### Future
-
-- [x] Debug: BDRC browser extension: `Error invoking remote method 'bdrc:inspect': Error: bdrcImport.mjs not found in the LJB desktop bundle.` — the tsup build only copied the wikisource `.mjs` runtime into `dist/`, and electron-builder ships `dist/**` only, so `src/bdrc/*.mjs` never reached the packaged app. Fixed by a `copyBdrcRuntime()` step in `apps/desktop/tsup.config.ts`; both callers now share `src/bdrc/bdrcRuntime.ts`.
-- [ ] `createCompoundAnchor` (`packages/cwrc-leafwriter/src/autoTagging/anchor.ts:247-248`) computes `localEnd` — the search-index equivalent of `localStart`, which the sibling `createAnchor` function's `rawRange` helper (same file) uses to convert a search-index back to a snapped raw text-node offset — but then never uses it: `endOffset: endRaw` (line 275) returns the _raw, unsnapped_ input instead of the computed-and-normalized value, unlike `offset: startSearch.map[localStart]` a few lines above it, which does apply that snapping for the start boundary. `localEnd` is assigned and read nowhere. This looks like an incomplete port of the pattern `createAnchor`/`rawRange` establish elsewhere in the file, not a deliberate choice — but the existing test (`apply.test.ts:72`) exercises exactly the case where `endRaw` equals the node's full length, where `localEnd`'s `findIndex` would miss (hit the `-1` fallback) and `endRaw` happens to already be correct, so the gap may not be as visible as it should be. This only affects `createCompoundAnchor`'s callers (the post-component person-wrapper pass) and only when the end boundary isn't at a node's natural end, where whitespace-policy snapping could shift the offset. **2026-08-24: low real-world priority** — Asian-script sources normally carry no whitespace, so the whitespace-policy snapping this gap would affect essentially doesn't come up in practice for this project's actual corpus. Still worth fixing for correctness/robustness, but not urgent.
-- [ ] Figure out how to accommodate both segmented and unsegmented Tibetan texts.
-
-- Full CBETA integration
-  - [ ] Include Bingenheimer's tagged bios
-
-### 'LJBtero' (After testing)
-
-- [ ] Clean up and rationalise options, UI, document and global settings. (Settings dialog reorganised into sections — `authorities`, `editor`, `entity-lookups`, `guardrails`, `markup-panel`, `profile`, `ui`, `reset` — and shipped in beta.2. Still open: the document-level vs global split; everything today is global.)
-- [ ] Figure out how best to handle the insertion of entities NOT in said paragraph.
-- [ ] Keyboard shortcut for insert entity
-- [ ] Rationalise Word and LibreOffice plugins.
-- [ ] Live passage citations in Word / LibreOffice: insert a refreshable field (source unit + optional translation + bibl + nearest page cue) that Syncs from LJB like Zotero — pointers only, no second copy of the edition ([live-passage-citation-planning.md](docs/live-passage-citation-planning.md))
-
-### Database viewer
-
-- [ ] Think about how to organise for rapid data entry
-- [ ] Filters beyond entity kind (the kind filter ships and persists via `databaseViewPrefs`; no field-level or faceted filtering yet)
-
-#### UX
-
-- [ ] Find/replace Phase 2b: WYSIWYG visible-text replace across markup ([find-replace-planning.md](docs/find-replace-planning.md))
-- [ ] Persist last find query across sessions (match-case / ignore-case and regex toggles already ship; the query itself resets to `''` on mount)
-- [ ] Milestone-aware auto-tagging — [autotagging-milestone-projection-planning.md](docs/autotagging-milestone-projection-planning.md); **Phases A–E done** (enable in Settings → Project); Phase D (AI/Sanmiao) deferred
-  - [ ] testing
-  - [ ] AI+Sanmiao integration
-- [ ] Re-explore Tag-boundary Bugs B/C/H (typing/delete at edges) keeping us from full Oxygen parity.
-
-#### AI
-
-- [ ] Noble titles
-- [ ] kaeriten
-- [ ] Translation panel: check for translation consistency across the document
-- [ ] Translation panel: suggest improvements with 'accept/reject'
-- [ ] AI-inferred file import profiles
-- [ ] AI auto-tag: gold harness / residual gaps for `roleName` / `orgName` audit apply (remove/retag/redraw, schema-driven tag picker, and prompt-profile UI already ship)
-
-#### Norbert
-
-- [ ] Fix person-wrapper tag bomb
-- [ ] Consider implementing works/editions
-- [ ] Use 'knowledge' category?
-- [ ] Consider second-order, relational tags, kinship, appointment, death, knowledge
-
-#### Push limits
-
-- [ ] Instead of relying on Markup panel to navigate the xml tree, introduce some sort of toggle where the keyboard arrow keys move you between siblings, parent, and first child. Preferably a keyboard toggle.
-- [ ] Make TinyMCE even faster to load.
-
-#### Technical / collaboration
-
-- [ ] Further Norbert functions
-- [ ] Support for custom authorities
-- [ ] Support for user SQL databases
-- [ ] Multi-machine soak and hardening ([entity-sync-planning.md](docs/entity-sync-planning.md) — Phase 0–4 shipped; achievements blob sync + Phase 5 hardening open)
-- [ ] Entity DB cloud backup: on-launch "restore from cloud" dialog when `checkEntityDbIntegrity` fails (currently only an in-panel alert)
-- [ ] Entity DB cloud backup: live R2 smoke test against a provisioned bucket + token
-- [ ] Entity DB cloud backup: confirm Electron `safeStorage` is available on a packaged Linux build (needs an unlocked keyring)
-- [ ] Option to track annotator on the tag level for collaborations.
-
----
-
-### Pending
-
-#### Maps (pending feedback from historian of geography)
-
-- [ ] Pin captions to further aid in disambiguation
-- [ ] Click on map to select in panel
-- [ ] Placename Phase 4–5: persisted coordinate/id place entities; mint from merged periods ([placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
-
-#### Database cards
-
-- [ ] place (pending feedback from historian of geography)
-- [ ] title (pending decisions on how to treat works)
-
-#### Dates
-
-- [ ] Allow the setting and display of Sanmiao-style CJK dates in the place of/parallel to Western dates.
-- [ ] Scan DILA for markers into Sanmiao
-- [ ] AI assist for Sanmiao to identify beginning of dynasties, reigns, era
-
-### Deferred
-
-- [ ] TEI appointment encoding for office/role context ([doc](docs/authority-packs-planning.md))
-- [ ] Time Machine polish: diff preview, export history zip, optional `revisionDesc` on restore, delete (?)
-- [ ] Docx import Phase 3: style-aware mammoth → IR (blind text extraction already ships)
-- [ ] Bundle size: icon barrel / storage-service; lazy dialogs/Monaco ([bundle-size-warning-planning.md](docs/bundle-size-warning-planning.md))
-- [ ] (IF someone actually uses markdown) Import leftovers: md `{{header}}` expansion, import validator report (blind import, folder multi-select, and basic provenance already ship — see import-planning.md)
-- [ ] (IF grows to point where relevant) LaTeX export

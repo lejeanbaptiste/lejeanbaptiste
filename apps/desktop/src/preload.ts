@@ -317,6 +317,7 @@ export interface ElectronAPI {
     }[]
   >;
   kanripoClone?: (krId: string) => Promise<{ cachePath: string; reused: boolean; files: string[] }>;
+  viafFetchCluster?: (viafId: string) => Promise<unknown>;
   kanripoFetchJuan?: (
     krId: string,
     juan: string,
@@ -1013,6 +1014,7 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('plugins:invokePython', pluginId, payload),
   kanripoSearch: (query: string) => ipcRenderer.invoke('kanripo:search', query),
   kanripoClone: (krId: string) => ipcRenderer.invoke('kanripo:clone', krId),
+  viafFetchCluster: (viafId: string) => ipcRenderer.invoke('viaf:fetchCluster', viafId),
   kanripoFetchJuan: (krId: string, juan: string) =>
     ipcRenderer.invoke('kanripo:fetchJuan', krId, juan),
   kanripoFlush: (krId: string) => ipcRenderer.invoke('kanripo:flush', krId),

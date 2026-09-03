@@ -36,6 +36,14 @@ import {
 } from './disambiguationMatch';
 import { normalizeNameType, normalizeTypedNamesForIntake, type NameTypeId } from './nameTypes';
 import {
+  enrichCandidatesWithBdrcWikidataConcordance,
+  emptyBdrcWikidataIndex,
+  fetchBdrcIdsForQids,
+  loadBdrcWikidataConcordance,
+  mergeBdrcWikidataIndexes,
+  qidsMissingBdrcLink,
+} from './bdrcWikidataConcordance';
+import {
   authorityIdsFromPackCrosswalk,
   enrichCandidatesWithViafWikidataConcordance,
   loadViafWikidataConcordance,
@@ -46,6 +54,7 @@ import {
   isEastAsianCalendarLanguageCode,
   isLatnLang,
   isTibetanLanguageCode,
+  textMatchesProjectScript,
 } from '../utilities/languageCodes';
 import { autoRomanizeForKind, romanizeFromAuthorityMetadata } from '../utilities/romanize';
 import type { WikidataFetchFn } from './wikidataDates';
@@ -54,6 +63,10 @@ import { fetchDilaPlaceDetail, type DilaFetchFn } from './dilaPlaceDetail';
 import { DilaPlaceDetailCache } from './dilaPlaceDetailCache';
 import { wikidataQidsMatchingKind } from './wikidataKindFilter';
 import { packIdsForEntityType, searchPackRows } from '../services/authority-pack-lookup';
+import { viafIdsOnCandidate, viafNativeHeadingForId, type ViafFetchFn } from './viafNativeHeadings';
+import { BDRC_SHOW_URL, extractBdrcId, normalizeBdrcId } from './bdrcIds';
+
+export { BDRC_PURL, BDRC_SHOW_URL, extractBdrcId, normalizeBdrcId } from './bdrcIds';
 import { AUTHORITY_PACKS } from './packPaths';
 import {
   normalizeDateRangeFilter,
@@ -220,7 +233,7 @@ export function preferredWikipediaSite(locale?: string): WikipediaSite {
 }
 
 export interface CandidateLink {
-  kind: 'wikidata' | 'viaf' | 'cbdb' | 'dila';
+  kind: 'wikidata' | 'viaf' | 'cbdb' | 'dila' | 'bdrc';
   url: string;
   title: string;
 }
@@ -254,6 +267,8 @@ export function candidateLinks(
     if (viaf) add('viaf', `https://viaf.org/viaf/${viaf}`, `VIAF ${viaf}`);
     const cbdb = extractCbdbId(text);
     if (cbdb) add('cbdb', CBDB_PERSON_URL(cbdb), `CBDB ${cbdb}`);
+    const bdrc = extractBdrcId(text);
+    if (bdrc) add('bdrc', BDRC_SHOW_URL(bdrc), `BDRC ${bdrc}`);
   };
 
   scan(candidate.uri);
@@ -265,10 +280,37 @@ export function candidateLinks(
     if (auth.type === 'DILA') {
       add('dila', DILA_URL(auth.value), `DILA ${auth.value}`);
     }
+    if (auth.type.toLowerCase() === 'bdrc') {
+      const bdrc = normalizeBdrcId(auth.value);
+      if (bdrc) add('bdrc', BDRC_SHOW_URL(bdrc), `BDRC ${bdrc}`);
+    }
     scan(auth.value);
   }
 
   return links;
+}
+
+/** Project-script name when we have one; otherwise the authority's own label. */
+export function candidatePrimaryLabel(candidate: DisambiguationCandidate): string {
+  const script = candidate.projectLangName?.trim();
+  if (script && !isLatinSurface(script)) return script;
+  return candidate.label;
+}
+
+/**
+ * Transliteration on its own line only when the row has no description and no
+ * dates — those already occupy the subtitle. Used so Tibetan Wylie sits under
+ * the uchen label instead of competing as a second primary.
+ */
+export function candidateRomanizationSubtitle(
+  candidate: DisambiguationCandidate,
+): string | undefined {
+  if (candidate.description?.trim()) return undefined;
+  if (candidate.startYear != null || candidate.endYear != null) return undefined;
+  const romanized = candidate.romanizedName?.trim();
+  if (!romanized) return undefined;
+  if (romanized === candidatePrimaryLabel(candidate)) return undefined;
+  return romanized;
 }
 
 function authorityKeysForCandidate(candidate: DisambiguationCandidate): string[] {
@@ -281,6 +323,8 @@ function authorityKeysForCandidate(candidate: DisambiguationCandidate): string[]
     if (viaf) keys.add(`viaf:${viaf}`);
     const cbdb = extractCbdbId(text);
     if (cbdb) keys.add(`cbdb:${cbdb}`);
+    const bdrc = extractBdrcId(text);
+    if (bdrc) keys.add(`bdrc:${bdrc}`);
   };
 
   scan(candidate.uri);
@@ -302,6 +346,10 @@ function authorityKeysForCandidate(candidate: DisambiguationCandidate): string[]
     // Case-insensitive so PEDB idnos (NORBERT/CBDB) collapse with pack rows.
     if (type === 'cbdb') keys.add(`cbdb:${value}`);
     if (type === 'dila') keys.add(`dila:${value}`);
+    if (type === 'bdrc') {
+      const bdrc = normalizeBdrcId(value);
+      if (bdrc) keys.add(`bdrc:${bdrc}`);
+    }
     if (type === 'norbert') {
       keys.add(`norbert:${value}`);
       // Typed (`office-4135`) and bare (`4135`) forms must collapse for the
@@ -366,6 +414,9 @@ function authorityIdsFromCrossRefs(
 
     const ndl = text.match(/id\.ndl\.go\.jp\/auth\/(?:ndlna|ndlsh)\/([\w-]+)/i)?.[1];
     if (ndl) add('NDL', ndl);
+
+    const bdrc = extractBdrcId(text);
+    if (bdrc) add('BDRC', bdrc);
   }
   return out;
 }
@@ -410,6 +461,7 @@ export function mergeSelectedCandidates(
   const typedNames = normalizedTypedNames.length ? normalizedTypedNames : undefined;
   const nonLatinLabel = options?.preferNonLatinLabel
     ? (candidates.map((c) => c.label).find((label) => label && !isLatinSurface(label)) ??
+      candidates.map((c) => c.projectLangName).find((name) => name && !isLatinSurface(name)) ??
       projectLangName)
     : undefined;
   const authorityAssertionMap = new Map<string, DisambiguationCandidate>();
@@ -985,7 +1037,10 @@ async function candidatesFromAuthorityPacks(
             id: match.uri,
             label: match.label,
             description,
-            sources: [spec.source.toUpperCase()],
+            sources: [
+              spec.source.toUpperCase(),
+              ...(row?.metadata?.crosswalk?.bdrc ? ['BDRC'] : []),
+            ],
             uri: match.uri,
             authorityIds: dedupeAuthorityIds(
               // The bare authorityId, not match.uri — auth.value must be an id a
@@ -1192,10 +1247,9 @@ export async function fetchLiveCandidates(
 }
 
 /**
- * Best-effort dual-script name fill for candidates that authorities/packs left
- * incomplete: one batched Wikidata label fetch per panel supplies the
- * project-language label; romanization falls back to the Latin en label or
- * autogeneration. Mutates in place; network errors leave candidates untouched.
+ * Best-effort dual-script name fill. One Wikidata label batch plus, when needed,
+ * a VIAF cluster fetch so native-script headings (`bo`, `zh`, `ja`, …) are not
+ * dropped in favour of the Latin catalogue form LINCS returns. Mutates in place.
  */
 export async function enrichCandidateNames(
   candidates: DisambiguationCandidate[],
@@ -1222,24 +1276,68 @@ export async function enrichCandidateNames(
     try {
       labelsByQid = await wikidataLabelsByQid(allQids, fetchImpl);
     } catch {
-      // offline / API failure: fall through to autogeneration only
+      // offline / API failure: fall through to VIAF / autogeneration
     }
   }
 
+  const viafFetch: ViafFetchFn = (url, init) =>
+    fetchImpl ? (fetchImpl as ViafFetchFn)(url, init) : fetch(url, init);
+  const viafIds = [
+    ...new Set(
+      needy
+        .filter((candidate) => !candidate.projectLangName)
+        .flatMap((candidate) => viafIdsOnCandidate(candidate)),
+    ),
+  ];
+  const viafNativeById = new Map<string, string | null>();
+  if (viafIds.length > 0) {
+    await Promise.all(
+      viafIds.map(async (id) => {
+        const heading = await viafNativeHeadingForId(id, projectLang, viafFetch);
+        viafNativeById.set(id, heading);
+      }),
+    );
+  }
+
   for (const candidate of needy) {
+    const originalLabel = candidate.label;
     const labels: Record<string, string> = {};
     for (const qid of qidsOf(candidate)) Object.assign(labels, labelsByQid.get(qid) ?? {});
 
+    const viafNative = viafIdsOnCandidate(candidate)
+      .map((id) => viafNativeById.get(id))
+      .find((heading): heading is string => Boolean(heading));
+
     candidate.projectLangName ??=
       preferredLabelForLang(labels, projectLang) ??
+      viafNative ??
       (!isLatinSurface(candidate.label) ? candidate.label : undefined);
 
     if (!candidate.romanizedName) {
-      const enLabel = labels['en'];
-      candidate.romanizedName =
-        (enLabel && isLatinSurface(enLabel) ? enLabel : undefined) ??
-        autoRomanizeForKind(candidate.projectLangName ?? candidate.label, projectLang, kind) ??
-        undefined;
+      const scriptName = candidate.projectLangName ?? candidate.label;
+      const generated = autoRomanizeForKind(scriptName, projectLang, kind) ?? undefined;
+      const strippedLatin = originalLabel
+        .replace(/,?\s*\d{3,4}\s*[-–]\s*(?:\d{3,4})?\s*$/u, '')
+        .replace(/,/g, '')
+        .trim();
+      const latinOriginal = isLatinSurface(strippedLatin) ? strippedLatin : undefined;
+      if (isTibetanLanguageCode(projectLang)) {
+        candidate.romanizedName = generated ?? latinOriginal;
+      } else {
+        const enLabel = labels['en'];
+        candidate.romanizedName =
+          latinOriginal ??
+          (enLabel && isLatinSurface(enLabel) ? enLabel : undefined) ??
+          generated;
+      }
+    }
+
+    if (
+      candidate.projectLangName &&
+      textMatchesProjectScript(candidate.projectLangName, projectLang) &&
+      candidate.label !== candidate.projectLangName
+    ) {
+      candidate.label = candidate.projectLangName;
     }
   }
 }
@@ -1426,16 +1524,31 @@ export async function buildDisambiguationCandidates(
   const concordancePromise = readPackFile
     ? loadViafWikidataConcordance(readPackFile)
     : Promise.resolve(null);
+  const bdrcConcordancePromise = readPackFile
+    ? loadBdrcWikidataConcordance(readPackFile)
+    : Promise.resolve(null);
 
   const finalize = async (
     packLocal: DisambiguationCandidate[],
     live: DisambiguationCandidate[],
   ) => {
     const index = (await concordancePromise) ?? null;
+    let bdrcIndex = (await bdrcConcordancePromise) ?? emptyBdrcWikidataIndex();
     const merged = mergeCandidates([local, centralCandidates, packLocal, live], mergeOpts).map(
       enrichCandidateCrossRefs,
     );
-    const enriched = index ? enrichCandidatesWithViafWikidataConcordance(merged, index) : merged;
+    const viafEnriched = index
+      ? enrichCandidatesWithViafWikidataConcordance(merged, index)
+      : merged;
+    const missing = qidsMissingBdrcLink(viafEnriched, bdrcIndex);
+    if (missing.length > 0) {
+      try {
+        bdrcIndex = mergeBdrcWikidataIndexes(bdrcIndex, await fetchBdrcIdsForQids(missing));
+      } catch {
+        // Pack/concordance ids still apply when Wikidata is unreachable.
+      }
+    }
+    const enriched = enrichCandidatesWithBdrcWikidataConcordance(viafEnriched, bdrcIndex);
     return collapseCrossAuthorityCandidates(enriched, mergeOpts);
   };
 

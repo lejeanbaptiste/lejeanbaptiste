@@ -694,6 +694,7 @@ export interface ElectronAPI {
     }[]
   >;
   kanripoClone?: (krId: string) => Promise<{ cachePath: string; reused: boolean; files: string[] }>;
+  viafFetchCluster?: (viafId: string) => Promise<unknown>;
   kanripoFetchJuan?: (
     krId: string,
     juan: string,

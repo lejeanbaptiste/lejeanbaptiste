@@ -10,6 +10,7 @@ import readline from 'node:readline';
 import {
   AUTHORITY_PACKS,
   authorityPackOrigin,
+  getAuthorityPackSpec,
   type AuthorityPackId,
   type AuthorityPackDateFilter,
   type AuthorityPackStatus,
@@ -170,6 +171,7 @@ export async function readAuthorityPackFile(
   packId: AuthorityPackId,
   dateFilter?: AuthorityPackDateFilter,
 ): Promise<string[]> {
+  if (!getAuthorityPackSpec(packId)) return [];
   const files = await resolveAuthorityPackDataFiles(entityDbFolder, packId, dateFilter);
   if (files.length === 1) return readAuthorityPackLines(files[0]!);
   // Read selected chunks one at a time. Promise.all + flat() briefly held
@@ -193,6 +195,7 @@ export async function lookupAuthorityPackRowsByIds(
   packId: AuthorityPackId,
   authorityIds: string[],
 ): Promise<string[]> {
+  if (!getAuthorityPackSpec(packId)) return [];
   const wanted = new Set(
     authorityIds.map((id) => String(id ?? '').trim()).filter((id) => id.length > 0),
   );

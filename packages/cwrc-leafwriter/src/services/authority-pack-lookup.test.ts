@@ -1,4 +1,9 @@
-import { packIdsForEntityType, packResultUri, searchPackContent } from './authority-pack-lookup';
+import {
+  packIdsForEntityType,
+  packResultUri,
+  searchBdrcLookupContent,
+  searchPackContent,
+} from './authority-pack-lookup';
 import { parseAuthorityUri } from '../autoTagging/lookupResolve';
 
 const rows = [
@@ -168,6 +173,7 @@ describe('packResultUri round-trips through parseAuthorityUri', () => {
     // Norbert idnos are kind-prefixed so person/office numeric spaces cannot collide.
     ['norbert' as const, 'office' as const, '5678', 'NORBERT', 'office-5678'],
     ['norbert' as const, 'person' as const, '12', 'NORBERT', 'person-12'],
+    ['bdrc' as const, 'person' as const, 'P1KG18539', 'BDRC', 'P1KG18539'],
   ])('%s %s %s → %s %s', (source, entityType, id, idnoType, value) => {
     const parsed = parseAuthorityUri(packResultUri(source, entityType, id));
     expect(parsed).toMatchObject({ idnoType, value });
@@ -177,6 +183,59 @@ describe('packResultUri round-trips through parseAuthorityUri', () => {
     expect(packResultUri('norbert', 'office', 'office-42')).toBe(
       'urn:ljb:authority:norbert:office:42',
     );
+  });
+});
+
+describe('searchBdrcLookupContent', () => {
+  const wikidataRow = JSON.stringify({
+    source: 'wikidata',
+    authorityId: 'Q42',
+    kind: 'person',
+    primaryName: 'མི་དཔེ།',
+    searchStrings: ['མི་དཔེ།'],
+    metadata: { crosswalk: { bdrc: 'P1KG18539', wikidata: 'Q42' } },
+  });
+  const wikidataNoBdrc = JSON.stringify({
+    source: 'wikidata',
+    authorityId: 'Q99',
+    kind: 'person',
+    primaryName: 'མི་དཔེ།',
+    searchStrings: ['མི་དཔེ།'],
+    metadata: { crosswalk: { wikidata: 'Q99' } },
+  });
+  const content = `${wikidataRow}\n${wikidataNoBdrc}\n`;
+
+  it('finds a Wikidata person by BDRC identifier without a private BDRC pack', () => {
+    const results = searchBdrcLookupContent(content, 'wikidata', 'person', 'P1KG18539');
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({
+      label: 'མི་དཔེ།',
+      uri: 'https://library.bdrc.io/show/bdr:P1KG18539',
+    });
+    expect(results[0]?.description).toContain('https://www.wikidata.org/wiki/Q42');
+  });
+
+  it('accepts a BUDA show URL as the query', () => {
+    const results = searchBdrcLookupContent(
+      content,
+      'wikidata',
+      'person',
+      'https://library.bdrc.io/show/bdr:P1KG18539?s=session',
+    );
+    expect(results[0]?.uri).toBe('https://library.bdrc.io/show/bdr:P1KG18539');
+  });
+
+  it('matches names only when the Wikidata row already has a BDRC id', () => {
+    const withBdrc = searchBdrcLookupContent(content, 'wikidata', 'person', 'མི་དཔེ།');
+    expect(withBdrc).toHaveLength(1);
+    expect(withBdrc[0]?.uri).toContain('P1KG18539');
+    const onlyUnlinked = searchBdrcLookupContent(
+      `${wikidataNoBdrc}\n`,
+      'wikidata',
+      'person',
+      'མི་དཔེ།',
+    );
+    expect(onlyUnlinked).toHaveLength(0);
   });
 });
 

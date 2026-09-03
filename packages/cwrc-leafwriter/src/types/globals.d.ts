@@ -34,6 +34,8 @@ declare global {
   };
 
   interface LeafWriterElectronApi {
+    /** Load a VIAF cluster JSON in the main process (avoids renderer CORS / Cloudflare). */
+    viafFetchCluster?: (viafId: string) => Promise<unknown>;
     authorityRefLookup?: (request: {
       source: 'cbdb' | 'dila' | 'norbert';
       authorityId: string;

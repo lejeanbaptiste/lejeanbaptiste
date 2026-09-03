@@ -37,7 +37,7 @@ import { useColorScheme } from '@mui/material/styles';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
-import { CbdbIcon, DilaIcon, InitialsIcon } from '../icons/custom/AuthoritySource';
+import { BdrcIcon, CbdbIcon, DilaIcon, ViafIcon } from '../icons/custom/AuthoritySource';
 import { WikipediaIcon } from '../icons/custom/Wikipedia';
 import { openExternalUrl } from '../utilities/DOM';
 import { cachedPackReader } from '../services/authority-pack-lookup';
@@ -45,6 +45,8 @@ import {
   buildDisambiguationCandidates,
   candidateLinks,
   candidatePassesYearFilter,
+  candidatePrimaryLabel,
+  candidateRomanizationSubtitle,
   extractWikidataId,
   isOwnDatabaseSource,
   mergeCandidates,
@@ -212,9 +214,11 @@ const AuthorityLinkIcon = ({ link }: { link: CandidateLink }) => (
     ) : link.kind === 'cbdb' ? (
       <CbdbIcon sx={{ fontSize: 15 }} />
     ) : link.kind === 'viaf' ? (
-      <InitialsIcon top="VI" bottom="AF" sx={{ fontSize: 15 }} />
+      <ViafIcon sx={{ width: 15, height: 15 }} />
     ) : link.kind === 'dila' ? (
       <DilaIcon sx={{ fontSize: 15 }} />
+    ) : link.kind === 'bdrc' ? (
+      <BdrcIcon sx={{ width: 15, height: 15 }} />
     ) : (
       <OpenInNewIcon sx={{ fontSize: 13 }} />
     )}
@@ -242,6 +246,7 @@ function provenanceSourcesForBadges(
     if (key === 'viaf' && linked.has('viaf')) return false;
     if ((key === 'wikidata' || key === 'wikipedia') && linked.has('wikidata')) return false;
     if (key === 'dila' && linked.has('dila')) return false;
+    if (key === 'bdrc' && linked.has('bdrc')) return false;
     if (key === 'entity-file' && candidate.fromEntityFile) return false;
     return true;
   });
@@ -1428,19 +1433,7 @@ export const DisambiguationPanel = ({
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, minWidth: 0 }}>
                   <Typography variant="body2" sx={{ fontWeight: 500, flex: 1, minWidth: 0 }} noWrap>
-                    {candidate.projectLangName ?? candidate.label}
-                    {candidate.romanizedName &&
-                      candidate.romanizedName !==
-                        (candidate.projectLangName ?? candidate.label) && (
-                        <Typography
-                          component="span"
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ ml: 0.75 }}
-                        >
-                          {candidate.romanizedName}
-                        </Typography>
-                      )}
+                    {candidatePrimaryLabel(candidate)}
                   </Typography>
                   {links.map((link) => (
                     <AuthorityLinkIcon key={link.url} link={link} />
@@ -1520,6 +1513,19 @@ export const DisambiguationPanel = ({
                     {candidate.description}
                   </Typography>
                 )}
+                {(() => {
+                  const romanized = candidateRomanizationSubtitle(candidate);
+                  return romanized ? (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                      sx={{ lineHeight: 1.3 }}
+                    >
+                      {romanized}
+                    </Typography>
+                  ) : null;
+                })()}
                 {aiRationales[candidate.id] && (
                   <Typography
                     variant="caption"

@@ -670,6 +670,7 @@
         "match_across_line_breaks_description": "Trouve des correspondances dans Tag Bomb à travers les balises vides <lb>, <pb>, etc. Conserve les repères dans les balises appliquées. Désactivé par défaut.",
         "match_across_line_breaks_enable": "Activer pour ce projet",
         "asset_packs_note": "Les packs d’autorités hors ligne et les tuiles cartographiques se trouvent maintenant dans l’onglet Packs de ressources.",
+        "bdrc_closed_note": "Le BDRC (BUDA) est un catalogue fermé et interdit le moissonnage de son site. Le Jean-Baptiste n’interroge pas library.bdrc.io. L’accès passe par les identifiants Wikidata (propriété P2477) déjà présents dans les packs tibétains ; les liens ouvrent tout de même la page officielle BUDA.",
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>Voulez-vous vraiment supprimer l'autorité </0><1>{{name}}</1><2> ?</2>",
           "Authority deleted successfully": "Autorité supprimée avec succès",

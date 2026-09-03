@@ -2752,6 +2752,22 @@ const registerIpcHandlers = () => {
     }>;
   };
 
+  ipcMain.handle('viaf:fetchCluster', async (_event, viafId: string) => {
+    const id = String(viafId || '').replace(/\D/g, '');
+    if (!id) throw new Error('Missing VIAF id');
+    const response = await fetch(`https://viaf.org/viaf/${id}`, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`VIAF cluster ${id} failed (${response.status})`);
+    }
+    return response.json();
+  });
+
   ipcMain.handle('wikisource:inspect', async (_event, url: string) => {
     const mod = await loadWikisourceImport();
     return mod.inspectWikisourceImport(String(url || '').trim());
@@ -3179,12 +3195,19 @@ const registerIpcHandlers = () => {
   ipcMain.handle('authorityPack:read', async (_event, packId: string, dateFilter?: unknown) => {
     const folder = await getEntityDbFolderOrNull();
     if (!folder) throw new Error('No entity database folder configured.');
-    return readAuthorityPackFile(
-      folder,
-      packId as import('../../commons/src/desktop/authorityPackTypes').AuthorityPackId,
-      dateFilter as
-        import('../../commons/src/desktop/authorityPackTypes').AuthorityPackDateFilter | undefined,
-    );
+    try {
+      return await readAuthorityPackFile(
+        folder,
+        packId as import('../../commons/src/desktop/authorityPackTypes').AuthorityPackId,
+        dateFilter as
+          | import('../../commons/src/desktop/authorityPackTypes').AuthorityPackDateFilter
+          | undefined,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (/^Unknown pack:/i.test(message)) return [];
+      throw error;
+    }
   });
 
   ipcMain.handle(

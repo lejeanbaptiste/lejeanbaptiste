@@ -351,9 +351,14 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
                   {activeId === 'authorities' && !isReadonly && (
                     <>
                       {isDesktop && (
-                        <Alert severity="info">
-                          {t('LW.settings.authorities.asset_packs_note')}
-                        </Alert>
+                        <Stack gap={1}>
+                          <Alert severity="info">
+                            {t('LW.settings.authorities.asset_packs_note')}
+                          </Alert>
+                          <Alert severity="warning">
+                            {t('LW.settings.authorities.bdrc_closed_note')}
+                          </Alert>
+                        </Stack>
                       )}
                       <Section
                         endDecorator={<AddCustomAuthority />}

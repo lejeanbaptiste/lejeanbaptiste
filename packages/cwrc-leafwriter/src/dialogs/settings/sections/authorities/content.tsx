@@ -32,7 +32,7 @@ export const Content = ({
   return (
     <AccordionDetails sx={{ display: 'flex', flexDirection: 'column', gap: 1, py: 1 }}>
       <Typography variant="body2" sx={{ fontSize: '0.84rem', lineHeight: 1.4 }}>
-        {description}
+        {id === 'bdrc' ? t('LW.settings.authorities.bdrc_closed_note') : description}
         {url && (
           <>
             {' '}

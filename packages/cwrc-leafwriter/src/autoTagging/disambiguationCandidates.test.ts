@@ -9,6 +9,8 @@ import {
   clearPersonPackIndexForTests,
   collapseCrossAuthorityCandidates,
   collectTypedNamesForCandidate,
+  candidatePrimaryLabel,
+  candidateRomanizationSubtitle,
   enrichCandidateNames,
   extractCbdbId,
   extractViafId,
@@ -29,6 +31,7 @@ import {
   clearWikidataTypedNamesCacheForTests,
 } from './disambiguationMatch';
 import { addEntity, createEntitiesScaffold, parseEntities } from './entities';
+import { clearViafHeadingCacheForTests, viafIdsOnCandidate } from './viafNativeHeadings';
 
 jest.mock('../services/lincs-api', () => ({ reconcile: jest.fn() }));
 const mockReconcile = reconcile as jest.MockedFunction<typeof reconcile>;
@@ -300,7 +303,10 @@ describe('disambiguationCandidates', () => {
   });
 
   describe('enrichCandidateNames', () => {
-    afterEach(() => clearWikidataNamesCacheForTests());
+    afterEach(() => {
+      clearWikidataNamesCacheForTests();
+      clearViafHeadingCacheForTests();
+    });
 
     const labelsResponse = (entities: Record<string, Record<string, string>>) =>
       ({
@@ -338,6 +344,44 @@ describe('disambiguationCandidates', () => {
       expect(candidates[0]?.projectLangName).toBe('張衡');
       expect(candidates[0]?.romanizedName).toBe('Zhang Heng');
       expect(fetchImpl).toHaveBeenCalledTimes(1);
+    });
+
+    it('promotes Tibetan script to the primary label and uses Wylie, not the English label', async () => {
+      const fetchImpl = jest.fn().mockResolvedValue(
+        labelsResponse({
+          Q42: { bo: 'དཔོན་ཚང་ཡེ་ཤེས།', en: 'Pön Tsang Yeshe' },
+        }),
+      );
+      const candidates: DisambiguationCandidate[] = [
+        {
+          id: 'wd',
+          label: 'Pön Tsang Yeshe',
+          sources: ['Wikidata'],
+          uri: 'https://www.wikidata.org/wiki/Q42',
+        },
+      ];
+
+      await enrichCandidateNames(candidates, 'bo', fetchImpl);
+      expect(candidates[0]?.projectLangName).toBe('དཔོན་ཚང་ཡེ་ཤེས།');
+      expect(candidates[0]?.label).toBe('དཔོན་ཚང་ཡེ་ཤེས།');
+      expect(candidates[0]?.romanizedName).not.toBe('Pön Tsang Yeshe');
+      expect(candidates[0]?.romanizedName).toMatch(/[a-z]/i);
+    });
+
+    it('puts Wylie on the subtitle only when there is no description or dates', () => {
+      const tibetan: DisambiguationCandidate = {
+        id: 'wd',
+        label: 'དཔོན་ཚང་ཡེ་ཤེས།',
+        sources: ['Wikidata'],
+        projectLangName: 'དཔོན་ཚང་ཡེ་ཤེས།',
+        romanizedName: 'dpon tshang ye shes',
+      };
+      expect(candidatePrimaryLabel(tibetan)).toBe('དཔོན་ཚང་ཡེ་ཤེས།');
+      expect(candidateRomanizationSubtitle(tibetan)).toBe('dpon tshang ye shes');
+      expect(
+        candidateRomanizationSubtitle({ ...tibetan, description: 'Tibetan lama' }),
+      ).toBeUndefined();
+      expect(candidateRomanizationSubtitle({ ...tibetan, startYear: 982 })).toBeUndefined();
     });
 
     it('autogenerates pinyin when no Latin label exists', async () => {
@@ -387,6 +431,55 @@ describe('disambiguationCandidates', () => {
       await enrichCandidateNames(candidates, null, fetchImpl);
       expect(candidates[0]?.projectLangName).toBeUndefined();
       expect(fetchImpl).not.toHaveBeenCalled();
+    });
+
+    it('promotes VIAF cluster headings in Tibetan and Chinese', async () => {
+      const cluster = {
+        mainHeadings: { data: [{ text: 'Bdud-ʼjoms ʼJigs-bral-ye-śes-rdo-rje 1904-1987' }] },
+        x400s: {
+          data: [
+            {
+              subfield: [
+                { code: 'a', content: 'བདུད་འཇོམས་འཇིགས་བྲལ་ཡེ་ཤེས་རྡོ་རྗེ།' },
+              ],
+            },
+            { subfield: [{ code: 'a', content: '敦珠' }] },
+            { subfield: [{ code: 'a', content: '敦珠仁波切' }] },
+          ],
+        },
+      };
+      const fetchImpl = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => cluster,
+      } as Response);
+
+      const tibetan: DisambiguationCandidate[] = [
+        {
+          id: 'viaf',
+          label: 'Bdud-ʼjoms ʼJigs-bral-ye-śes-rdo-rje, 1904-1987',
+          sources: ['VIAF'],
+          uri: 'https://viaf.org/viaf/29939963',
+        },
+      ];
+      expect(viafIdsOnCandidate(tibetan[0]!)).toEqual(['29939963']);
+      await enrichCandidateNames(tibetan, 'bo', fetchImpl);
+      expect(tibetan[0]?.label).toBe('བདུད་འཇོམས་འཇིགས་བྲལ་ཡེ་ཤེས་རྡོ་རྗེ།');
+      expect(tibetan[0]?.projectLangName).toBe('བདུད་འཇོམས་འཇིགས་བྲལ་ཡེ་ཤེས་རྡོ་རྗེ།');
+
+      clearViafHeadingCacheForTests();
+      const chinese: DisambiguationCandidate[] = [
+        {
+          id: 'viaf',
+          label: 'Bdud-ʼjoms ʼJigs-bral-ye-śes-rdo-rje, 1904-1987',
+          sources: ['VIAF'],
+          uri: 'https://viaf.org/viaf/29939963',
+        },
+      ];
+      await enrichCandidateNames(chinese, 'zh-Hant', fetchImpl);
+      expect(chinese[0]?.label).toBe('敦珠仁波切');
+      expect(chinese[0]?.projectLangName).toBe('敦珠仁波切');
+      // VIAF's Latin heading here is Wylie, not pinyin; autogenerate from the Chinese name.
+      expect(chinese[0]?.romanizedName).toBe('Dun Zhu Ren Bo Qie');
     });
   });
 
@@ -1120,6 +1213,34 @@ describe('disambiguationCandidates', () => {
     });
     expect(links[0]?.url).toBe('https://www.wikidata.org/wiki/Q65884952');
     expect(links[0]?.title).toBe('Wikidata (Q65884952)');
+  });
+
+  it('builds a BUDA show link from a Wikidata BDRC id (no private pack required)', () => {
+    const links = candidateLinks({
+      id: 'x',
+      label: 'Test',
+      sources: ['Wikidata'],
+      uri: 'https://www.wikidata.org/wiki/Q42',
+      authorityIds: [
+        { type: 'Wikidata', value: 'Q42' },
+        { type: 'BDRC', value: 'P1KG18539' },
+      ],
+    });
+    const bdrc = links.find((link) => link.kind === 'bdrc');
+    expect(bdrc?.url).toBe('https://library.bdrc.io/show/bdr:P1KG18539');
+    expect(bdrc?.title).toBe('BDRC P1KG18539');
+  });
+
+  it('strips BUDA search-state query strings from BDRC URLs', () => {
+    const links = candidateLinks({
+      id: 'x',
+      label: 'Test',
+      sources: ['Wikidata'],
+      description: 'https://library.bdrc.io/show/bdr:P1KG18539?s=session',
+    });
+    expect(links.find((link) => link.kind === 'bdrc')?.url).toBe(
+      'https://library.bdrc.io/show/bdr:P1KG18539',
+    );
   });
 
   describe('candidatePassesYearFilter', () => {

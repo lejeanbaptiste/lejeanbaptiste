@@ -29,6 +29,8 @@ export type AuthorityPackId =
   | 'wikidata-works-ja'
   /** Precompiled VIAF ↔ Wikidata pairs (P214) for live disambiguation merge. */
   | 'wikidata-viaf-concordance'
+  /** Precompiled BDRC ↔ Wikidata pairs (P2477) for live lookup badges/merge. */
+  | 'wikidata-bdrc-concordance'
   | 'ndl-persons'
   | 'ndl-places'
   | 'ndl-orgs'
@@ -285,6 +287,13 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     label: 'Wikidata ↔ VIAF concordance',
     source: 'wikidata',
     relativePath: 'wikidata/viaf-wikidata-concordance.ndjson',
+    defaultTag: '',
+  },
+  {
+    id: 'wikidata-bdrc-concordance',
+    label: 'Wikidata ↔ BDRC concordance',
+    source: 'wikidata',
+    relativePath: 'wikidata/bdrc-wikidata-concordance.ndjson',
     defaultTag: '',
   },
   {

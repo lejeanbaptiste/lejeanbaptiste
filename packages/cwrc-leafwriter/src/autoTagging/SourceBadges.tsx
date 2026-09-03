@@ -2,8 +2,14 @@ import Box from '@mui/material/Box';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import type { ReactElement } from 'react';
-import viafBadge from '../../../../apps/commons/src/assets/images/badge_oclc.png';
-import { CbdbIcon, ChgisIcon, DilaIcon, NorbertIcon } from '../icons/custom/AuthoritySource';
+import {
+  BdrcIcon,
+  CbdbIcon,
+  ChgisIcon,
+  DilaIcon,
+  NorbertIcon,
+  ViafIcon,
+} from '../icons/custom/AuthoritySource';
 import { WikipediaIcon } from '../icons/custom/Wikipedia';
 
 const ICON_SX = { fontSize: 14, display: 'block' } as const;
@@ -15,19 +21,14 @@ const sourceIcon = (label: string): ReactElement | null => {
       return <WikipediaIcon sx={ICON_SX} />;
     case 'dila':
       return <DilaIcon sx={ICON_SX} />;
+    case 'bdrc':
+      return <BdrcIcon />;
     case 'cbdb':
       return <CbdbIcon sx={ICON_SX} />;
     case 'chgis':
       return <ChgisIcon sx={ICON_SX} />;
     case 'viaf':
-      return (
-        <Box
-          component="img"
-          src={viafBadge}
-          alt=""
-          sx={{ width: 14, height: 14, objectFit: 'contain', display: 'block' }}
-        />
-      );
+      return <ViafIcon />;
     case 'norbert':
       return <NorbertIcon />;
     default:

@@ -32,6 +32,7 @@ import {
   type FrenchOfficeGlossIndex,
   type OfficeGlossIndex,
 } from '../autoTagging/officeGlossLookup';
+import { normalizeBdrcId } from '../autoTagging/bdrcIds';
 
 export interface PackRow {
   authorityId?: string;
@@ -45,7 +46,7 @@ export interface PackRow {
 
 const MAX_RESULTS = 10;
 
-type PackSource = 'cbdb' | 'dila' | 'chgis' | 'ndl' | 'norbert';
+type PackSource = 'cbdb' | 'dila' | 'chgis' | 'ndl' | 'norbert' | 'bdrc';
 
 const SERVICES: {
   source: PackSource;
@@ -98,6 +99,111 @@ const SERVICES: {
 ];
 
 /**
+ * BDRC lookup does not need the private BDRC CSV pack. Wikidata Tibetan packs
+ * already carry P2477 (`crosswalk.bdrc`). The private pack is an extra name
+ * list when it happens to be installed.
+ */
+const BDRC_LOOKUP_PACKS: Partial<
+  Record<NamedEntityType, { packId: AuthorityPackId; packSource: 'wikidata' | 'bdrc' }[]>
+> = {
+  person: [
+    { packId: 'wikidata-persons-bo', packSource: 'wikidata' },
+    { packId: 'bdrc-persons-bo', packSource: 'bdrc' },
+  ],
+  place: [
+    { packId: 'wikidata-places-bo', packSource: 'wikidata' },
+    { packId: 'bdrc-places-bo', packSource: 'bdrc' },
+  ],
+  organization: [{ packId: 'wikidata-orgs-bo', packSource: 'wikidata' }],
+};
+
+function bdrcIdFromRow(row: PackRow, packSource: 'wikidata' | 'bdrc'): string | null {
+  if (packSource === 'bdrc') return normalizeBdrcId(String(row.authorityId ?? ''));
+  const entry = row.metadata?.crosswalk?.bdrc;
+  const raw = Array.isArray(entry) ? entry[0] : entry;
+  return raw ? normalizeBdrcId(String(raw)) : null;
+}
+
+/**
+ * Find BDRC persons/places in a Wikidata (or private BDRC) pack.
+ * Identifier queries (`P…`, `G…`, BUDA URL) match `crosswalk.bdrc` / pack id.
+ * Name queries match search strings, but only on rows that already have a BDRC id.
+ */
+export function searchBdrcLookupContent(
+  content: AuthorityPackContent,
+  packSource: 'wikidata' | 'bdrc',
+  entityType: NamedEntityType,
+  query: string,
+  limit: number = MAX_RESULTS,
+): AuthorityLookupResult[] {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  const queryId = normalizeBdrcId(trimmed);
+  const needles = queryId ? [...new Set([queryId, queryId.toUpperCase()])] : [trimmed];
+  const exact: AuthorityLookupResult[] = [];
+  const seen = new Set<string>();
+
+  const lineHasNeedle = (line: string) => needles.some((needle) => line.includes(needle));
+
+  const tryLine = (line: string): void => {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) return;
+    let row: PackRow;
+    try {
+      row = JSON.parse(trimmedLine) as PackRow;
+    } catch {
+      return;
+    }
+    if (!row.primaryName) return;
+    const bdrcId = bdrcIdFromRow(row, packSource);
+    if (!bdrcId) return;
+    if (queryId) {
+      if (bdrcId.toUpperCase() !== queryId.toUpperCase()) return;
+    } else {
+      const strings = row.searchStrings?.length ? row.searchStrings : [row.primaryName];
+      if (!strings.some((s) => stringsMatchExactly(s, trimmed))) return;
+    }
+    const uri = packResultUri('bdrc', entityType, bdrcId);
+    if (seen.has(uri)) return;
+    seen.add(uri);
+    const displayName = row.displayName?.trim() || row.primaryName;
+    const qid = packSource === 'wikidata' ? String(row.authorityId ?? '').toUpperCase() : '';
+    const wikidataUrl = /^Q\d+$/i.test(qid) ? `https://www.wikidata.org/wiki/${qid}` : null;
+    exact.push({
+      label: displayName,
+      description: [describePackRow(row) ?? `BDRC ${bdrcId}`, wikidataUrl]
+        .filter(Boolean)
+        .join(' · '),
+      uri,
+    });
+  };
+
+  if (Array.isArray(content)) {
+    for (const line of content) {
+      if (exact.length >= limit) break;
+      if (lineHasNeedle(line)) tryLine(line);
+    }
+  } else {
+    const text = content as string;
+    let searchFrom = 0;
+    while (exact.length < limit) {
+      let hit = -1;
+      for (const needle of needles) {
+        const at = text.indexOf(needle, searchFrom);
+        if (at !== -1 && (hit === -1 || at < hit)) hit = at;
+      }
+      if (hit === -1) break;
+      const lineStart = text.lastIndexOf('\n', hit) + 1;
+      const nextNewline = text.indexOf('\n', hit);
+      const lineEnd = nextNewline === -1 ? text.length : nextNewline;
+      tryLine(text.slice(lineStart, lineEnd));
+      searchFrom = lineEnd + 1;
+    }
+  }
+  return exact;
+}
+
+/**
  * Canonical record URL, parseable back to (authority, id) by
  * `parseAuthorityUri` so resolve-on-select recognizes the pick.
  */
@@ -123,6 +229,8 @@ export function packResultUri(source: PackSource, entityType: NamedEntityType, i
     case 'norbert':
       // Packs store typed ids (`office-4135`); URN keeps kind + bare numeric.
       return `urn:ljb:authority:norbert:${entityType}:${bareNorbertAuthorityValue(id)}`;
+    case 'bdrc':
+      return `https://library.bdrc.io/show/bdr:${id.replace(/^bdr:/i, '')}`;
   }
 }
 
@@ -429,11 +537,32 @@ function makeSearch(spec: (typeof SERVICES)[number]) {
   };
 }
 
+function makeBdrcSearch() {
+  return async ({ query, entityType }: AuthorityLookupParams): Promise<AuthorityLookupResult[]> => {
+    const specs = BDRC_LOOKUP_PACKS[entityType];
+    if (!specs?.length) return [];
+    const installed = await installedPackIds();
+    const out: AuthorityLookupResult[] = [];
+    const seen = new Set<string>();
+    for (const spec of specs) {
+      if (!installed.has(spec.packId)) continue;
+      const content = await readPackCached(spec.packId);
+      for (const row of searchBdrcLookupContent(content, spec.packSource, entityType, query)) {
+        if (seen.has(row.uri)) continue;
+        seen.add(row.uri);
+        out.push(row);
+        if (out.length >= MAX_RESULTS) return out;
+      }
+    }
+    return out;
+  };
+}
+
 /** Pack-backed lookup services (desktop only; empty when the bridge is missing). */
 export function authorityPackLookupServices(): AuthorityService[] {
   if (typeof window === 'undefined' || !window.electronAPI?.authorityPackRead) return [];
 
-  return SERVICES.map((spec) => ({
+  const packServices = SERVICES.map((spec) => ({
     id: spec.id,
     name: spec.name,
     url: spec.url,
@@ -444,4 +573,22 @@ export function authorityPackLookupServices(): AuthorityService[] {
     isLocal: true,
     search: makeSearch(spec),
   }));
+
+  const bdrcTypes = new Map(
+    (Object.keys(BDRC_LOOKUP_PACKS) as NamedEntityType[]).map((name) => [name, { name }]),
+  );
+
+  return [
+    ...packServices,
+    {
+      id: 'bdrc',
+      name: 'BDRC',
+      url: 'https://library.bdrc.io',
+      description:
+        'BDRC (BUDA) is a closed catalogue and forbids scraping their website. Lookup uses Wikidata identifiers (P2477), not library.bdrc.io. Links still open the official BUDA page.',
+      entityTypes: bdrcTypes,
+      isLocal: true,
+      search: makeBdrcSearch(),
+    },
+  ];
 }

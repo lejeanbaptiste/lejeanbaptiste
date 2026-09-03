@@ -23,6 +23,8 @@ import { AuthorityCache } from '../../autoTagging/authorityCache';
 import {
   buildDisambiguationCandidates,
   candidateLinks,
+  candidatePrimaryLabel,
+  candidateRomanizationSubtitle,
   loadSqliteDisambiguationCandidates,
   type DisambiguationCandidate,
 } from '../../autoTagging/disambiguationCandidates';
@@ -67,15 +69,23 @@ const yearsLabel = (candidate: DisambiguationCandidate): string | null => {
 };
 
 /** Map internal pipeline source ids to badge-friendly labels. */
-const displaySources = (sources: readonly string[]): string =>
-  sources
+const displaySources = (sources: readonly string[]): string => {
+  const seen = new Set<string>();
+  return sources
     .map((source) => {
       const lower = source.toLowerCase();
       if (lower === 'entity-file' || lower === 'pedb') return 'pedb';
       if (lower === 'central-database' || lower === 'cedb') return 'cedb';
       return source;
     })
+    .filter((source) => {
+      const key = source.toLowerCase();
+      if (!source || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
     .join('+');
+};
 
 const primaryUriForCandidate = (candidate: DisambiguationCandidate): string => {
   // Own-DB rows must keep internal/central URIs so tag mode can adopt/link by key.
@@ -90,6 +100,8 @@ const primaryUriForCandidate = (candidate: DisambiguationCandidate): string => {
     if (type === 'wikidata') return `https://www.wikidata.org/wiki/${auth.value}`;
     if (type === 'viaf') return `https://viaf.org/viaf/${auth.value}`;
     if (type === 'cbdb') return `https://cbdb.fas.harvard.edu/cbdbapi/person.php?id=${auth.value}`;
+    if (type === 'bdrc')
+      return `https://library.bdrc.io/show/bdr:${auth.value.replace(/^bdr:/i, '')}`;
   }
   return `urn:ljb:lookup:${candidate.id}`;
 };
@@ -120,7 +132,7 @@ const entryFromCandidate = (
   return {
     authority,
     entityType,
-    label: candidate.label,
+    label: candidatePrimaryLabel(candidate),
     uri,
     description: candidate.description,
     internal,
@@ -220,9 +232,11 @@ export const MergedLookupMain = () => {
           }
         }
 
-        // Lookup needs to feel like the legacy popup: show pack hits ASAP,
-        // skip per-QID Wikidata lifespan enrichment (~1s throttle each), and
-        // skip dual-script name enrichment (minting care, not pick-a-URI).
+        const projectLang =
+          (await window.__leafWriterProject?.getProjectSourceLanguage?.()) ?? null;
+
+        // Pack hits first; skip per-QID lifespan enrichment. Dual-script names
+        // are filled so Tibetan (and other non-Latin) projects mint uchen, not Latin.
         const rows = await buildDisambiguationCandidates(
           null,
           tag,
@@ -234,13 +248,13 @@ export const MergedLookupMain = () => {
           undefined,
           undefined,
           undefined,
-          undefined,
+          projectLang,
           central,
           undefined,
           localCandidates,
           {
             enrichLifespans: false,
-            enrichNames: false,
+            enrichNames: true,
             onPartialResults: (partial) => {
               if (requestId !== requestIdRef.current) return;
               setCandidates(partial);
@@ -310,7 +324,10 @@ export const MergedLookupMain = () => {
             const checked = checkedEntries.has(uri);
             const links = candidateLinks(candidate);
             const years = yearsLabel(candidate);
-            const sources = displaySources(candidate.sources);
+            const sources = displaySources([
+              ...candidate.sources,
+              ...(candidate.authorityIds ?? []).map((auth) => auth.type),
+            ]);
             return (
               <ListItem
                 key={`${candidate.id}:${uri}`}
@@ -361,7 +378,7 @@ export const MergedLookupMain = () => {
                     primary={
                       <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap">
                         <Typography variant="body2" component="span">
-                          {candidate.label}
+                          {candidatePrimaryLabel(candidate)}
                         </Typography>
                         {years && (
                           <Typography variant="caption" color="text.secondary" component="span">
@@ -371,7 +388,9 @@ export const MergedLookupMain = () => {
                         {sources ? <SourceBadges label={sources} /> : null}
                       </Stack>
                     }
-                    secondary={candidate.description}
+                    secondary={
+                      candidate.description?.trim() || candidateRomanizationSubtitle(candidate)
+                    }
                     secondaryTypographyProps={{ noWrap: true, variant: 'caption' }}
                   />
                 </ListItemButton>

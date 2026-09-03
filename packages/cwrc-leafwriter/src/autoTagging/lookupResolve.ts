@@ -89,6 +89,14 @@ const URI_PATTERNS: {
   { pattern: /geonames\.org\/(\d+)/i, idnoType: 'Geonames' },
   { pattern: /vocab\.getty\.edu\/(?:tgn|ulan|aat)\/([\w-]+)/i, idnoType: 'Getty' },
   { pattern: /d-nb\.info\/gnd\/([\w-]+)/i, idnoType: 'GND' },
+  {
+    // BUDA show page or PDI purl. Query string (`?s=`) is UI state — ignored.
+    pattern:
+      /(?:library\.bdrc\.io\/show\/bdr:|purl\.bdrc\.io\/resource\/)([A-Za-z][A-Za-z0-9._-]*)/i,
+    idnoType: 'BDRC',
+    crosswalkKey: 'bdrc',
+    transform: (v) => v.replace(/^bdr:/i, ''),
+  },
 ];
 
 export function parseAuthorityUri(uri: string): ParsedAuthorityRef | null {
@@ -141,6 +149,7 @@ const SOURCE_IDNO_TYPES: Record<string, string> = {
   wikidata: 'Wikidata',
   ndl: 'NDL',
   norbert: 'NORBERT',
+  bdrc: 'BDRC',
 };
 
 export interface CrosswalkResult {

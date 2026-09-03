@@ -139,3 +139,28 @@ export const isTibetanLanguageCode = (code: string | null | undefined): boolean 
   const primary = canonicalLanguageCode(code).split('-')[0].toLowerCase();
   return primary === 'bo' || primary === 'tib' || primary === 'bod';
 };
+
+/**
+ * True when `text` is written in the project's native script (Tibetan uchen,
+ * Han for Chinese/Japanese/Korean, kana, Hangul). Used to prefer VIAF/Wikidata
+ * vernacular headings over Latin catalogue forms.
+ */
+export function textMatchesProjectScript(
+  text: string | null | undefined,
+  projectLang: string | null | undefined,
+): boolean {
+  const value = text?.trim();
+  if (!value || !projectLang) return false;
+  if (isTibetanLanguageCode(projectLang)) return /\p{Script=Tibetan}/u.test(value);
+  if (isChineseLanguageCode(projectLang) || isJapaneseLanguageCode(projectLang)) {
+    if (/\p{Script=Han}/u.test(value)) return true;
+    if (isJapaneseLanguageCode(projectLang)) {
+      return /\p{Script=Hiragana}/u.test(value) || /\p{Script=Katakana}/u.test(value);
+    }
+    return false;
+  }
+  if (isKoreanLanguageCode(projectLang)) {
+    return /\p{Script=Hangul}/u.test(value) || /\p{Script=Han}/u.test(value);
+  }
+  return false;
+}
