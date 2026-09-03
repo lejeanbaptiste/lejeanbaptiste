@@ -1326,9 +1326,7 @@ export async function enrichCandidateNames(
       } else {
         const enLabel = labels['en'];
         candidate.romanizedName =
-          latinOriginal ??
-          (enLabel && isLatinSurface(enLabel) ? enLabel : undefined) ??
-          generated;
+          latinOriginal ?? (enLabel && isLatinSurface(enLabel) ? enLabel : undefined) ?? generated;
       }
     }
 

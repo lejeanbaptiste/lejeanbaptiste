@@ -26,76 +26,22 @@ const isInvisible = (char: string) =>
   char === '\u200D' ||
   char === '\u00AD';
 
-/**
- * NFC-normalize every text node under root, in place. This is the single
- * central normalization point: anchors are created and resolved against
- * NFC text, and nothing downstream normalizes independently.
- */
-export function normalizeDomText(root: Node): void {
-  const doc = root.ownerDocument ?? (root as Document);
-  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let node = walker.nextNode();
-  while (node) {
-    const text = node as Text;
-    const nfc = text.data.normalize('NFC');
-    if (nfc !== text.data) text.data = nfc;
-    node = walker.nextNode();
-  }
-}
+// --- Tibetan mark handling (shared by buildSearchText, the LLM matcher and the string matcher) ---
+
+/** Non-breaking tsheg U+0F0C \u2192 plain tsheg U+0F0B: a display variant, length-preserving. */
+const NON_BREAKING_TSHEG_CHAR = '\u0F0C';
+const NON_BREAKING_TSHEG = /\u0F0C/g;
+const PLAIN_TSHEG = '\u0F0B';
 
 /**
- * Build search text from a raw (already NFC) string under the given
- * whitespace policy, keeping a map back to raw offsets.
- */
-export function buildSearchText(raw: string, policy: WhitespacePolicy): SearchText {
-  const chars: string[] = [];
-  const map: number[] = [];
-  let pendingSpace = false;
-
-  for (let i = 0; i < raw.length; i++) {
-    const char = raw[i]!;
-    if (isInvisible(char)) continue;
-    if (isWhitespace(char)) {
-      if (policy === 'collapse') pendingSpace = true;
-      continue;
-    }
-    if (pendingSpace && chars.length > 0) {
-      chars.push(' ');
-      map.push(map[map.length - 1]! + 1);
-    }
-    pendingSpace = false;
-    chars.push(char);
-    map.push(i);
-  }
-
-  return { text: chars.join(''), map };
-}
-
-/** FNV-1a 32-bit hash, hex-encoded. Used to detect stale anchors, not for security. */
-export function hashText(text: string): string {
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < text.length; i++) {
-    hash ^= text.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return (hash >>> 0).toString(16).padStart(8, '0');
-}
-
-// --- Tibetan mark handling (shared by the LLM matcher and the string matcher) ---
-
-/** Non-breaking tsheg U+0F0C → plain tsheg U+0F0B: a display variant, length-preserving. */
-const NON_BREAKING_TSHEG = /༌/g;
-const PLAIN_TSHEG = '་';
-
-/**
- * Tibetan mark block, tsheg (U+0F0B) through gter-tsheg (U+0F14) — the
- * intersyllabic tsheg, the non-breaking tsheg and the shad family — plus
+ * Tibetan mark block, tsheg (U+0F0B) through gter-tsheg (U+0F14) \u2014 the
+ * intersyllabic tsheg, the non-breaking tsheg and the shad family \u2014 plus
  * whitespace, anchored to a string edge.
  */
-const TIBETAN_EDGE_MARKS = /^[་-༔\s]+|[་-༔\s]+$/g;
+const TIBETAN_EDGE_MARKS = /^[\u0F0B-\u0F14\s]+|[\u0F0B-\u0F14\s]+$/g;
 
 /** Any Tibetan code point (used to gate Tibetan-only rules cheaply). */
-export const hasTibetan = (text: string): boolean => /[ༀ-࿿]/.test(text);
+export const hasTibetan = (text: string): boolean => /[\u0F00-\u0FFF]/.test(text);
 
 /** Fold the non-breaking tsheg to the plain tsheg everywhere in `text`. */
 export const foldNonBreakingTsheg = (text: string): string =>
@@ -121,7 +67,7 @@ export function normalizeMatchPattern(pattern: string): string {
  * right/left edge for a Tibetan match: a tsheg, a shad, whitespace, the
  * string edge, or the a-chung U+0F60 that begins the genitive/agentive
  * particles which fuse onto the previous syllable without a tsheg. Anything
- * else — a base letter, a vowel sign, a subjoined consonant — means the match
+ * else \u2014 a base letter, a vowel sign, a subjoined consonant \u2014 means the match
  * cut a syllable in half.
  */
 export function isTibetanEdgeChar(char: string | undefined): boolean {
@@ -130,4 +76,73 @@ export function isTibetanEdgeChar(char: string | undefined): boolean {
   const cp = char.codePointAt(0)!;
   if (cp >= 0x0f0b && cp <= 0x0f14) return true;
   return cp === 0x0f60;
+}
+
+/**
+ * NFC-normalize every text node under root, in place. This is the single
+ * central normalization point: anchors are created and resolved against
+ * NFC text, and nothing downstream normalizes independently.
+ */
+export function normalizeDomText(root: Node): void {
+  const doc = root.ownerDocument ?? (root as Document);
+  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let node = walker.nextNode();
+  while (node) {
+    const text = node as Text;
+    const nfc = text.data.normalize('NFC');
+    if (nfc !== text.data) text.data = nfc;
+    node = walker.nextNode();
+  }
+}
+
+/**
+ * Build search text from a raw (already NFC) string under the given
+ * whitespace policy, keeping a map back to raw offsets.
+ *
+ * Tibetan overrides, applied whenever the node holds Tibetan script:
+ *  - whitespace is collapsed, never deleted, even under the `'ignore'` policy.
+ *    Tibetan is scriptio continua with an explicit syllable dot (tsheg), so a
+ *    space in the source (after a shad, in modern prose, from OCR) is a real
+ *    separator — deleting it would fuse two syllables into a form that is
+ *    neither a word nor a valid match. (Mapping such a space to a tsheg so a
+ *    matcher can cross it is a further step, deliberately not taken here.)
+ *  - the non-breaking tsheg U+0F0C is folded to the plain tsheg U+0F0B, a
+ *    length-preserving swap of a display variant so it matches pack keys.
+ * A Tibetan node with no whitespace and no U+0F0C is unchanged — its hash,
+ * and therefore existing anchors, are unaffected.
+ */
+export function buildSearchText(raw: string, policy: WhitespacePolicy): SearchText {
+  const chars: string[] = [];
+  const map: number[] = [];
+  let pendingSpace = false;
+  const tibetan = hasTibetan(raw);
+  const collapse = policy === 'collapse' || tibetan;
+
+  for (let i = 0; i < raw.length; i++) {
+    const char = raw[i]!;
+    if (isInvisible(char)) continue;
+    if (isWhitespace(char)) {
+      if (collapse) pendingSpace = true;
+      continue;
+    }
+    if (pendingSpace && chars.length > 0) {
+      chars.push(' ');
+      map.push(map[map.length - 1]! + 1);
+    }
+    pendingSpace = false;
+    chars.push(tibetan && char === NON_BREAKING_TSHEG_CHAR ? PLAIN_TSHEG : char);
+    map.push(i);
+  }
+
+  return { text: chars.join(''), map };
+}
+
+/** FNV-1a 32-bit hash, hex-encoded. Used to detect stale anchors, not for security. */
+export function hashText(text: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
 }

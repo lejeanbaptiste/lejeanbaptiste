@@ -34,7 +34,9 @@ const localName = (key: string): string => {
 };
 
 const isLatinHeading = (text: string): boolean =>
-  /[\p{Script=Latin}]/u.test(text) && !/\p{Script=Tibetan}/u.test(text) && !/\p{Script=Han}/u.test(text);
+  /[\p{Script=Latin}]/u.test(text) &&
+  !/\p{Script=Tibetan}/u.test(text) &&
+  !/\p{Script=Han}/u.test(text);
 
 const NAME_SECTIONS = new Set(['mainHeadings', 'mainHeadingEl', 'x400s', 'x400']);
 
@@ -187,8 +189,7 @@ export async function fetchViafHeadingTexts(
   try {
     const payload = await loadViafCluster(id, fetchImpl);
     const texts = collectViafHeadingTexts(payload);
-    const preferred =
-      texts.find((heading) => isLatinHeading(heading)) ?? texts[0] ?? null;
+    const preferred = texts.find((heading) => isLatinHeading(heading)) ?? texts[0] ?? null;
     viafHeadingCache.set(id, texts);
     viafPreferredCache.set(id, preferred);
     return texts;

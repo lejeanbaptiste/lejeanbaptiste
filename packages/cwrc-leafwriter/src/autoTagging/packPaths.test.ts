@@ -51,8 +51,8 @@ describe('authority pack UI helpers', () => {
     expect(AUTHORITY_PACKS.find((pack) => pack.id === 'wikidata-places-ja')?.relativePath).toBe(
       'wikidata/place-ja/places.ndjson',
     );
-    expect(AUTHORITY_PACKS.find((pack) => pack.id === 'wikidata-bdrc-concordance')?.relativePath).toBe(
-      'wikidata/bdrc-wikidata-concordance.ndjson',
-    );
+    expect(
+      AUTHORITY_PACKS.find((pack) => pack.id === 'wikidata-bdrc-concordance')?.relativePath,
+    ).toBe('wikidata/bdrc-wikidata-concordance.ndjson');
   });
 });

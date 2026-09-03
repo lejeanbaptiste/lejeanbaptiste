@@ -1,7 +1,4 @@
-import {
-  collectViafHeadingTexts,
-  pickNativeViafHeading,
-} from './viafNativeHeadings';
+import { collectViafHeadingTexts, pickNativeViafHeading } from './viafNativeHeadings';
 
 describe('viafNativeHeadings', () => {
   const cluster = {
@@ -43,19 +40,13 @@ describe('viafNativeHeadings', () => {
 
   it('picks Tibetan, Chinese, and Japanese by project script', () => {
     const headings = collectViafHeadingTexts(cluster);
-    expect(pickNativeViafHeading(headings, 'bo')).toBe(
-      'བདུད་འཇོམས་འཇིགས་བྲལ་ཡེ་ཤེས་རྡོ་རྗེ།',
-    );
+    expect(pickNativeViafHeading(headings, 'bo')).toBe('བདུད་འཇོམས་འཇིགས་བྲལ་ཡེ་ཤེས་རྡོ་རྗེ།');
     expect(pickNativeViafHeading(headings, 'zh-Hant')).toBe('敦珠仁波切');
     expect(pickNativeViafHeading(headings, 'ja')).toBe('ドゥジョム・リンポチェ');
   });
 
   it('prefers the x400 name that matches the Latin preferred heading', () => {
-    const headings = [
-      'Smon-lam-dpal, Khri-chen VIII, 1414-',
-      'ལེགས་པའི་བློ་གྲོས',
-      'སྨོན་ལམ་དཔལ།',
-    ];
+    const headings = ['Smon-lam-dpal, Khri-chen VIII, 1414-', 'ལེགས་པའི་བློ་གྲོས', 'སྨོན་ལམ་དཔལ།'];
     expect(pickNativeViafHeading(headings, 'bo', 'Smon-lam-dpal, Khri-chen VIII, 1414-')).toBe(
       'སྨོན་ལམ་དཔལ།',
     );
@@ -78,8 +69,6 @@ describe('viafNativeHeadings', () => {
       'ns1:titles': { 'ns1:text': 'བརྡ་ཆད་གཏན་འབེབས་ལས་འཆར། བཙན་བྱོལ་བོད་གཞུང་ཤེས་རིག་ལས་ཁུངས།' },
     };
     const headings = collectViafHeadingTexts(karma);
-    expect(pickNativeViafHeading(headings, 'bo', 'Karmā Monalama, Acharya')).toBe(
-      'ཀརྨ༌སྨོན༌ལམ',
-    );
+    expect(pickNativeViafHeading(headings, 'bo', 'Karmā Monalama, Acharya')).toBe('ཀརྨ༌སྨོན༌ལམ');
   });
 });

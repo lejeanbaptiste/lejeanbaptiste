@@ -439,9 +439,7 @@ describe('disambiguationCandidates', () => {
         x400s: {
           data: [
             {
-              subfield: [
-                { code: 'a', content: 'བདུད་འཇོམས་འཇིགས་བྲལ་ཡེ་ཤེས་རྡོ་རྗེ།' },
-              ],
+              subfield: [{ code: 'a', content: 'བདུད་འཇོམས་འཇིགས་བྲལ་ཡེ་ཤེས་རྡོ་རྗེ།' }],
             },
             { subfield: [{ code: 'a', content: '敦珠' }] },
             { subfield: [{ code: 'a', content: '敦珠仁波切' }] },
