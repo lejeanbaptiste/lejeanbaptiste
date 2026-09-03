@@ -5,7 +5,8 @@ import { parsePagesTags, extractPageContent, expandPagesTranscription } from './
 import { wikitextToBodyXml } from './wikitextToTei.mjs';
 
 test('parsePagesTags: reads index/from/to/fromsection/tosection, unquoted or quoted, mixed case', () => {
-  const wikitext = '<div>\n<pages index="Foo.pdf" From=3 to=5 fromsection="part1" tosection="part2"/>\n</div>';
+  const wikitext =
+    '<div>\n<pages index="Foo.pdf" From=3 to=5 fromsection="part1" tosection="part2"/>\n</div>';
   const [tag] = parsePagesTags(wikitext);
   assert.equal(tag.index, 'Foo.pdf');
   assert.equal(tag.from, 3);
@@ -97,10 +98,14 @@ test('expandPagesTranscription: a page fetch failure contributes just its pb, no
     if (title === 'Page:Foo.pdf/2') throw new Error('404');
     return { wikitext: 'ok text', pageTitle: title };
   };
-  const expanded = await expandPagesTranscription('<pages index="Foo.pdf" from=1 to=2/>', 'wikisource.org', {
-    fetchPageWikitext,
-    sleep: async () => {},
-  });
+  const expanded = await expandPagesTranscription(
+    '<pages index="Foo.pdf" from=1 to=2/>',
+    'wikisource.org',
+    {
+      fetchPageWikitext,
+      sleep: async () => {},
+    },
+  );
   assert.match(expanded, /\{\{pb\|n=1\}\}ok text/);
   assert.match(expanded, /\{\{pb\|n=2\}\}(\n\n|$)/);
 });

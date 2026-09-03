@@ -75,10 +75,9 @@ test('presentational tags like <big> are unwrapped, not escaped as literal text'
 });
 
 test('[[Category:…]] links are dropped, not rendered as a stray paragraph', () => {
-  const result = wikitextToBodyXml(
-    'Real prose.\n\n[[Category:Tibetan]]\n[[分類:Foo]]',
-    { locale: 'generic' },
-  );
+  const result = wikitextToBodyXml('Real prose.\n\n[[Category:Tibetan]]\n[[分類:Foo]]', {
+    locale: 'generic',
+  });
   assert.match(result.bodyXml, /<p>Real prose\.<\/p>/);
   assert.doesNotMatch(result.bodyXml, /Category|分類/);
 });
@@ -94,7 +93,8 @@ test('header field values are resolved to plain text, not left as raw wikitext m
   // embedded as a plain citation string (headerCredit in
   // WikisourceImportDialog.tsx), which already XML-escapes it itself — so the
   // conversion here must produce clean text, not markup or XML entities.
-  const wikitext = '{{header|title={{xx-larger|[[Some Title]]}}|author=[[Jane Doe|Doe, J.]]}}\n\nBody.';
+  const wikitext =
+    '{{header|title={{xx-larger|[[Some Title]]}}|author=[[Jane Doe|Doe, J.]]}}\n\nBody.';
   const result = wikitextToBodyXml(wikitext, { locale: 'generic' });
   assert.equal(result.header?.title, 'Some Title');
   assert.equal(result.header?.author, 'Doe, J.');
