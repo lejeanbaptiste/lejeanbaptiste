@@ -242,6 +242,7 @@ import { searchKanripoWorks } from './kanripoWorks';
 import { daozangCacheRoot, daozangCorpusStatus, daozangTextPath } from './daozangCorpus';
 import { cbetaCorpusStatus, ensureCbetaCorpus } from './cbetaCorpus';
 import { importBdrcToProject } from './bdrc/bdrcProjectImport';
+import { loadBdrcImport } from './bdrc/bdrcRuntime';
 import { searchDaozangWorks } from './daozangWorks';
 import {
   closeEntitySqliteReadRepositories,
@@ -2755,19 +2756,6 @@ const registerIpcHandlers = () => {
     const mod = await loadWikisourceImport();
     return mod.inspectWikisourceImport(String(url || '').trim());
   });
-
-  const loadBdrcImport = async () => {
-    const candidates = [
-      path.join(__dirname, 'bdrc', 'bdrcImport.mjs'),
-      path.resolve(__dirname, '../src/bdrc/bdrcImport.mjs'),
-    ];
-    const hit = candidates.find((candidate) => existsSync(candidate));
-    if (!hit) throw new Error('bdrcImport.mjs not found in the LJB desktop bundle.');
-    return import(pathToFileURL(hit).href) as Promise<{
-      inspectBdrcEtext: (input: string) => Promise<unknown>;
-      runBdrcImport: (input: string, opts?: { windowSize?: number }) => Promise<unknown>;
-    }>;
-  };
 
   ipcMain.handle('bdrc:inspect', async (_event, input: string) => {
     if (!isPluginEnabledInMain('bdrc-import'))

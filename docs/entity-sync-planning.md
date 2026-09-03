@@ -216,7 +216,7 @@ D1's free-tier write cap (100k rows/day, and each `central_entities` insert is
   now" still tries).
 - `apps/desktop/scripts/generate-entity-sync-seed.mjs` emits `seed-NNN.sql`
   files (INSERTs at `revision = 1` + the `sync_counter` row) from a local
-  `entities.sqlite`. Apply with `wrangler d1 execute … --file`, one per day if
+  `entities.sqlite`. Bulk-import with `wrangler d1 import … --file` (batches and retries), one per day if
   needed. The next in-app **Sync now** then reconciles everything locally
   (reads only) via the pull fast-path below — no D1 writes.
 - Pull fast-path: when a pulled change's `contentHash` already equals the local

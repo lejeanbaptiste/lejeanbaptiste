@@ -159,6 +159,9 @@ docs/doc import/
 test_project/
 databases/
 Users/daniel/Code/authority extraction/
+
+# Local entity-sync DB seed dumps (private data, not schema)
+seed/*.sql
 **/.obsidian/
 **/.claude/
 **/.cursor/

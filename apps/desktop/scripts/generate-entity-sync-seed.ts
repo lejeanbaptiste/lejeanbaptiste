@@ -15,8 +15,11 @@
  *
  * (or via the .mjs wrapper: `node apps/desktop/scripts/generate-entity-sync-seed.mjs --owner …`)
  *
- * Then, per file (spread over days if you hit the write cap):
- *   wrangler d1 execute ljb-entity-sync --remote --file=<out>/seed-001.sql
+ * Then, from `workers/entity-sync/` (where wrangler.toml lives), per file and
+ * spread over days if you hit the write cap:
+ *   wrangler d1 import ljb-entity-sync --remote --file=<abs>/seed-001.sql
+ *
+ * (`d1 import` batches and retries; `d1 execute --file` can choke on the size.)
  *
  * Afterwards, in the app: **Sync now**. The pull reconciles all rows locally
  * (reads only) and finds nothing dirty to push — zero further D1 writes.
@@ -52,8 +55,11 @@ const parseArgs = (argv: string[]): Args => {
   return {
     owner,
     db: path.resolve(get('--db') ?? defaultDb),
-    out: path.resolve(get('--out') ?? 'entity-sync-seed'),
-    chunk: chunkRaw ? Math.max(1, Number(chunkRaw)) : 20_000,
+    // Default next to wrangler.toml so the printed `--file=` paths are easy to
+    // run from `workers/entity-sync/`.
+    out: path.resolve(get('--out') ?? 'workers/entity-sync/seed'),
+    // ~10k entities/file keeps each SQL file small enough for `d1 import`.
+    chunk: chunkRaw ? Math.max(1, Number(chunkRaw)) : 10_000,
   };
 };
 
@@ -131,10 +137,11 @@ const main = (): void => {
     `\n${seq} entities → ${fileIndex} file(s) in ${args.out}` +
       (skipped ? ` (${skipped} skipped: no export)` : ''),
   );
-  console.log('\nApply each file (one per day if you hit the write cap):');
+  console.log('\nFrom workers/entity-sync/, apply each file (one per day if the write cap trips):');
+  console.log('  cd workers/entity-sync');
   for (let i = 1; i <= fileIndex; i += 1) {
     console.log(
-      `  wrangler d1 execute ljb-entity-sync --remote --file=${path.join(
+      `  npx wrangler d1 import ljb-entity-sync --remote --file=${path.join(
         args.out,
         `seed-${String(i).padStart(3, '0')}.sql`,
       )}`,

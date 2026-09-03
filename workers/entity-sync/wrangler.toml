@@ -8,11 +8,11 @@ preview_urls = false
 # not secret — set it here per deployment, or override with
 # `wrangler secret put OWNER_GITHUB_ID` if you'd rather not commit it.
 [vars]
-OWNER_GITHUB_ID = "REPLACE_WITH_YOUR_GITHUB_NUMERIC_ID"
+OWNER_GITHUB_ID = "76396963"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "ljb-entity-sync"
 # Fill in after `wrangler d1 create ljb-entity-sync`.
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "81aebb00-1a06-4970-b1ca-b18b1683f2f1"
 migrations_dir = "migrations"

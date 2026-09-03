@@ -17,6 +17,8 @@ export type AuthorityPackId =
   | 'wikidata-persons-pre-ming'
   | 'wikidata-persons-ja'
   | 'wikidata-persons-bo'
+  | 'bdrc-persons-bo'
+  | 'bdrc-places-bo'
   | 'wikidata-places-zh-hant'
   | 'wikidata-places-ja'
   | 'wikidata-places-bo'
@@ -82,6 +84,7 @@ export interface AuthorityPackSpec {
     | 'dila'
     | 'chgis'
     | 'wikidata'
+    | 'bdrc'
     | 'ndl'
     | 'norbert'
     | 'huckbot5000'
@@ -204,6 +207,20 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     source: 'wikidata',
     relativePath: 'wikidata/person-bo/persons.ndjson',
     defaultTag: 'persName',
+  },
+  {
+    id: 'bdrc-persons-bo',
+    label: 'BDRC persons (bo)',
+    source: 'bdrc',
+    relativePath: 'bdrc/person-bo/persons.ndjson',
+    defaultTag: 'persName',
+  },
+  {
+    id: 'bdrc-places-bo',
+    label: 'BDRC places (bo)',
+    source: 'bdrc',
+    relativePath: 'bdrc/place-bo/places.ndjson',
+    defaultTag: 'placeName',
   },
   {
     id: 'wikidata-places-zh-hant',
@@ -565,7 +582,9 @@ export const UI_AUTHORITY_PACK_IDS: AuthorityPackId[] = [
   'wikidata-persons',
   'wikidata-persons-ja',
   'wikidata-persons-bo',
+  'bdrc-persons-bo',
   'wikidata-places-zh-hant',
+  'bdrc-places-bo',
   'wikidata-places-ja',
   'wikidata-places-bo',
   'wikidata-orgs-zh-hant',
@@ -693,6 +712,7 @@ export const AUTHORITY_SOURCE_ORDER = [
   'dila',
   'chgis',
   'wikidata',
+  'bdrc',
   'ndl',
   'norbert',
   'huckbot5000',
@@ -710,6 +730,7 @@ export const AUTHORITY_SOURCE_LABELS: Record<AuthoritySourceId, string> = {
   dila: 'DILA',
   chgis: 'CHGIS',
   wikidata: 'Wikidata',
+  bdrc: 'BDRC',
   ndl: 'NDL',
   norbert: 'Norbert',
   huckbot5000: 'Huckbot5000',
@@ -729,7 +750,9 @@ export const AUTHORITY_PACK_SHORT_LABELS: Partial<Record<AuthorityPackId, string
   'wikidata-persons': 'Persons',
   'wikidata-persons-ja': 'Persons (ja)',
   'wikidata-persons-bo': 'Persons (bo)',
+  'bdrc-persons-bo': 'Persons (bo)',
   'wikidata-places-zh-hant': 'Places (zh-hant)',
+  'bdrc-places-bo': 'Places (bo)',
   'wikidata-places-ja': 'Places (ja)',
   'wikidata-places-bo': 'Places (bo)',
   'wikidata-orgs-zh-hant': 'Organizations (zh-hant)',

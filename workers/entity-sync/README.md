@@ -85,14 +85,16 @@ that. Options:
 
 - **Upgrade to Workers Paid** ($5/mo, 50M writes/mo) — the seed becomes a
   non-event; just press Sync now.
-- **Seed out of band.** Generate SQL from a local database and apply it
-  directly (one file per day if you still trip the cap):
+- **Seed out of band.** Generate SQL from a local database, then bulk-import it
+  (one file per day if you still trip the cap):
   ```bash
   node ../../apps/desktop/scripts/generate-entity-sync-seed.mjs \
-    --owner <github-id> --db /path/to/entities.sqlite --out ./seed
-  wrangler d1 execute ljb-entity-sync --remote --file=./seed/seed-001.sql
+    --owner <github-id> --db /path/to/entities.sqlite
+  # writes workers/entity-sync/seed/seed-NNN.sql; run from THIS dir:
+  npx wrangler d1 import ljb-entity-sync --remote --file=seed/seed-001.sql
   # …one per day…
   ```
+  `d1 import` batches and retries (`d1 execute --file` can choke on the size).
   Then **Sync now** in the app: the pull reconciles every seeded row locally
   (reads only) and finds nothing to push.
 

@@ -22,7 +22,7 @@ export interface AuthorityLifecyclePromptStrings {
 }
 
 /** Matches `policy.version` in compiled pack manifests (authority extraction). */
-export const COMPILE_POLICY_VERSION = '2026-07-05';
+export const COMPILE_POLICY_VERSION = '2026-09-02';
 
 export const LIFECYCLE_FILENAME = 'lifecycle.json';
 

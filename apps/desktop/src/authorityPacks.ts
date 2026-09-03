@@ -80,6 +80,7 @@ export async function installAuthorityPacksFrom(
 
   for (const spec of filePacks()) {
     const srcFile = path.join(sourcePacksRoot, spec.relativePath);
+    if (!fs.existsSync(srcFile)) continue;
     const destFile = packPath(entityDbFolder, spec.id);
     await fsp.mkdir(path.dirname(destFile), { recursive: true });
     await fsp.copyFile(srcFile, destFile);

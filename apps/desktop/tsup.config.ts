@@ -15,6 +15,20 @@ const copyWikisourceRuntime = () => {
   }
 };
 
+const copyBdrcRuntime = () => {
+  const destDir = path.join('dist', 'bdrc');
+  mkdirSync(destDir, { recursive: true });
+  for (const name of [
+    'bdrcImport.mjs',
+    'pdiClient.mjs',
+    'etextToTei.mjs',
+    'bdrcRef.mjs',
+    'bdrcCache.mjs',
+  ]) {
+    copyFileSync(path.join('src', 'bdrc', name), path.join(destDir, name));
+  }
+};
+
 export default defineConfig({
   entry: ['src/main.ts', 'src/preload.ts', 'src/bulkBridgeWorker.ts', 'src/entityIndexWorker.ts'],
   format: ['cjs'],
@@ -22,6 +36,7 @@ export default defineConfig({
   clean: true,
   onSuccess: async () => {
     copyWikisourceRuntime();
+    copyBdrcRuntime();
   },
   // Keep Node's built-in SQLite module as a built-in import. Without this,
   // esbuild rewrites `node:sqlite` to `sqlite`, which is not an installed

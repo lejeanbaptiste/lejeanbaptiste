@@ -10,8 +10,7 @@ import {
   PROJECT_FILE_NAME,
   type ProjectFileConfig,
 } from '../../../commons/src/desktop/projectTypes';
-
-type BdrcImportModule = typeof import('./bdrcImport.mjs');
+import { loadBdrcImport } from './bdrcRuntime';
 
 export interface BdrcProjectImportOptions {
   projectRoot: string;
@@ -45,9 +44,6 @@ const xmlLooksWellFormed = (xml: string): boolean => {
   const doc = new DOMParser().parseFromString(xml, 'application/xml');
   return !doc.getElementsByTagName('parsererror').length;
 };
-
-const loadBdrcImport = async (): Promise<BdrcImportModule> =>
-  import('./bdrcImport.mjs') as Promise<BdrcImportModule>;
 
 const readProjectConfig = async (projectRoot: string): Promise<ProjectFileConfig> => {
   const raw = await fs.readFile(path.join(projectRoot, PROJECT_FILE_NAME), 'utf8');
