@@ -87,8 +87,15 @@ const parseTemplateArgs = (inner) => {
 
 const stripHtmlComments = (wikitext) => String(wikitext || '').replace(/<!--[\s\S]*?-->/g, '');
 
+// Purely presentational HTML tags Wikisource pages use for typography (`{{xx-larger}}`
+// renders as `<big>`, etc.) — this importer keeps no bold/italic/size semantics, so
+// these are unwrapped like div/span/br rather than left to fall through to
+// convertInline's plain-text path, where they'd be XML-escaped as literal `&lt;big&gt;`.
 const stripWrapperTags = (wikitext) =>
-  String(wikitext || '').replace(/<\/?(?:onlyinclude|includeonly|poem|div|span|br)\b[^>]*>/gi, '');
+  String(wikitext || '').replace(
+    /<\/?(?:onlyinclude|includeonly|poem|div|span|br|big|small|center|b|i|u|s|tt|code|sup|sub|em|strong|font|blockquote|hr)\b[^>]*>/gi,
+    '',
+  );
 
 const stripNoinclude = (wikitext) =>
   stripWrapperTags(
@@ -98,6 +105,53 @@ const stripNoinclude = (wikitext) =>
         .replace(/<includeonly>|<\/includeonly>/gi, ''),
     ),
   );
+
+/**
+ * A `{{header}}` field value is raw wikitext, not plain text — e.g.
+ * `title={{xx-larger|[[Some Title]]}}` (confirmed live on bo.wikisource
+ * content 2026-09-03). Resolve it to plain text for callers that embed it as
+ * a citation string (`headerCredit` in WikisourceImportDialog.tsx): unwrap
+ * typographic templates to their one argument, take a link's display text,
+ * and leave real prose alone. No XML escaping here — this feeds plain-text
+ * fields, not markup, and callers already escape on their own.
+ */
+const wikitextInlineToPlainText = (text) => {
+  const source = String(text || '');
+  let output = '';
+  let index = 0;
+  while (index < source.length) {
+    if (source.startsWith('{{', index)) {
+      const balanced = findBalanced(source, '{{', '}}', index);
+      if (!balanced) {
+        output += source[index];
+        index += 1;
+        continue;
+      }
+      const parsed = parseTemplateArgs(balanced.inner);
+      const arg = parsed.positional[0] ?? '';
+      if (arg) output += wikitextInlineToPlainText(arg);
+      index = balanced.end;
+      continue;
+    }
+    if (source.startsWith('[[', index)) {
+      const balanced = findBalanced(source, '[[', ']]', index);
+      if (!balanced) {
+        output += source[index];
+        index += 1;
+        continue;
+      }
+      const display = balanced.inner.includes('|')
+        ? balanced.inner.slice(balanced.inner.lastIndexOf('|') + 1)
+        : balanced.inner;
+      output += wikitextInlineToPlainText(display);
+      index = balanced.end;
+      continue;
+    }
+    output += source[index];
+    index += 1;
+  }
+  return decodeEntities(output).trim();
+};
 
 const extractHeader = (wikitext) => {
   const match = wikitext.match(/\{\{\s*header\b/i);
@@ -109,10 +163,10 @@ const extractHeader = (wikitext) => {
   return {
     rest,
     header: {
-      title: parsed.named.title || parsed.named.標題 || '',
-      author: parsed.named.author || parsed.named.作者 || '',
-      section: parsed.named.section || parsed.named.章節 || '',
-      notes: parsed.named.notes || parsed.named.說明 || '',
+      title: wikitextInlineToPlainText(parsed.named.title || parsed.named.標題 || ''),
+      author: wikitextInlineToPlainText(parsed.named.author || parsed.named.作者 || ''),
+      section: wikitextInlineToPlainText(parsed.named.section || parsed.named.章節 || ''),
+      notes: wikitextInlineToPlainText(parsed.named.notes || parsed.named.說明 || ''),
     },
   };
 };
@@ -147,6 +201,11 @@ const pageBreakFromLink = (inner) => {
   return n ? `<pb n="${escapeXml(n)}"/>` : '<pb/>';
 };
 
+// `[[Category:…]]` is page classification, not body text — Wikisource pages
+// end with several of these, and rendering their display text (as any other
+// link falls through to) produces a stray "Category:Foo" paragraph.
+const isCategoryLink = (inner) => /^(?:Category|分類):/i.test(inner.split('|')[0].trim());
+
 const convertInline = (text, locale) => {
   let output = '';
   let index = 0;
@@ -169,6 +228,10 @@ const convertInline = (text, locale) => {
       if (!balanced) {
         output = appendPlainText(output, source[index]);
         index += 1;
+        continue;
+      }
+      if (isCategoryLink(balanced.inner)) {
+        index = balanced.end;
         continue;
       }
       const pb = pageBreakFromLink(balanced.inner);
@@ -217,13 +280,14 @@ const paragraphXml = (block, locale) => {
 export function wikitextToBodyXml(wikitext, options = {}) {
   const locale = options.locale === 'zh' ? 'zh' : 'generic';
   const stripped = stripNoinclude(wikitext);
-  const { rest, header } =
-    locale === 'zh' ? extractHeader(stripped) : { rest: stripped, header: null };
-  let body = rest;
-  if (locale !== 'zh') {
-    body = body.replace(/\{\{[^}]*\}\}/g, '');
-  }
-  const blocks = body
+  // `{{header}}` is a shared Wikisource convention, not zh-specific — extract
+  // it for every locale. Any other top-level templates left in `rest` are
+  // dropped by convertInline's own balanced-brace handling below, which
+  // (unlike a naive `{{[^}]*}}` regex) copes with nesting like
+  // `{{header|title={{xx-larger|...}}|...}}` without leaking leftover args
+  // into the body as text.
+  const { rest, header } = extractHeader(stripped);
+  const blocks = rest
     .replace(/\r\n/g, '\n')
     .split(/\n{2,}/)
     .map((block) => block.trim())

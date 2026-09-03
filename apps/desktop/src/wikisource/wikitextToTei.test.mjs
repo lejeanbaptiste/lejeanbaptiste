@@ -46,6 +46,60 @@ test('generic locale strips templates and keeps paragraphs', () => {
   assert.equal(result.hasPb, false);
 });
 
+test('generic locale: header extracted (not just stripped) and a nested template in title= does not leak leftover args', () => {
+  // bo.wikisource-style header confirmed live 2026-09-03: `title=` nests
+  // `{{xx-larger|...}}`. A naive `{{[^}]*}}` strip only eats up to the first
+  // `}}` (the inner template's), leaving `| year=...| previous=...` etc as
+  // literal text in the body — this must not happen.
+  const wikitext = `{{header
+| title={{xx-larger|ཤེས་རབ་སྙིང་པོའི་འགྲེལ་པ}}
+| year= 1990
+| previous=
+| next=
+| section= དཀར་ཆག
+| author=ཨ་ལག་ཤ་
+}}
+
+Real body text here.
+`;
+  const result = wikitextToBodyXml(wikitext, { locale: 'generic' });
+  assert.equal(result.header?.author, 'ཨ་ལག་ཤ་');
+  assert.match(result.bodyXml, /<p>Real body text here\.<\/p>/);
+  assert.doesNotMatch(result.bodyXml, /year=|previous=|next=|section=|author=/);
+});
+
+test('presentational tags like <big> are unwrapped, not escaped as literal text', () => {
+  const result = wikitextToBodyXml('<big>Loud text.</big>', { locale: 'generic' });
+  assert.match(result.bodyXml, /<p>Loud text\.<\/p>/);
+  assert.doesNotMatch(result.bodyXml, /big/);
+});
+
+test('[[Category:…]] links are dropped, not rendered as a stray paragraph', () => {
+  const result = wikitextToBodyXml(
+    'Real prose.\n\n[[Category:Tibetan]]\n[[分類:Foo]]',
+    { locale: 'generic' },
+  );
+  assert.match(result.bodyXml, /<p>Real prose\.<\/p>/);
+  assert.doesNotMatch(result.bodyXml, /Category|分類/);
+});
+
+test('a category link mixed into a real paragraph is dropped, the rest of the text stays', () => {
+  const result = wikitextToBodyXml('Before.[[Category:Tibetan]]After.', { locale: 'generic' });
+  assert.match(result.bodyXml, /<p>Before\.After\.<\/p>/);
+});
+
+test('header field values are resolved to plain text, not left as raw wikitext markup', () => {
+  // title={{xx-larger|[[Some Title]]}} — a typographic wrapper around a link,
+  // confirmed live on bo.wikisource content 2026-09-03. This value is later
+  // embedded as a plain citation string (headerCredit in
+  // WikisourceImportDialog.tsx), which already XML-escapes it itself — so the
+  // conversion here must produce clean text, not markup or XML entities.
+  const wikitext = '{{header|title={{xx-larger|[[Some Title]]}}|author=[[Jane Doe|Doe, J.]]}}\n\nBody.';
+  const result = wikitextToBodyXml(wikitext, { locale: 'generic' });
+  assert.equal(result.header?.title, 'Some Title');
+  assert.equal(result.header?.author, 'Doe, J.');
+});
+
 test('missing page breaks set hasPb false', () => {
   const result = wikitextToBodyXml('只有正文。', { locale: 'zh' });
   assert.equal(result.hasPb, false);

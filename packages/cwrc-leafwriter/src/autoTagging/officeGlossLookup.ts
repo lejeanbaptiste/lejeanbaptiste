@@ -15,6 +15,7 @@ export const HUCKBOT_PROCEDURAL_SOURCE = 'Huckbot5000 (procedural)';
 export const MAXIRICCI_PROCEDURAL_SOURCE = 'MaxiRicci7000 (procedural)';
 
 export const HUCKBOT_TRANSLATIONS_PACK_ID: AuthorityPackId = 'huckbot5000-translations';
+export const HUCKBOT_INSIDERS_PACK_ID: AuthorityPackId = 'huckbot5000-insiders';
 export const MAXIRICCI_TRANSLATIONS_PACK_ID: AuthorityPackId = 'maxiricci7000-translations';
 
 export type OfficeGlossIndex = Map<string, string>;
@@ -452,9 +453,20 @@ type PackReader = (packId: AuthorityPackId) => Promise<AuthorityPackContent>;
  */
 export function loadHuckbotGlossIndex(readPack: PackReader): Promise<OfficeGlossIndex> {
   if (!glossIndexPromise) {
-    glossIndexPromise = readPack(HUCKBOT_TRANSLATIONS_PACK_ID)
+    const publicGlosses = readPack(HUCKBOT_TRANSLATIONS_PACK_ID)
       .then((content) => buildHuckbotGlossIndex(content))
-      .catch(() => new Map());
+      .catch(() => new Map<string, string>());
+    const insiderGlosses = readPack(HUCKBOT_INSIDERS_PACK_ID)
+      .then((content) => buildHuckbotGlossIndex(content))
+      .catch(() => new Map<string, string>());
+    glossIndexPromise = Promise.all([publicGlosses, insiderGlosses]).then(
+      ([published, insiders]) => {
+        for (const [key, gloss] of insiders) {
+          if (!published.has(key)) published.set(key, gloss);
+        }
+        return published;
+      },
+    );
   }
   return glossIndexPromise;
 }

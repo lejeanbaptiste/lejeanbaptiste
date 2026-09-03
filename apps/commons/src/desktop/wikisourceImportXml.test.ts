@@ -72,11 +72,15 @@ describe('wrapWikisourceTeiDocument', () => {
       expect(xml).not.toContain('<author n=');
     });
 
-    test('non-CBETA target keeps the <p>-based sourceDesc and @n authors', () => {
+    test('non-CBETA target also emits a single <bibl> sourceDesc (@n authors, not @ref)', () => {
       const xml = wrapWikisourceTeiDocument({ config, meta: wsMeta, bodyXml: '<p>道</p>' });
-      expect(xml).toMatch(/<sourceDesc>\s*<p>Imported from Wikisource/);
+      const sourceDesc = xml.match(/<sourceDesc>[\s\S]*?<\/sourceDesc>/)?.[0] ?? '';
+      expect(sourceDesc).toMatch(/<sourceDesc>\s*<bibl>Imported from Wikisource/);
+      // No bare <note>/<idno> sibling of <bibl> — sourceDescription.ts only
+      // recognizes bibliographic notes nested inside <bibl>/<biblStruct>.
+      expect(sourceDesc).not.toMatch(/<\/bibl>\s*<(?:note|idno)/);
       expect(xml).toContain('<author n="Q9598">李耳</author>');
-      expect(xml).not.toContain('<bibl>');
+      expect(xml).not.toContain('<author ref=');
     });
   });
 

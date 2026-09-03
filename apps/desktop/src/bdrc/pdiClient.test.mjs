@@ -169,6 +169,41 @@ test('fetchEtextBase: resolves the UT→IE→(WA / MW) instance chain and title'
   assert.equal(base.title, 'འདུལ་བ་ཀ');
 });
 
+test('fetchEtextBase: an OpenPecha volume falls back from the empty `_0000` id to the bare one', async () => {
+  // `volumeHasEtext` on an OpenPecha-batch instance (e.g. bdr:IE0OPIAC23BB41,
+  // confirmed live 2026-09-03) points at a bare `UT<n>_I<ig>` id with no
+  // `_0000` suffix — the suffixed id `veToUt` always derives resolves to
+  // nothing. fetchEtextBase must retry the bare id before giving up.
+  const bareUt = 'UTIE0OPIAC23BB41_I4PD2634';
+  const suffixedUt = `${bareUt}_0000`;
+  const calls = [];
+  const fetchImpl = async (url) => {
+    calls.push(url);
+    const u = new URL(url);
+    const ok = (body) => ({ ok: true, status: 200, text: async () => body });
+    const requested = u.searchParams.get('R_RES');
+    if (u.pathname.endsWith('/query/graph/Etext_base')) {
+      if (requested === `bdr:${suffixedUt}`) {
+        return ok(`<${R}${suffixedUt}> <${TMP}etextIsPaginated> "false" .\n`);
+      }
+      if (requested === `bdr:${bareUt}`) {
+        return ok(
+          `<${R}${bareUt}> <${CORE}eTextInInstance> <${R}IE0OPIAC23BB41> .\n` +
+            `<${R}${bareUt}> <${CORE}etextIsPaginated> "true" .\n` +
+            `<${R}IE0OPIAC23BB41> <${CORE}instanceOf> <${R}WA1022> .\n`,
+        );
+      }
+    }
+    return { ok: false, status: 404, text: async () => '' };
+  };
+
+  const base = await fetchEtextBase(suffixedUt, { fetchImpl });
+  assert.equal(base.utId, bareUt);
+  assert.equal(base.paginated, true);
+  assert.equal(base.etextInstanceId, 'IE0OPIAC23BB41');
+  assert.equal(calls.length, 2); // suffixed attempt, then the bare fallback
+});
+
 test('fetchInstanceBibl: edition statement, ISO publication year, publisher + place', async () => {
   const { fetchImpl, calls } = makeFetch();
   const bibl = await fetchInstanceBibl('bdr:MW4CZ5369', { fetchImpl });
@@ -428,6 +463,40 @@ test('importEtext: a degenerate Etext_base yields unsupported, no chunk fetch', 
     calls.some((u) => u.includes('/query/graph/chunkContext')),
     false,
   );
+});
+
+test('importEtext: OpenPecha fallback id is carried through to chunkContext, not the original _0000', async () => {
+  const bareUt = 'UTIE0OPIAC23BB41_I4PD2634';
+  const suffixedUt = `${bareUt}_0000`;
+  const calls = [];
+  const fetchImpl = async (url) => {
+    calls.push(url);
+    const u = new URL(url);
+    const ok = (body) => ({ ok: true, status: 200, text: async () => body });
+    const requested = u.searchParams.get('R_RES') ?? u.searchParams.get('R_UT');
+    if (u.pathname.endsWith('/query/graph/Etext_base')) {
+      if (requested === `bdr:${suffixedUt}`) {
+        return ok(`<${R}${suffixedUt}> <${TMP}etextIsPaginated> "false" .\n`);
+      }
+      return ok(
+        `<${R}${bareUt}> <${CORE}eTextInInstance> <${R}IE0OPIAC23BB41> .\n` +
+          `<${R}${bareUt}> <${CORE}etextIsPaginated> "true" .\n` +
+          `<${R}${bareUt}> <${ADM}access> <${A}AccessOpen> .\n` +
+          `<${R}IE0OPIAC23BB41> <${CORE}instanceOf> <${R}WA1022> .\n`,
+      );
+    }
+    if (u.pathname.endsWith('/query/graph/chunkContext')) {
+      assert.equal(requested, `bdr:${bareUt}`);
+      return ok('');
+    }
+    return { ok: false, status: 404, text: async () => '' };
+  };
+
+  const { extracted, restricted, unsupported } = await importEtext(suffixedUt, { fetchImpl });
+  assert.equal(unsupported, undefined);
+  assert.equal(restricted, false);
+  assert.equal(extracted.meta.utId, bareUt);
+  assert.ok(calls.some((u) => u.includes('/query/graph/chunkContext')));
 });
 
 test('importEtext: unreleased status is surfaced as a warning but still imports', async () => {

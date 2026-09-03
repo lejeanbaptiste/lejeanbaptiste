@@ -61,9 +61,18 @@ export const wrapWikisourceTeiDocument = ({
   if (catalogId === 'orlando' || catalogId === 'jTei') {
     throw new Error('Wikisource import currently supports TEI projects (not Orlando or jTEI).');
   }
-  // CBETA P5 target: its `<sourceDesc>` takes *either* prose (`<p>`) *or*
-  // bibliographic elements, not a mix, and its divisions reject a CJK `@n`.
-  // Emit a single `<bibl>`; the TEI-ALL / TEI-Lite path is unchanged.
+  // CBETA P5's divisions reject a CJK `@n` and its authors want `@ref` rather
+  // than `@n` — those stay catalog-specific below. `<sourceDesc>` itself does
+  // not: every catalog here (like every other importer's sourceDesc — see
+  // bdrcImportXml.ts) wraps its bibliographic facts in a single `<bibl>`.
+  // `sourceDesc/p` mixed with bare `<idno>`/`<note>` siblings, which this
+  // used to emit for non-CBETA targets, is not a valid `sourceDesc` — and
+  // this app's own Source Description sync (sourceDescription.ts) only
+  // recognizes bibliographic notes nested inside `<bibl>`/`<biblStruct>`
+  // anyway, so a bare sibling `<note>` was also getting orphaned on the next
+  // metadata edit (confirmed 2026-09-03: a real import left a stray
+  // `<note type="wikisource-header">` sibling after the Source Description
+  // panel rewrote `<p>` into `<biblStruct>`).
   const isCbetaFamily = catalogId === 'cbeta';
 
   const title = escapeXmlText(meta.title || meta.pageTitle || meta.workTitle || 'Untitled');
@@ -76,52 +85,28 @@ export const wrapWikisourceTeiDocument = ({
     `<titleStmt>\n      <title>${title}</title>\n${authors}\n    </titleStmt>`,
   );
 
-  if (isCbetaFamily) {
-    const biblKids = [
-      meta.url ? `<ptr target="${escapeXmlAttr(meta.url)}"/>` : '',
-      meta.qid
-        ? `<idno type="URI">https://www.wikidata.org/entity/${escapeXmlText(meta.qid)}</idno>`
-        : '',
-      meta.ctextWorkId ? `<idno type="CTP">${escapeXmlText(meta.ctextWorkId)}</idno>` : '',
-      meta.publicationDate
-        ? `<note type="pubDate">Wikidata P577: ${escapeXmlText(meta.publicationDate)}</note>`
-        : '',
-      meta.headerCredit
-        ? `<note type="wikisource-header">${escapeXmlText(meta.headerCredit)}</note>`
-        : '',
-      meta.extractionNote
-        ? `<note type="extraction">${escapeXmlText(meta.extractionNote)}</note>`
-        : '',
-    ].filter(Boolean);
-    xml = xml.replace(
-      /<sourceDesc>[\s\S]*?<\/sourceDesc>/,
-      `<sourceDesc>\n      <bibl>Imported from Wikisource (${escapeXmlText(meta.workTitle)}).${
-        biblKids.length ? `\n      ${biblKids.join('\n      ')}\n      ` : ' '
-      }</bibl>\n    </sourceDesc>`,
-    );
-  } else {
-    const idnos = [
-      meta.qid
-        ? `\n      <idno type="URI">https://www.wikidata.org/entity/${escapeXmlText(meta.qid)}</idno>`
-        : '',
-      meta.ctextWorkId ? `\n      <idno type="CTP">${escapeXmlText(meta.ctextWorkId)}</idno>` : '',
-    ].join('');
-    const urlPara = meta.url ? `<p>${escapeXmlText(meta.url)}</p>` : '';
-    const credit = meta.headerCredit
-      ? `\n      <note type="wikisource-header">${escapeXmlText(meta.headerCredit)}</note>`
-      : '';
-    const extraction = meta.extractionNote
-      ? `\n      <note type="extraction">${escapeXmlText(meta.extractionNote)}</note>`
-      : '';
-    const dateNote = meta.publicationDate
-      ? `\n      <p>Wikidata P577: ${escapeXmlText(meta.publicationDate)}</p>`
-      : '';
-
-    xml = xml.replace(
-      /<sourceDesc>[\s\S]*?<\/sourceDesc>/,
-      `<sourceDesc>\n      <p>Imported from Wikisource (${escapeXmlText(meta.workTitle)}).</p>\n      ${urlPara}${dateNote}${idnos}${credit}${extraction}\n    </sourceDesc>`,
-    );
-  }
+  const biblKids = [
+    meta.url ? `<ptr target="${escapeXmlAttr(meta.url)}"/>` : '',
+    meta.qid
+      ? `<idno type="URI">https://www.wikidata.org/entity/${escapeXmlText(meta.qid)}</idno>`
+      : '',
+    meta.ctextWorkId ? `<idno type="CTP">${escapeXmlText(meta.ctextWorkId)}</idno>` : '',
+    meta.publicationDate
+      ? `<note type="pubDate">Wikidata P577: ${escapeXmlText(meta.publicationDate)}</note>`
+      : '',
+    meta.headerCredit
+      ? `<note type="wikisource-header">${escapeXmlText(meta.headerCredit)}</note>`
+      : '',
+    meta.extractionNote
+      ? `<note type="extraction">${escapeXmlText(meta.extractionNote)}</note>`
+      : '',
+  ].filter(Boolean);
+  xml = xml.replace(
+    /<sourceDesc>[\s\S]*?<\/sourceDesc>/,
+    `<sourceDesc>\n      <bibl>Imported from Wikisource (${escapeXmlText(meta.workTitle)}).${
+      biblKids.length ? `\n      ${biblKids.join('\n      ')}\n      ` : ' '
+    }</bibl>\n    </sourceDesc>`,
+  );
 
   xml = xml.replace(
     /<\/teiHeader>/,

@@ -14,6 +14,7 @@ import {
 } from './wikisource-parallel.mjs';
 import { fetchWikidataWorkMetadata } from './wikidata.mjs';
 import { wikitextToBodyXml, wikisourceLocaleFromHost } from './wikitextToTei.mjs';
+import { expandPagesTranscription } from './proofreadPages.mjs';
 
 const expandEditionTree = async (apiHost, tree) => {
   if (!tree.needsFetch) return tree;
@@ -109,7 +110,13 @@ export async function fetchWikisourceImportPages(options) {
     if (index > 0) await sleep(getFetchDelayMs());
     const title = titles[index];
     const fetched = await fetchPageWikitext(apiHost, title);
-    const converted = wikitextToBodyXml(fetched.wikitext, { locale });
+    // Some Wikisources (confirmed on bo.wikisource content, hosted at
+    // wikisource.org) hold no prose on the work page at all — just a
+    // `<pages index=… from=… to=…/>` ProofreadPage transclusion tag pointing
+    // at the real text on `Page:` subpages. Expand that before conversion, or
+    // the import yields nothing but the surrounding {{header}} scaffolding.
+    const expandedWikitext = await expandPagesTranscription(fetched.wikitext, apiHost);
+    const converted = wikitextToBodyXml(expandedWikitext, { locale });
     pages.push({
       title: fetched.pageTitle || title,
       stem: (fetched.pageTitle || title).split('/').pop() || title,

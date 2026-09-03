@@ -444,3 +444,15 @@ CBETA and similar texts often split a running string across milestones, e.g. `�
 - Milestone-aware auto-tagging planning and acceptance cases: [`docs/autotagging-milestone-projection-planning.md`](docs/autotagging-milestone-projection-planning.md).
 
 ## Upstream
+
+### BDRC import (2026-09-03)
+
+- Fixed OpenPecha-batch volumes reporting "no downloadable transcription" when they in fact have real `Etext_base` metadata — just under the bare `UT<n>_I<ig>` id, not the `_0000`-suffixed paginated id `veToUt` always derives. `fetchEtextBase` now retries the bare id before giving up, and the subsequent chunk fetch follows whichever id actually resolved. Known gap: the OpenPecha batch this was found on (`bdr:IE0OPIAC23BB41`) still has no queryable text in PDI's `chunkContext` even once the metadata resolves — its content lives only in the linked GitHub repo (Openpecha-Data), which this importer does not fetch.
+
+### Wikisource import (2026-09-03)
+
+- `{{header}}` extraction now runs for every wiki locale, not just `zh` — non-`zh` imports previously only stripped it with a naive `{{[^}]*}}` regex that couldn't handle a nested template inside a field (e.g. `title={{xx-larger|…}}`), leaking the rest of the header's arguments into the body as literal text. Header field values are now resolved to plain text (templates unwrapped, link display text taken) before being embedded as a citation string, rather than carrying raw wikitext markup.
+- New: expand ProofreadPage `<pages index=… from=… to=… fromsection=… tosection=…/>` transclusion tags by fetching the named `Page:` range and stitching it back together with `<pb>` milestones. Some Wikisources — including bo-language works hosted on the shared `wikisource.org` — hold no prose on the work page itself, only this tag; importing such a page previously produced nothing but header scaffolding.
+- Presentational HTML tags (`<big>`, `<small>`, `<center>`, `<b>`, etc.) are unwrapped instead of showing up as escaped literal text in the body.
+- `[[Category:…]]` links are dropped instead of rendering as a stray paragraph.
+- Non-CBETA `sourceDesc` now wraps bibliographic facts in a single `<bibl>`, matching the CBETA branch and every other importer, instead of mixing `<p>` prose with bare `<idno>`/`<note>` siblings directly under `<sourceDesc>` — invalid there, and silently orphaned by the Source Description panel's `biblStruct` rewrite, which only recognizes notes nested inside `<bibl>`/`<biblStruct>`.

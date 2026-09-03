@@ -151,8 +151,20 @@ export async function fetchRevision(utId, opts = {}) {
   }
 }
 
+const isEmptyBase = (base) => !base.access && !base.etextInstanceId && !base.title;
+
 /**
  * `Etext_base` → volume-level facts.
+ *
+ * `veToUt` (bdrcRef.mjs) always derives the `_0000`-suffixed paginated id,
+ * which is correct for natively-hosted BDRC etexts but wrong for OpenPecha
+ * batch imports — there, `volumeHasEtext` points straight at the bare
+ * `UT<n>_I<ig>` id with no suffix, and the `_0000` variant resolves to
+ * nothing. When the `_0000` lookup comes back empty, retry the bare id
+ * before concluding the volume has no downloadable transcription (confirmed
+ * live against bdr:IE0OPIAC23BB41 2026-09-03). The returned `utId` reflects
+ * whichever id actually resolved, so callers should key subsequent requests
+ * (chunkContext, revision, cache) off it rather than the input `utId`.
  * @returns {Promise<{
  *   utId: string, access: string|null, status: string|null,
  *   paginated: boolean, instanceId: string|null, workId: string|null,
@@ -161,6 +173,15 @@ export async function fetchRevision(utId, opts = {}) {
  */
 export async function fetchEtextBase(utId, opts = {}) {
   const ut = bareId(utId);
+  const base = await fetchEtextBaseOnce(ut, opts);
+  if (isEmptyBase(base) && /_0000$/.test(ut)) {
+    const fallback = await fetchEtextBaseOnce(ut.replace(/_0000$/, ''), opts);
+    if (!isEmptyBase(fallback)) return fallback;
+  }
+  return base;
+}
+
+async function fetchEtextBaseOnce(ut, opts) {
   const idx = indexTriples(await fetchGraphNt('Etext_base', { R_RES: `bdr:${ut}` }, opts));
   const utUri = BDR + ut;
 
@@ -530,10 +551,10 @@ export async function importEtext(utId, opts = {}) {
   };
 
   // A real BDRC transcription carries at least an access tier or an instance
-  // link. A near-empty Etext_base means the id resolves to nothing usable —
-  // typically an OpenPecha / pecha.org volume, which BDRC serves differently
-  // and this importer can't fetch (planning §9).
-  if (!base.access && !base.etextInstanceId && !base.title) {
+  // link. A near-empty Etext_base — even after fetchEtextBase's own `_0000`
+  // fallback — means the id resolves to nothing usable: a genuine OpenPecha /
+  // pecha.org volume BDRC has no paginated etext for at all (planning §9).
+  if (isEmptyBase(base)) {
     warnings.push(
       'no etext metadata for this id — the volume has no downloadable transcription ' +
         '(BDRC serves OpenPecha / pecha.org texts differently)',
@@ -566,7 +587,10 @@ export async function importEtext(utId, opts = {}) {
     return { ...stub, fromCache: false };
   }
 
-  const { chunks, pages, imageGroupId, parts } = await fetchChunks(utId, opts);
+  // base.utId is whichever id fetchEtextBase actually resolved to — the
+  // requested id, or its `_0000`-stripped fallback — so chunkContext (keyed
+  // by the same UT) must follow it, not the raw input utId.
+  const { chunks, pages, imageGroupId, parts } = await fetchChunks(base.utId, opts);
   if (chunks.length === 0) warnings.push('chunkContext returned no chunks');
   if (pages.length === 0)
     warnings.push('no page slices — pagination will fall back to a single <pb>');

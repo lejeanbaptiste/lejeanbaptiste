@@ -42,6 +42,8 @@ export type AuthorityPackId =
   | 'noble-title-filter'
   /** Gap-fill English office glosses (sidecar — not a tag-bomb seed pack). */
   | 'huckbot5000-translations'
+  /** Local Hucker collision archive (sidecar — internal plugin only). */
+  | 'huckbot5000-insiders'
   /** French office glosses (sidecar — not a tag-bomb seed pack). */
   | 'maxiricci7000-translations'
   /** Project entity database (PEDB) — read live from entities.xml, not a file pack. */
@@ -212,14 +214,14 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     id: 'bdrc-persons-bo',
     label: 'BDRC persons (bo)',
     source: 'bdrc',
-    relativePath: 'bdrc/person-bo/persons.ndjson',
+    relativePath: 'bdrc/persons.ndjson',
     defaultTag: 'persName',
   },
   {
     id: 'bdrc-places-bo',
     label: 'BDRC places (bo)',
     source: 'bdrc',
-    relativePath: 'bdrc/place-bo/places.ndjson',
+    relativePath: 'bdrc/places.ndjson',
     defaultTag: 'placeName',
   },
   {
@@ -349,6 +351,14 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     source: 'huckbot5000',
     relativePath: 'huckbot5000/translations.ndjson',
     // Gloss sidecar only — never a seed pack for tag-bomb matching.
+    defaultTag: '',
+  },
+  {
+    id: 'huckbot5000-insiders',
+    label: 'Huckbot5000 insiders (Hucker, local)',
+    source: 'huckbot5000',
+    relativePath: 'huckbot5000-insiders/translations.ndjson',
+    // Gloss sidecar only — never a seed pack; internal plugin install.
     defaultTag: '',
   },
   {

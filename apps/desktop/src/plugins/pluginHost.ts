@@ -319,6 +319,7 @@ export async function installPluginFromDirectory(sourceDir: string): Promise<Plu
     manifest,
   };
   await ensurePluginBundledAssets(installed);
+  await applyPluginContributions(installed);
   if (manifest.id === 'cbeta-import') ensureCbetaCorpusInBackground();
   return getPluginHostSnapshot();
 }
@@ -408,6 +409,10 @@ async function applyPluginContributions(plugin: PluginRecord): Promise<void> {
         const destFile = packPath(entityDbFolder, pack.id);
         await fsp.mkdir(path.dirname(destFile), { recursive: true });
         await fsp.copyFile(srcRoot, destFile);
+        const srcManifest = path.join(path.dirname(srcRoot), 'manifest.json');
+        if (fs.existsSync(srcManifest)) {
+          await fsp.copyFile(srcManifest, path.join(path.dirname(destFile), 'manifest.json'));
+        }
       }
       continue;
     }
