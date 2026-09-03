@@ -467,7 +467,7 @@ CBETA and similar texts often split a running string across milestones, e.g. `ã€
 - **Name-type policy** (`nameTypeTaggingPolicy.ts`): the `art` phase-1 length gate rises to 4 code points for `bo` projects, since one Tibetan syllable is 2â€“3 letters plus its tsheg and the default of 3 waved every single syllable through.
 - Authority-pack data side (terminal shad stripped from `searchStrings`, bundle rebuilt) is in the authority-extraction changelog.
 
-## Upstream
+## v0.1.0-beta.11
 
 ### BDRC as an authority (2026-09-03)
 
