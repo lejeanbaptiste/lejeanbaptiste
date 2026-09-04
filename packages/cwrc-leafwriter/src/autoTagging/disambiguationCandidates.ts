@@ -711,15 +711,29 @@ export function isOwnDatabaseSource(source: string): boolean {
   return OWN_DATABASE_SOURCES.has(source.trim().toLowerCase());
 }
 
-/** Drop Local/Central provenance labels so synced projects do not show that split. */
-export function stripOwnDatabaseSources(sources: string[]): string[] {
-  return sources.filter((source) => !isOwnDatabaseSource(source));
+/**
+ * Collapse Local/Central provenance labels to a single "central-database" for
+ * synced projects, where every entity lives in the central database and the
+ * Local/Central split is meaningless — but the entity is still, correctly,
+ * from the user's own database rather than a bare external authority hit.
+ */
+export function centralizeOwnDatabaseSources(sources: string[]): string[] {
+  let sawOwnDatabase = false;
+  const rest = sources.filter((source) => {
+    if (isOwnDatabaseSource(source)) {
+      sawOwnDatabase = true;
+      return false;
+    }
+    return true;
+  });
+  return sawOwnDatabase ? ['central-database', ...rest] : rest;
 }
 
 /**
- * Rewrite an entity-database candidate for a syncToCentral project: strip
- * Local/Central source labels, and when a PEDB mirror id is known prefer that
- * so "already in document" / accept paths use the project key.
+ * Rewrite an entity-database candidate for a syncToCentral project: collapse
+ * Local/Central source labels to "central-database", and when a PEDB mirror
+ * id is known prefer that so "already in document" / accept paths use the
+ * project key.
  */
 export function asSyncedEntityCandidate(
   candidate: DisambiguationCandidate,
@@ -728,7 +742,7 @@ export function asSyncedEntityCandidate(
   const pedbId = linkedPedbId?.trim() || undefined;
   return {
     ...candidate,
-    sources: stripOwnDatabaseSources(candidate.sources),
+    sources: centralizeOwnDatabaseSources(candidate.sources),
     localEntityId: pedbId ?? candidate.localEntityId,
     centralEntityId: pedbId ? undefined : candidate.centralEntityId,
   };

@@ -26,11 +26,11 @@ import { DilaPlaceDetailCache } from './dilaPlaceDetailCache';
 import type { DisambiguationCandidate } from './disambiguationCandidates';
 import {
   asSyncedEntityCandidate,
+  centralizeOwnDatabaseSources,
   collectGivenFamilyNamesForCandidate,
   collectTypedNamesForCandidate,
   loadSqliteDisambiguationCandidates,
   resolveCandidateForPedb,
-  stripOwnDatabaseSources,
   toAuthoritySourcedFields,
 } from './disambiguationCandidates';
 import { mintOrLinkEntitySqlite } from './sqliteLookupMint';
@@ -627,7 +627,7 @@ export class AutoTaggingSession {
       )
       .map((candidate) => ({
         ...candidate,
-        sources: stripOwnDatabaseSources(candidate.sources),
+        sources: centralizeOwnDatabaseSources(candidate.sources),
       }));
 
     return {

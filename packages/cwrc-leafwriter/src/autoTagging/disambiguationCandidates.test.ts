@@ -6,6 +6,7 @@ import {
   candidatesFromSqliteEntities,
   candidateLinks,
   candidatePassesYearFilter,
+  centralizeOwnDatabaseSources,
   clearPersonPackIndexForTests,
   collapseCrossAuthorityCandidates,
   collectTypedNamesForCandidate,
@@ -20,7 +21,6 @@ import {
   mergeCandidates,
   mergeSelectedCandidates,
   normalizeGeo,
-  stripOwnDatabaseSources,
   toAuthoritySourcedFields,
   type DisambiguationCandidate,
 } from './disambiguationCandidates';
@@ -1152,13 +1152,15 @@ describe('disambiguationCandidates', () => {
     expect(rows[0]?.sources).toEqual(['central-database', 'Wikidata']);
   });
 
-  it('strips Local/Central provenance for synced entity candidates', () => {
+  it('collapses Local/Central provenance to Central for synced entity candidates', () => {
     expect(isOwnDatabaseSource('central-database')).toBe(true);
     expect(isOwnDatabaseSource('entity-file')).toBe(true);
     expect(isOwnDatabaseSource('Wikidata')).toBe(false);
-    expect(stripOwnDatabaseSources(['central-database', 'Wikidata', 'entity-file'])).toEqual([
+    expect(centralizeOwnDatabaseSources(['central-database', 'Wikidata', 'entity-file'])).toEqual([
+      'central-database',
       'Wikidata',
     ]);
+    expect(centralizeOwnDatabaseSources(['Wikidata'])).toEqual(['Wikidata']);
 
     const linked = asSyncedEntityCandidate(
       {
@@ -1170,7 +1172,7 @@ describe('disambiguationCandidates', () => {
       },
       'person-pedb-9',
     );
-    expect(linked.sources).toEqual(['CBDB']);
+    expect(linked.sources).toEqual(['central-database', 'CBDB']);
     expect(linked.localEntityId).toBe('person-pedb-9');
     expect(linked.centralEntityId).toBeUndefined();
 
@@ -1184,7 +1186,7 @@ describe('disambiguationCandidates', () => {
       },
       null,
     );
-    expect(unlinked.sources).toEqual([]);
+    expect(unlinked.sources).toEqual(['central-database']);
     expect(unlinked.localEntityId).toBeUndefined();
     expect(unlinked.centralEntityId).toBe('person-cedb-2');
   });

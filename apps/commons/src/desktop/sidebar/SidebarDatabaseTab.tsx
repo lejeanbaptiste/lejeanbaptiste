@@ -470,12 +470,14 @@ interface EntityRowData {
   openXPathForEntity: (entity: EntitySummary) => void;
   notifyViaSnackbar: (notification: NotificationProps | string) => void;
   showRejected: boolean;
+  /** Synced projects have no project-local key distinct from the central one — hide the redundant "(central)" line. */
+  syncToCentral: boolean;
   t: TFn;
 }
 
 /** First line always present (name/romanization/badges) plus the padding above it. */
 const ENTITY_ROW_BASE_HEIGHT = 34;
-/** Second always-present line (id + copy button). */
+/** Second line (id + copy button) — omitted when syncToCentral and the entity has no project-local key. */
 const ENTITY_ROW_ID_LINE_HEIGHT = 20;
 /** Each optional line (description; dates/dynasties/origins). */
 const ENTITY_ROW_OPTIONAL_LINE_HEIGHT = 20;
@@ -500,11 +502,12 @@ const entityRowHeight = (index: number, rowProps: EntityRowData): number => {
   const hasRejectedLine =
     rowProps.showRejected &&
     (entity.rejectedCount > 0 || (entity.rejectedConcordances?.length ?? 0) > 0);
+  const hasIdLine = !rowProps.syncToCentral || entity.projectKey != null;
   const optionalLines =
     (entity.description ? 1 : 0) + (hasDatesLine ? 1 : 0) + (hasRejectedLine ? 1 : 0);
   return (
     ENTITY_ROW_BASE_HEIGHT +
-    ENTITY_ROW_ID_LINE_HEIGHT +
+    (hasIdLine ? ENTITY_ROW_ID_LINE_HEIGHT : 0) +
     optionalLines * ENTITY_ROW_OPTIONAL_LINE_HEIGHT
   );
 };
@@ -529,6 +532,7 @@ function EntityRow({
   openXPathForEntity,
   notifyViaSnackbar,
   showRejected,
+  syncToCentral,
   t,
 }: RowComponentProps<EntityRowData>) {
   const entity = entities[index];
@@ -603,32 +607,34 @@ function EntityRow({
             </Box>
           )}
         </Stack>
-        <Stack direction="row" alignItems="center" spacing={0.5}>
-          <Typography variant="caption" color="text.secondary" component="div" noWrap>
-            {listProjectKey(entity) ?? '(central)'}
-          </Typography>
-          {listProjectKey(entity) && (
-            <Tooltip title={t('LWC.desktop.sidebar.database.copy_id')}>
-              <IconButton
-                size="small"
-                aria-label={t('LWC.desktop.sidebar.database.copy_id')}
-                onClick={() => {
-                  const key = listProjectKey(entity);
-                  if (!key) return;
-                  void navigator.clipboard.writeText(key).then(() => {
-                    notifyViaSnackbar({
-                      message: t('LWC.desktop.sidebar.database.id_copied'),
-                      options: { variant: 'success' },
+        {(!syncToCentral || listProjectKey(entity)) && (
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            <Typography variant="caption" color="text.secondary" component="div" noWrap>
+              {listProjectKey(entity) ?? '(central)'}
+            </Typography>
+            {listProjectKey(entity) && (
+              <Tooltip title={t('LWC.desktop.sidebar.database.copy_id')}>
+                <IconButton
+                  size="small"
+                  aria-label={t('LWC.desktop.sidebar.database.copy_id')}
+                  onClick={() => {
+                    const key = listProjectKey(entity);
+                    if (!key) return;
+                    void navigator.clipboard.writeText(key).then(() => {
+                      notifyViaSnackbar({
+                        message: t('LWC.desktop.sidebar.database.id_copied'),
+                        options: { variant: 'success' },
+                      });
                     });
-                  });
-                }}
-                sx={{ p: 0.25, flexShrink: 0 }}
-              >
-                <ContentCopyIcon sx={{ fontSize: 14 }} />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Stack>
+                  }}
+                  sx={{ p: 0.25, flexShrink: 0 }}
+                >
+                  <ContentCopyIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Stack>
+        )}
         {entity.description && (
           <Typography variant="caption" color="text.secondary" component="div" noWrap>
             {entity.description}
@@ -3248,6 +3254,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       openXPathForEntity,
       notifyViaSnackbar,
       showRejected,
+      syncToCentral,
       t,
     }),
     [
@@ -3260,6 +3267,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       openXPathForEntity,
       notifyViaSnackbar,
       showRejected,
+      syncToCentral,
       t,
     ],
   );

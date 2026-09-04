@@ -47,8 +47,8 @@ import {
   candidatePassesYearFilter,
   candidatePrimaryLabel,
   candidateRomanizationSubtitle,
+  centralizeOwnDatabaseSources,
   extractWikidataId,
-  isOwnDatabaseSource,
   mergeCandidates,
   mergeSelectedCandidates,
   type CandidateLink,
@@ -231,17 +231,17 @@ const AuthorityLinkIcon = ({ link }: { link: CandidateLink }) => (
  * appear twice (AuthorityLinkIcon + SourceBadges).
  *
  * When the project syncs to the central database there is no Local vs Central
- * split — hide those provenance keys even if a cached row still carries them.
+ * split — collapse those provenance keys to a single "Central" badge, even if
+ * a cached row still carries the Local-side key.
  */
 function provenanceSourcesForBadges(
   candidate: DisambiguationCandidate,
   links: CandidateLink[],
-  hideOwnDatabase = false,
+  syncToCentral = false,
 ): string[] {
   const linked = new Set(links.map((link) => link.kind));
-  return candidate.sources.filter((source) => {
+  const filtered = candidate.sources.filter((source) => {
     const key = source.trim().toLowerCase();
-    if (hideOwnDatabase && isOwnDatabaseSource(key)) return false;
     if (key === 'cbdb' && linked.has('cbdb')) return false;
     if (key === 'viaf' && linked.has('viaf')) return false;
     if ((key === 'wikidata' || key === 'wikipedia') && linked.has('wikidata')) return false;
@@ -250,6 +250,7 @@ function provenanceSourcesForBadges(
     if (key === 'entity-file' && candidate.fromEntityFile) return false;
     return true;
   });
+  return syncToCentral ? centralizeOwnDatabaseSources(filtered) : filtered;
 }
 
 function projectSyncsToCentral(): boolean {
