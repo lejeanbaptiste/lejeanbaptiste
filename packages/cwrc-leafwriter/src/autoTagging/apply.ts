@@ -1,4 +1,4 @@
-import { resolveAnchor, resolveXPath } from './anchor';
+import { createCompoundAnchor, resolveAnchor, resolveXPath } from './anchor';
 import { isEntityTagForbiddenInDate, isInsideDateElement } from './dateTeiHelpers';
 import {
   projectionSpanIsInsideDate,
@@ -257,6 +257,103 @@ export async function applySuggestions(
     snapshot,
     personWrapperValidation: validatePersonWrappers(doc),
     textIntegrityWarning,
+  };
+}
+
+/**
+ * Like {@link applySuggestions}, but understands wrapper-candidate
+ * suggestions from `groupWrapperCandidateSuggestions` (`compoundMembers`
+ * set): their component suggestions have no tagged elements yet, so they
+ * must land in the document *before* the wrapper's own `add-compound` can
+ * resolve them as siblings to wrap. Runs two passes — every ordinary
+ * suggestion plus every wrapper candidate's components first, then the
+ * wrapper adds themselves — but returns one merged `BatchResult` with a
+ * single snapshot (the state before either pass), so accepting a wrapper
+ * candidate is one atomic, one-undo-step commit from the caller's
+ * perspective. A wrapper candidate whose components didn't all apply is
+ * never attempted in the second pass and is reported as `unresolvable`
+ * rather than silently dropped.
+ */
+export async function applyWithWrapperCandidates(
+  doc: Document,
+  suggestions: Suggestion[],
+  options: ApplyOptions,
+): Promise<BatchResult> {
+  const wrapperCandidates = suggestions.filter(
+    (suggestion) => (suggestion.compoundMembers?.length ?? 0) > 0,
+  );
+  if (wrapperCandidates.length === 0) {
+    return applySuggestions(doc, suggestions, options);
+  }
+
+  const rest = suggestions.filter((suggestion) => !wrapperCandidates.includes(suggestion));
+  const members = wrapperCandidates.flatMap((candidate) => candidate.compoundMembers!);
+  const firstPass = await applySuggestions(doc, [...rest, ...members], options);
+
+  // The wrapper candidate's own anchor was computed before the document
+  // mutated (its members didn't have tagged elements yet, so there was
+  // nothing to build a real compound anchor from). Now that the members are
+  // applied, rebuild the anchor from the actual elements just created —
+  // reusing the stale, pre-mutation offsets would resolve against whatever
+  // text node happens to occupy that xpath now, which is not reliably the
+  // same node the (possibly split) original text became.
+  const memberResultById = new Map(
+    firstPass.results.map((result) => [result.suggestion.id, result]),
+  );
+  const ready: Suggestion[] = [];
+  const skipped: Suggestion[] = [];
+  for (const candidate of wrapperCandidates) {
+    const memberResults = candidate.compoundMembers!.map((member) =>
+      memberResultById.get(member.id),
+    );
+    const firstResult = memberResults[0];
+    const lastResult = memberResults[memberResults.length - 1];
+    const allApplied = memberResults.every(
+      (result) => result?.outcome === 'applied' && result.element,
+    );
+    const startText = firstResult?.element?.firstChild;
+    const endText = lastResult?.element?.firstChild;
+    if (
+      !allApplied ||
+      !startText ||
+      startText.nodeType !== 3 ||
+      !endText ||
+      endText.nodeType !== 3
+    ) {
+      skipped.push(candidate);
+      continue;
+    }
+    const surface = candidate.compoundMembers!.map((member) => member.anchor.surface).join('');
+    candidate.anchor = createCompoundAnchor(
+      candidate.anchor.documentId,
+      doc,
+      startText as unknown as Text,
+      0,
+      endText as unknown as Text,
+      (endText as unknown as Text).data.length,
+      surface,
+      options.policy,
+    );
+    ready.push(candidate);
+  }
+
+  const secondPass = ready.length > 0 ? await applySuggestions(doc, ready, options) : null;
+  const skippedResults: ApplyResult[] = skipped.map((suggestion) => ({
+    suggestion,
+    outcome: 'unresolvable',
+  }));
+  for (const result of skippedResults) result.suggestion.status = 'unresolvable';
+
+  return {
+    results: [...firstPass.results, ...(secondPass?.results ?? []), ...skippedResults],
+    applied: firstPass.applied + (secondPass?.applied ?? 0),
+    snapshot: firstPass.snapshot,
+    personWrapperValidation:
+      secondPass?.personWrapperValidation ?? firstPass.personWrapperValidation,
+    textIntegrityWarning:
+      [firstPass.textIntegrityWarning, secondPass?.textIntegrityWarning]
+        .filter(Boolean)
+        .join('\n') || undefined,
   };
 }
 

@@ -1,9 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import { collectTextNodes, createAnchor, createCompoundAnchor } from './anchor';
-import { applySuggestions, revertToSnapshot } from './apply';
+import { applySuggestions, applyWithWrapperCandidates, revertToSnapshot } from './apply';
 import { anchorForDateElement, findTeiBodyRoot } from './dates';
 import { normalizeDomText } from './normalize';
+import { groupWrapperCandidateSuggestions } from './wrapperCandidates';
 import type { Suggestion } from './types';
 
 const parse = (xml: string) => {
@@ -547,5 +548,79 @@ describe('real corpus batch', () => {
     expect(already).toBeGreaterThan(0); // existing <persName>上陽子</persName> respected
 
     expect(serialize(revertToSnapshot(snapshot))).toBe(before);
+  });
+});
+
+describe('applyWithWrapperCandidates', () => {
+  const wrapperDoc = () =>
+    parse(
+      `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>刺史範為政。</p></body></text></TEI>`,
+    );
+
+  it('applies a wrapper candidate atomically: components first, then the wrap', async () => {
+    const doc = wrapperDoc();
+    const roleName = suggest(doc, '刺史', 'roleName');
+    const persName = suggest(doc, '範', 'persName');
+    const { groups } = groupWrapperCandidateSuggestions([roleName, persName]);
+    expect(groups).toHaveLength(1);
+
+    const { applied, results } = await applyWithWrapperCandidates(doc, [groups[0]!.suggestion], {
+      policy: 'ignore',
+    });
+
+    // Components + the wrap = 3 applied outcomes for one accepted suggestion.
+    expect(applied).toBe(3);
+    expect(results.every((r) => r.outcome === 'applied')).toBe(true);
+    const wrapper = doc.getElementsByTagName('name')[0]!;
+    expect(wrapper.getAttribute('type')).toBe('personWrapper');
+    expect(wrapper.getElementsByTagName('roleName')[0]!.textContent).toBe('刺史');
+    expect(wrapper.getElementsByTagName('persName')[0]!.textContent).toBe('範');
+  });
+
+  it('produces one atomic snapshot — reverting undoes both passes at once', async () => {
+    const doc = wrapperDoc();
+    const before = serialize(doc);
+    const roleName = suggest(doc, '刺史', 'roleName');
+    const persName = suggest(doc, '範', 'persName');
+    const { groups } = groupWrapperCandidateSuggestions([roleName, persName]);
+
+    const { snapshot } = await applyWithWrapperCandidates(doc, [groups[0]!.suggestion], {
+      policy: 'ignore',
+    });
+
+    expect(serialize(revertToSnapshot(snapshot))).toBe(before);
+  });
+
+  it('marks the wrapper candidate unresolvable, without applying it, when a member fails', async () => {
+    const doc = wrapperDoc();
+    const roleName = suggest(doc, '刺史', 'roleName');
+    const persName = suggest(doc, '範', 'persName');
+    const { groups } = groupWrapperCandidateSuggestions([roleName, persName]);
+    const candidate = groups[0]!.suggestion;
+    // Poison one member so it can no longer resolve — anchor resolution
+    // falls back to a whole-document text search, so a bad xpath alone
+    // isn't enough; the surface itself must not exist in the document.
+    candidate.compoundMembers![0]!.anchor.surface = '不存在';
+    candidate.compoundMembers![0]!.anchor.nodeHash = 'stale';
+
+    const { applied, results } = await applyWithWrapperCandidates(doc, [candidate], {
+      policy: 'ignore',
+    });
+
+    expect(applied).toBe(1); // only the healthy member ('範' as persName) applied
+    const candidateResult = results.find((r) => r.suggestion === candidate);
+    expect(candidateResult?.outcome).toBe('unresolvable');
+    expect(candidate.status).toBe('unresolvable');
+    expect(doc.getElementsByTagName('name')).toHaveLength(0); // wrap never attempted
+  });
+
+  it('falls through to ordinary applySuggestions when nothing has compoundMembers', async () => {
+    const doc = wrapperDoc();
+    const roleName = suggest(doc, '刺史', 'roleName');
+
+    const { applied } = await applyWithWrapperCandidates(doc, [roleName], { policy: 'ignore' });
+
+    expect(applied).toBe(1);
+    expect(doc.getElementsByTagName('roleName')[0]!.textContent).toBe('刺史');
   });
 });

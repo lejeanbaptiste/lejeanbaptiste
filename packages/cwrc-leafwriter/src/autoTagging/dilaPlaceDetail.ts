@@ -52,7 +52,7 @@ export async function fetchDilaPlaceDetail(
   id: string,
   fetchImpl: DilaFetchFn = fetch,
 ): Promise<DilaPlaceDetail | null> {
-  const url = `https://authority.dila.edu.tw/place/?fromInner=${encodeURIComponent(id)}`;
+  const url = `https://authority.dila.edu.tw/place/search.php?code=${encodeURIComponent(id)}`;
   const response = await fetchImpl(url);
   if (!response.ok) return null;
   const html = await response.text();

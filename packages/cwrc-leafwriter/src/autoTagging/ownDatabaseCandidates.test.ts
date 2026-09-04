@@ -121,6 +121,47 @@ describe('candidatesFromEntityDatabase', () => {
     expect(candidate!.searchStrings).not.toContain('武');
   });
 
+  it('expands a confirmed consort/dowager nobleTitle using a typed family name', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    addEntity(doc, 'person', {
+      name: '常氏',
+      altNames: [{ text: '常', type: 'family' }],
+      nobleTitles: [{ placeName: { text: '' }, roleName: { text: '太后' } }],
+    });
+
+    const [candidate] = candidatesFromEntityDatabase(doc, 'person', 'PEDB');
+    expect(candidate!.searchStrings).toContain('皇太后常氏');
+  });
+
+  it('adds the 皇太子 form for a confirmed 太子 nobleTitle', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    addEntity(doc, 'person', {
+      name: '楊勇',
+      nobleTitles: [{ placeName: { text: '' }, roleName: { text: '太子' } }],
+    });
+
+    const [candidate] = candidatesFromEntityDatabase(doc, 'person', 'PEDB');
+    expect(candidate!.searchStrings).toEqual(expect.arrayContaining(['太子楊勇', '皇太子楊勇']));
+  });
+
+  it('threads a typed family name through candidatesFromEntityDatabaseRecords too', () => {
+    const [candidate] = candidatesFromEntityDatabaseRecords(
+      [
+        {
+          id: 'person-sqlite-2',
+          kind: 'person',
+          names: [
+            { text: '常氏', type: 'primary' },
+            { text: '常', type: 'family' },
+          ],
+          nobleTitles: [{ roleName: '太后' }],
+        },
+      ],
+      'PEDB',
+    );
+    expect(candidate!.searchStrings).toContain('皇太后常氏');
+  });
+
   it('filters courtesy names from phase1 searchStrings using name types on persName', () => {
     const doc = parseEntities(createEntitiesScaffold());
     const { id } = addEntity(doc, 'person', {

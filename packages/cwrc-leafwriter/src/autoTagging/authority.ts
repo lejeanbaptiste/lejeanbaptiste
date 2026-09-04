@@ -140,6 +140,8 @@ export interface AuthorityCandidate {
     };
     /** Canonical noble titles carried by a Norbert person record. */
     nobleTitles?: {
+      /** This title's own dynasty/court (`person_nt.dyn`) — a person can hold titles across more than one. */
+      dynasty?: string;
       fief?: string;
       familyName?: string;
       roleName?: string;

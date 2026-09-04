@@ -148,6 +148,29 @@ describe('EntityStore', () => {
     expect(parseLog(body)).toHaveLength(3);
   });
 
+  it('appends and reads back harvested wrapper facts under .ljb/', async () => {
+    const fs = new FakeFs();
+    const store = EntityStore.fromPaths(fs, projectPaths());
+
+    expect(await store.readWrapperFacts()).toEqual([]);
+
+    await store.appendWrapperFacts([
+      { when: '2026-07-03T00:00:00Z', query: { persName: '休仁' }, entityId: 'p1' },
+    ]);
+    await store.appendWrapperFacts([
+      {
+        when: '2026-07-03T00:00:01Z',
+        query: { persName: '範', originPlace: '陳郡' },
+        entityId: 'p2',
+      },
+    ]);
+
+    const facts = await store.readWrapperFacts();
+    expect(facts).toHaveLength(2);
+    expect(facts.map((f) => f.entityId)).toEqual(['p1', 'p2']);
+    expect(fs.files.get('/proj/.ljb/wrapper-facts.jsonl')).toBeDefined();
+  });
+
   it('uses the platform separator implied by the root', () => {
     const paths = resolveEntityStorePaths({
       projectRoot: 'C:\\proj',

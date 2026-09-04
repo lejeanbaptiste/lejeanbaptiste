@@ -14,6 +14,11 @@ import {
 } from './centralMergeSuggestions';
 import { appendRecords, type DecisionRecord } from './decisionLog';
 import {
+  appendWrapperFactRecords,
+  parseWrapperFacts,
+  type WrapperFactRecord,
+} from './wrapperFactsLog';
+import {
   createEntitiesScaffold,
   isEntityDatabase,
   parseEntities,
@@ -473,6 +478,7 @@ export const AI_CACHE_DIR = 'ai-cache';
 export const AI_DISAMBIGUATION_CACHE_DIR = 'ai-disambiguation-cache';
 export const DILA_PLACE_DETAIL_CACHE_DIR = 'dila-place-detail-cache';
 export const DISAMBIGUATION_PENDING_FILE = 'disambiguation-pending.json';
+export const WRAPPER_FACTS_FILE = 'wrapper-facts.jsonl';
 
 /** @deprecated Use LJB_DIR */
 export const INFRA_DIR = LJB_DIR;
@@ -493,6 +499,7 @@ export class EntityStore {
   readonly aiDisambiguationCacheDir: string;
   readonly dilaPlaceDetailCacheDir: string;
   readonly disambiguationPendingPath: string;
+  readonly wrapperFactsPath: string;
 
   constructor(
     private readonly api: EntityFileApi,
@@ -510,6 +517,7 @@ export class EntityStore {
     this.aiDisambiguationCacheDir = joinPath(paths.projectLjbDir, AI_DISAMBIGUATION_CACHE_DIR);
     this.dilaPlaceDetailCacheDir = joinPath(paths.projectLjbDir, DILA_PLACE_DETAIL_CACHE_DIR);
     this.disambiguationPendingPath = joinPath(paths.projectLjbDir, DISAMBIGUATION_PENDING_FILE);
+    this.wrapperFactsPath = joinPath(paths.projectLjbDir, WRAPPER_FACTS_FILE);
   }
 
   static fromPaths(api: EntityFileApi, paths: EntityStorePaths): EntityStore {
@@ -1444,6 +1452,25 @@ export class EntityStore {
       ? await this.api.readFile(this.decisionsPath)
       : '';
     await this.api.writeFile(this.decisionsPath, appendRecords(existing, records));
+  }
+
+  /**
+   * Append harvested person-wrapper facts (see `wrapperFactsLog.ts`) to this
+   * project's JSONL log, creating it if needed.
+   */
+  async appendWrapperFacts(records: WrapperFactRecord[]): Promise<void> {
+    if (records.length === 0) return;
+    await this.api.ensureDirectory(this.projectLjbDir);
+    const existing = (await this.api.pathExists(this.wrapperFactsPath))
+      ? await this.api.readFile(this.wrapperFactsPath)
+      : '';
+    await this.api.writeFile(this.wrapperFactsPath, appendWrapperFactRecords(existing, records));
+  }
+
+  /** Read every harvested person-wrapper fact this project has recorded so far. */
+  async readWrapperFacts(): Promise<WrapperFactRecord[]> {
+    if (!(await this.api.pathExists(this.wrapperFactsPath))) return [];
+    return parseWrapperFacts(await this.api.readFile(this.wrapperFactsPath));
   }
 
   async readDisambiguationPending(): Promise<string | null> {

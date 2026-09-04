@@ -17,6 +17,8 @@ import { resolveEntityStorePaths } from './entityStoreResolve';
 import { collectTextNodes, createAnchor } from './anchor';
 import { AutoTaggingSession, reconcilePersonWrapperKeys, type WriterLike } from './integration';
 import type { AuthorityPackId } from './packPaths';
+import { groupWrapperCandidateSuggestions } from './wrapperCandidates';
+import type { WrapperFactRecord } from './wrapperFactsLog';
 
 const XML = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>
 <p>張衡居洛陽，張衡造渾天儀。</p>
@@ -222,6 +224,97 @@ describe('AutoTaggingSession', () => {
     const doc = await session.getDocument();
     const [suggestion] = dictionaryTag(doc, [{ string: '張衡', tag: 'persName' }], 'ignore');
     expect(session.focus(suggestion!)).toBe(false);
+  });
+
+  describe('wrapper-candidate auto-key via harvested facts', () => {
+    const WRAPPER_XML = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>陳郡謝超宗為政。</p></body></text></TEI>`;
+
+    const makeFactStore = (seedFacts: WrapperFactRecord[] = []) => {
+      const files = new Map<string, string>();
+      if (seedFacts.length > 0) {
+        files.set(
+          '/proj/.ljb/wrapper-facts.jsonl',
+          `${seedFacts.map((fact) => JSON.stringify(fact)).join('\n')}\n`,
+        );
+      }
+      const api: EntityFileApi = {
+        ensureDirectory: async () => undefined,
+        pathExists: async (p) => files.has(p),
+        readFile: async (p) => files.get(p) ?? '',
+        writeFile: async (p, c) => {
+          files.set(p, c);
+        },
+      };
+      return {
+        store: EntityStore.fromPaths(
+          api,
+          resolveEntityStorePaths({ projectRoot: '/proj', entityStore: 'project' }),
+        ),
+        files,
+      };
+    };
+
+    it('auto-keys a wrapper candidate from a previously harvested project fact, without touching Norbert', async () => {
+      const { writer, getCurrent } = makeWriter(WRAPPER_XML);
+      const { store } = makeFactStore([
+        {
+          when: '2026-01-01T00:00:00Z',
+          query: { persName: '謝超宗', originPlace: '陳郡' },
+          entityId: 'entity-existing',
+        },
+      ]);
+      const session = new AutoTaggingSession(writer, 'ignore', store);
+
+      const doc = await session.getDocument();
+      const [placeName, persName] = dictionaryTag(
+        doc,
+        [
+          { string: '陳郡', tag: 'placeName' },
+          { string: '謝超宗', tag: 'persName' },
+        ],
+        'ignore',
+      );
+      const { groups } = groupWrapperCandidateSuggestions([placeName!, persName!]);
+      expect(groups).toHaveLength(1);
+
+      const result = await session.apply([groups[0]!.suggestion]);
+      expect(result.applied).toBe(3); // placeName + persName + the wrap
+
+      const parsed = new DOMParser().parseFromString(getCurrent(), 'application/xml');
+      const wrapper = parsed.getElementsByTagName('name')[0]!;
+      expect(wrapper.getAttribute('type')).toBe('personWrapper');
+      expect(wrapper.getAttribute('key')).toBe('entity-existing');
+      expect(wrapper.getAttribute('cert')).toBeNull();
+      expect(wrapper.getElementsByTagName('persName')[0]!.getAttribute('key')).toBe(
+        'entity-existing',
+      );
+      expect(wrapper.getElementsByTagName('placeName')[0]!.textContent).toBe('陳郡');
+    });
+
+    it('does not record a duplicate fact when the project already knew the combination', async () => {
+      const { writer } = makeWriter(WRAPPER_XML);
+      const seed: WrapperFactRecord = {
+        when: '2026-01-01T00:00:00Z',
+        query: { persName: '謝超宗', originPlace: '陳郡' },
+        entityId: 'entity-existing',
+      };
+      const { store } = makeFactStore([seed]);
+      const session = new AutoTaggingSession(writer, 'ignore', store);
+
+      const doc = await session.getDocument();
+      const [placeName, persName] = dictionaryTag(
+        doc,
+        [
+          { string: '陳郡', tag: 'placeName' },
+          { string: '謝超宗', tag: 'persName' },
+        ],
+        'ignore',
+      );
+      const { groups } = groupWrapperCandidateSuggestions([placeName!, persName!]);
+      await session.apply([groups[0]!.suggestion]);
+
+      expect(await store.readWrapperFacts()).toEqual([seed]);
+    });
   });
 
   describe('getProjectDocuments', () => {

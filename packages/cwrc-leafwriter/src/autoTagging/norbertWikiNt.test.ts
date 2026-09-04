@@ -1,5 +1,5 @@
 import type { AuthorityCandidate } from './authority';
-import { expandNorbertWikiNtCandidate } from './norbertWikiNt';
+import { buildNobleTitleSearchStrings, expandNorbertWikiNtCandidate } from './norbertWikiNt';
 import { seedSuggestions, suggestionsFromSeedMatches } from './seed';
 
 const candidate: AuthorityCandidate = {
@@ -87,5 +87,69 @@ describe('Norbert Wikipedia noble-title runtime', () => {
     expect(
       titleSuggestions.some((item) => item.tag === 'nobleTitle' && item.innerXml?.includes('江陽')),
     ).toBe(true);
+  });
+});
+
+describe('buildNobleTitleSearchStrings — heir apparent and consort forms', () => {
+  it('adds a 皇-prefixed form for 太子 alongside the bare fief-less form', () => {
+    const { wrapperSearchStrings } = buildNobleTitleSearchStrings({
+      roleName: '太子',
+      personNames: ['勇'],
+    });
+    expect(wrapperSearchStrings).toEqual(expect.arrayContaining(['太子勇', '皇太子勇']));
+  });
+
+  it('does not add a 皇-prefixed form for ranks other than 太子', () => {
+    const { wrapperSearchStrings } = buildNobleTitleSearchStrings({
+      fief: '江陽',
+      roleName: '公',
+      personNames: ['王瑊'],
+    });
+    expect(wrapperSearchStrings).not.toEqual(expect.arrayContaining(['皇公王瑊']));
+  });
+
+  it('adds 皇+rank+surname+氏 for 太后/太妃 when a family name is given', () => {
+    const { wrapperSearchStrings } = buildNobleTitleSearchStrings({
+      roleName: '太后',
+      familyName: '常',
+    });
+    expect(wrapperSearchStrings).toEqual(expect.arrayContaining(['皇太后常氏']));
+  });
+
+  it('omits the consort form without a family name', () => {
+    const { wrapperSearchStrings } = buildNobleTitleSearchStrings({ roleName: '太后' });
+    expect(wrapperSearchStrings).toHaveLength(0);
+  });
+
+  it('omits the consort form for ranks other than 太后/太妃', () => {
+    const { wrapperSearchStrings } = buildNobleTitleSearchStrings({
+      roleName: '王',
+      familyName: '常',
+    });
+    expect(wrapperSearchStrings).not.toEqual(expect.arrayContaining(['皇王常氏']));
+  });
+});
+
+describe('expandNorbertWikiNtCandidate — family name threading', () => {
+  it('reads a typed family-name entry off the candidate to feed the consort form', () => {
+    const consort: AuthorityCandidate = {
+      source: 'norbert-wikipedia',
+      authorityId: 'wiki-nt:0002',
+      kind: 'person',
+      primaryName: '常氏',
+      searchStrings: ['皇太后常氏'],
+      names: [{ text: '常', type: 'family' }],
+      metadata: {
+        isNobleTitle: true,
+        nobleTitle: { roleName: '太后' },
+        wrapper: {
+          personId: 'norbert:person-5',
+          titleRowId: 'wnt-0002',
+          components: { roleName: '太后', persName: '常氏' },
+        },
+      },
+    };
+    const wrapper = expandNorbertWikiNtCandidate(consort).find((item) => item.metadata?.wrapper);
+    expect(wrapper?.searchStrings).toEqual(expect.arrayContaining(['皇太后常氏']));
   });
 });

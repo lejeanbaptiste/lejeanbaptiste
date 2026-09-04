@@ -35,6 +35,7 @@ import {
 } from '../autoTagging';
 import { findPluginReviewPanel } from '../plugins/pluginExtensions';
 import { isPluginEnabled } from '../plugins/registry';
+import { groupWrapperCandidateSuggestions } from '../autoTagging/wrapperCandidates';
 import { cachedPackReader } from '../services/authority-pack-lookup';
 import { currentUserRules } from '../autoTagging/autoTaggingExclusions';
 import { useActions, useAppState } from '../overmind';
@@ -231,7 +232,23 @@ export const AutoTaggingReviewPane = () => {
       try {
         const session = getSession();
         const doc = await session.getDocument();
-        const { suggestions: prepared } = prepareSuggestionsForReview(doc, session.policy, batch);
+        const { suggestions: preparedRaw } = prepareSuggestionsForReview(
+          doc,
+          session.policy,
+          batch,
+        );
+        // Group fully contiguous, canonically-ordered person-wrapper
+        // component runs (nationality/roleName/nobleTitle/placeName/persName)
+        // into wrapper-candidate suggestions before anything else is shown —
+        // Norbert-only, so an inactive plugin leaves the batch untouched.
+        const prepared = isPluginEnabled('norbert')
+          ? (() => {
+              const { groups, ungrouped } = groupWrapperCandidateSuggestions(preparedRaw);
+              return groups.length > 0
+                ? [...groups.map((group) => group.suggestion), ...ungrouped]
+                : preparedRaw;
+            })()
+          : preparedRaw;
         if (cancelled) return;
         setSuggestions(prepared);
 
@@ -378,6 +395,13 @@ export const AutoTaggingReviewPane = () => {
           for (const suggestion of rejected) {
             dismissedLocations.current.add(suggestionLocationKey(suggestion));
           }
+          // Rejecting a wrapper candidate ungroups it: its component
+          // suggestions — pulled from the pool when they were grouped —
+          // return as ordinary, independently reviewable suggestions rather
+          // than being lost with the wrapper.
+          const reinstatedMembers = rejected.flatMap(
+            (suggestion) => suggestion.compoundMembers ?? [],
+          );
           const withoutDropped = (list: Suggestion[]) =>
             list.filter(
               (suggestion) =>
@@ -438,7 +462,10 @@ export const AutoTaggingReviewPane = () => {
             }
           }
           if (!closeAfterApply || result.applied === 0) {
-            setSuggestions((current) => nextSuggestions ?? withoutDropped(current));
+            setSuggestions((current) => {
+              const base = nextSuggestions ?? withoutDropped(current);
+              return reinstatedMembers.length > 0 ? [...base, ...reinstatedMembers] : base;
+            });
           }
           // Warm the disambiguation caches for the freshly applied tags while
           // the user reviews — gently paced so the editor stays responsive.

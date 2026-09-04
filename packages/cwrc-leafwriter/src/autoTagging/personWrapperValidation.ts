@@ -13,7 +13,40 @@ const ALLOWED_CHILDREN = new Set([
   'nationality',
 ]);
 
+/**
+ * Canonical order for a person wrapper's top-level children: dynasty/court
+ * affiliation, then an ordinary office, then a noble title (its own fief +
+ * rank + posthumous name nested inside), then the person's origin place,
+ * then the identity itself — always last. Every slot but `persName` is
+ * optional, but whichever are present must appear in this relative order.
+ */
+export const PERSON_WRAPPER_CHILD_ORDER: Record<string, number> = {
+  nationality: 0,
+  roleName: 1,
+  nobleTitle: 2,
+  placeName: 3,
+  persName: 4,
+};
+
 const elementName = (element: Element): string => element.localName || element.nodeName;
+
+/** Flag any child that sits out of the canonical nationality→roleName→nobleTitle→placeName→persName order. */
+function validateChildOrder(children: Element[], errors: string[]): void {
+  let previousOrder = -1;
+  let previousName = '';
+  for (const child of children) {
+    const name = elementName(child);
+    const order = PERSON_WRAPPER_CHILD_ORDER[name];
+    if (order == null) continue; // unsupported child — already flagged separately
+    if (order < previousOrder) {
+      errors.push(
+        `personWrapper children out of order: ${name} follows ${previousName}, but the order must be nationality, roleName, nobleTitle, placeName, then persName`,
+      );
+    }
+    previousOrder = Math.max(previousOrder, order);
+    previousName = name;
+  }
+}
 
 /** Validate one resolved, document-level Norbert person wrapper. */
 export function validatePersonWrapper(wrapper: Element): PersonWrapperValidation {
@@ -36,10 +69,16 @@ export function validatePersonWrapper(wrapper: Element): PersonWrapperValidation
     if (!ALLOWED_CHILDREN.has(name)) errors.push(`unsupported child: ${name}`);
     if (name === 'nobleTitle') validateNobleTitle(child, errors);
   }
+  validateChildOrder(children, errors);
 
   const names = children.filter((child) => elementName(child) === 'persName');
   if (names.length === 0 && !wrapper.querySelector('persName')) {
     errors.push('personWrapper must contain a persName');
+  }
+  // A lone persName is never worth wrapping — there must be at least one
+  // other (leading) component alongside it.
+  if (children.length > 0 && children.every((child) => elementName(child) === 'persName')) {
+    errors.push('personWrapper must contain persName plus at least one other component');
   }
   const identity = Array.from(wrapper.getElementsByTagName('persName')).find(
     (person) => !person.getAttribute('type'),

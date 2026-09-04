@@ -930,7 +930,13 @@ async function fetchAndCacheDilaPlaceDetail(
   await dilaDetailCache.throttle();
   try {
     const detail = await fetchDilaPlaceDetail(authorityId, fetchImpl);
-    if (detail) await dilaDetailCache.set(authorityId, detail);
+    // A record with neither 備註 nor 朝代 almost always means the scrape missed
+    // its target (wrong URL, page markup changed) rather than a genuinely blank
+    // record — don't lock that in behind the cache's long TTL, or a lookup that
+    // starts failing silently stays broken for every id it ever touches.
+    if (detail && (detail.remark || detail.dynasty)) {
+      await dilaDetailCache.set(authorityId, detail);
+    }
   } catch {
     // best-effort; the candidate stays undated until a later lookup retries
   }

@@ -58,6 +58,14 @@ export interface Suggestion {
   dateResolution?: DateResolution;
   /** AI validation metadata — populated when AI validation is enabled. */
   aiValidation?: AiValidationResult;
+  /**
+   * For a synthetic wrapper-candidate `add-compound` suggestion (see
+   * `groupWrapperCandidateSuggestions`): the individual component
+   * suggestions it consumes. These have no tagged elements to wrap yet —
+   * `apply.ts`'s `applyWithWrapperCandidates` applies them first, in the
+   * same commit, before the compound wrap itself.
+   */
+  compoundMembers?: Suggestion[];
 }
 
 /** AI validation result for a suggestion. */

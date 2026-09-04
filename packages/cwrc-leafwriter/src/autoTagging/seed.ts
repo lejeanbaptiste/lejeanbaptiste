@@ -31,7 +31,7 @@ import { preferredEntityPrimaryName } from './nobleTitleHeadword';
  * Keys on a case/whitespace/Unicode-form-insensitive form; keeps the
  * first-seen spelling for display.
  */
-function dedupeSourceLabels(sources: string[]): string[] {
+export function dedupeSourceLabels(sources: string[]): string[] {
   const seen = new Map<string, string>();
   for (const raw of sources) {
     for (const part of raw.split('+')) {

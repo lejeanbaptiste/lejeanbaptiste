@@ -36,7 +36,11 @@
 
 import type { AuthorityCandidate } from './authority';
 import { parseNobleTitleSpan, SLOT_TAG, type NobleTitleVocabulary } from './nobleTitleSpanParser';
-import { validatePersonWrapper, type PersonWrapperValidation } from './personWrapperValidation';
+import {
+  PERSON_WRAPPER_CHILD_ORDER,
+  validatePersonWrapper,
+  type PersonWrapperValidation,
+} from './personWrapperValidation';
 
 /** The identity-bearing child of a person wrapper (not a posthumous/temple name). */
 function wrapperPersonName(wrapper: Element): Element | null {
@@ -326,12 +330,17 @@ function isInsidePersonWrapper(element: Element): boolean {
  * a title or office always leads, never trails — so this only ever scans
  * backward from a `persName`, collecting adjacent components (skipping
  * whitespace-only gaps) until it hits the first non-component node. Nothing
- * after the `persName` is ever pulled in. A lone `persName` with no such
- * preceding component is left untouched, since wrapping it alone would
- * group nothing. This is purely structural: it does not require the person
- * to be a known authority record, since most mentions in a corpus won't be
- * — key assignment (which does use authority data) happens separately
- * afterward.
+ * after the `persName` is ever pulled in.
+ *
+ * The scan also stops at the first component out of the canonical
+ * nationality → roleName → nobleTitle → placeName → persName order (see
+ * `PERSON_WRAPPER_CHILD_ORDER`) — an earlier-slot component sitting on the
+ * far side of a later-slot one belongs to a different mention, not this
+ * wrapper. A lone `persName` with no (in-order) preceding component is left
+ * untouched, since wrapping it alone would group nothing. This is purely
+ * structural: it does not require the person to be a known authority
+ * record, since most mentions in a corpus won't be — key assignment (which
+ * does use authority data) happens separately afterward.
  */
 export function createPersonWrappersInScope(scopeRoot: Element, touched: Set<Element>): number {
   const doc = scopeRoot.ownerDocument;
@@ -351,11 +360,15 @@ export function createPersonWrappersInScope(scopeRoot: Element, touched: Set<Ele
 
       let first: ChildNode = persName;
       let precedingComponents = 0;
+      let maxOrder = PERSON_WRAPPER_CHILD_ORDER.persName!;
       let cursor: ChildNode | null = persName.previousSibling;
       while (cursor) {
         if (isWrapperComponent(cursor) && localNameOf(cursor) !== 'persName') {
+          const order = PERSON_WRAPPER_CHILD_ORDER[localNameOf(cursor)];
+          if (order === undefined || order > maxOrder) break;
           first = cursor;
           precedingComponents++;
+          maxOrder = order;
           cursor = cursor.previousSibling;
           continue;
         }

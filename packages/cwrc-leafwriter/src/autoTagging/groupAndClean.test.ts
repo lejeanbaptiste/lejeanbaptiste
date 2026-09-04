@@ -230,6 +230,66 @@ describe('createPersonWrappersInScope', () => {
     expect(created).toBe(0);
     expect(doc.getElementsByTagName('name').length).toBe(1);
   });
+
+  it('wraps every leading slot present, in canonical order', () => {
+    const doc = parse(
+      `${TEI_OPEN}<p><nationality>晉</nationality><roleName>刺史</roleName><nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle><placeName>陳郡</placeName><persName key="p6">範</persName></p>${TEI_CLOSE}`,
+    );
+    const created = createPersonWrappersInScope(doc.documentElement, new Set());
+
+    expect(created).toBe(1);
+    const wrapper = doc.getElementsByTagName('name')[0]!;
+    expect(Array.from(wrapper.children).map((el) => el.tagName)).toEqual([
+      'nationality',
+      'roleName',
+      'nobleTitle',
+      'placeName',
+      'persName',
+    ]);
+  });
+
+  it('stops at a placeName (origin) that sits before an out-of-order roleName', () => {
+    // 陳郡 (origin placeName) then 刺史 (roleName) is backwards — roleName
+    // must come before placeName in the canonical order — so the wrap must
+    // stop at 刺史 and never reach across it to 陳郡.
+    const doc = parse(
+      `${TEI_OPEN}<p><placeName>陳郡</placeName><roleName>刺史</roleName><persName key="p7">範</persName></p>${TEI_CLOSE}`,
+    );
+    const created = createPersonWrappersInScope(doc.documentElement, new Set());
+
+    expect(created).toBe(1);
+    const wrapper = doc.getElementsByTagName('name')[0]!;
+    expect(Array.from(wrapper.children).map((el) => el.tagName)).toEqual(['roleName', 'persName']);
+    // The out-of-order placeName is left outside the wrapper, untouched.
+    expect(wrapper.previousSibling?.textContent).toBe('陳郡');
+  });
+
+  it('stops at a nobleTitle that sits before an out-of-order placeName', () => {
+    const doc = parse(
+      `${TEI_OPEN}<p><nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle><roleName>刺史</roleName><persName key="p8">範</persName></p>${TEI_CLOSE}`,
+    );
+    const created = createPersonWrappersInScope(doc.documentElement, new Set());
+
+    expect(created).toBe(1);
+    const wrapper = doc.getElementsByTagName('name')[0]!;
+    expect(Array.from(wrapper.children).map((el) => el.tagName)).toEqual(['roleName', 'persName']);
+    expect(wrapper.previousSibling?.textContent).toBe('鄱陽王');
+  });
+
+  it('wraps two adjacent components of the same slot type together', () => {
+    const doc = parse(
+      `${TEI_OPEN}<p><placeName>陳郡</placeName><placeName>陽夏</placeName><persName key="p9">範</persName></p>${TEI_CLOSE}`,
+    );
+    const created = createPersonWrappersInScope(doc.documentElement, new Set());
+
+    expect(created).toBe(1);
+    const wrapper = doc.getElementsByTagName('name')[0]!;
+    expect(Array.from(wrapper.children).map((el) => el.tagName)).toEqual([
+      'placeName',
+      'placeName',
+      'persName',
+    ]);
+  });
 });
 
 describe('runGroupAndClean (integration, user-reported case)', () => {

@@ -5,7 +5,8 @@ import {
 } from './dilaPlaceDetail';
 
 // Trimmed excerpt of the real DILA record page for PL000000029418
-// (https://authority.dila.edu.tw/place/?fromInner=PL000000029418).
+// (https://authority.dila.edu.tw/place/search.php?code=PL000000029418 — the
+// content frame of the .../place/?fromInner=<id> frameset).
 const WULING_HTML = `<div id="D027" class="fpr_div">  <span >武陵郡(wǔ líng jùn)</span>
 <span id="wiki_district" class="fontStyle">行政區：</span>中國-湖南省-常德市-武陵區<br/>
 <span id="wiki_County" class="fontStyle">屬：</span>荊州<br/>
@@ -50,7 +51,7 @@ describe('yearRangeFromDilaText', () => {
 describe('fetchDilaPlaceDetail', () => {
   it('fetches by id and parses the response', async () => {
     const fetchImpl = jest.fn(async (url: string) => {
-      expect(url).toBe('https://authority.dila.edu.tw/place/?fromInner=PL000000029418');
+      expect(url).toBe('https://authority.dila.edu.tw/place/search.php?code=PL000000029418');
       return { ok: true, text: async () => WULING_HTML } as Response;
     });
     const detail = await fetchDilaPlaceDetail('PL000000029418', fetchImpl);

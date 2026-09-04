@@ -16,7 +16,11 @@ import { buildNobleTitleSearchStrings } from './norbertWikiNt';
  * — storing the structured parts is correct for the entity record, but the
  * tag-bomb matcher needs the concatenated forms Norbert's own expander uses.
  */
-function nobleTitleSearchStringsForEntity(el: Element, personNames: readonly string[]): string[] {
+function nobleTitleSearchStringsForEntity(
+  el: Element,
+  personNames: readonly string[],
+  familyName?: string,
+): string[] {
   const strings: string[] = [];
   for (const child of Array.from(el.children)) {
     if (child.localName !== 'nobleTitle') continue;
@@ -30,6 +34,7 @@ function nobleTitleSearchStringsForEntity(el: Element, personNames: readonly str
       posthumousName: textOf('persName', (part) => part.getAttribute('type') === 'posthumous'),
       dynasty: child.getAttribute('dynasty'),
       personNames,
+      familyName,
     });
     for (const value of [...titleSearchStrings, ...wrapperSearchStrings]) {
       if (!strings.includes(value)) strings.push(value);
@@ -82,6 +87,7 @@ export function candidatesFromEntityDatabaseRecords(
   return records.flatMap((record) => {
     const searchStrings = record.names.map((name) => name.text).filter(Boolean);
     if (record.kind === 'person') {
+      const familyName = record.names.find((name) => name.type === 'family')?.text;
       for (const title of record.nobleTitles) {
         const expanded = buildNobleTitleSearchStrings({
           fief: title.fief,
@@ -89,6 +95,7 @@ export function candidatesFromEntityDatabaseRecords(
           posthumousName: title.posthumousName,
           dynasty: title.dynasty,
           personNames: record.names.map((name) => name.text),
+          familyName,
         });
         searchStrings.push(...expanded.titleSearchStrings, ...expanded.wrapperSearchStrings);
       }
@@ -162,9 +169,11 @@ export function candidatesFromEntityDatabase(
       if (!searchStrings.includes(text)) searchStrings.push(text);
     }
     if (kind === 'person') {
+      const familyName = names.find((name) => name.type === 'family')?.text;
       for (const value of nobleTitleSearchStringsForEntity(
         el,
         names.map((name) => name.text),
+        familyName,
       )) {
         if (!searchStrings.includes(value)) searchStrings.push(value);
       }

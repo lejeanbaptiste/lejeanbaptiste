@@ -12,10 +12,12 @@ import {
 import { autoSyncEntitiesToCentral, autoSyncEntityToCentral } from './autoSync';
 import {
   applySuggestions,
+  applyWithWrapperCandidates,
   assignEntity,
   markUnresolved as markMentionUnresolved,
   revalidatePendingSuggestions,
   type ApplyOptions,
+  type ApplyResult,
   type BatchResult,
   type UserRule,
 } from './apply';
@@ -57,6 +59,7 @@ import { collectPluginPatternTagCandidates } from '../plugins/patternTagProducer
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
 import { extractRegisteredEntityData } from '../plugins/entityDataExtractors';
 import { personWrapperSource } from './entityExtraction';
+import { autoTaggingDocumentKey } from './dateWorkflow';
 import { preferCanonicalFamilyGiven } from './nameTypes';
 import {
   nobleTitlesFromMetadata,
@@ -101,6 +104,14 @@ import {
   nobleTitleMatchKey,
 } from './nobleTitleAutoResolve';
 import { formatNorbertAuthorityValue, norbertAuthorityLookupValues } from './norbertAuthorityId';
+import {
+  buildWrapperDisambiguationIndexFromFacts,
+  wrapperDisambiguationIndexFromPack,
+  wrapperDisambiguationQueryFromElement,
+  wrapperIdentityElement,
+  type WrapperDisambiguationIndex,
+} from './wrapperDisambiguationIndex';
+import type { WrapperFactRecord } from './wrapperFactsLog';
 import { cachedPackReader } from '../services/authority-pack-lookup';
 import { DisambiguationAiCache } from './disambiguationAiCache';
 import type { AiPromptProfile } from './aiPromptProfiles';
@@ -472,6 +483,9 @@ export class AutoTaggingSession {
   private disambiguationAiCacheStore: DisambiguationAiCache | null = null;
   private pendingCache: PendingCache = { version: 2, entries: {} };
   private personWrapperCandidatesPromise: Promise<AuthorityCandidate[]> | null = null;
+  private wrapperDisambiguationIndexPromise: Promise<WrapperDisambiguationIndex> | null = null;
+  /** Invalidated after every `appendWrapperFacts` so the next lookup sees what was just harvested. */
+  private projectWrapperFactsIndexPromise: Promise<WrapperDisambiguationIndex> | null = null;
   private documentPaths = new Map<Document, string>();
   private projectLangPromise: Promise<string | null> | null = null;
   private focusIndex: { body: HTMLElement; index: DocIndex } | null = null;
@@ -2004,6 +2018,134 @@ export class AutoTaggingSession {
     for (const instance of instances) this.logResolution(instance, 'unresolved');
   }
 
+  /** This project's own harvested wrapper facts, cached until the next `appendWrapperFacts`. */
+  private async loadProjectWrapperFactsIndex(): Promise<WrapperDisambiguationIndex | null> {
+    if (!this.store) return null;
+    try {
+      this.projectWrapperFactsIndexPromise ??= (async () =>
+        buildWrapperDisambiguationIndexFromFacts(await this.store!.readWrapperFacts()))();
+      return await this.projectWrapperFactsIndexPromise;
+    } catch {
+      this.projectWrapperFactsIndexPromise = null;
+      return null;
+    }
+  }
+
+  /**
+   * Auto-key newly applied person wrappers (from `groupWrapperCandidateSuggestions`
+   * / `applyWithWrapperCandidates`) whose found combination of dynasty/office/
+   * title/origin/name resolves unambiguously — the same "only when unique"
+   * caution as `autoResolveNobleTitles`'s strong case. Checks this project's
+   * own previously harvested combinations first (`wrapperFactsLog.ts`) —
+   * more specific than, and free of any dependency on, the global pack — and
+   * only falls back to Norbert's compiled person data when the project
+   * hasn't seen this combination before. A fresh Norbert-backed resolution
+   * mints or links a local entity (the same path a manually accepted
+   * disambiguation candidate uses) and is itself harvested as a new fact, so
+   * the next occurrence — this project or later — resolves from project
+   * knowledge alone. Either way, the wrapper's own structured content is
+   * also intaken into the resolved entity's SQLite record immediately (see
+   * `ingestWrapperData` below) — the same step a manually accepted
+   * disambiguation candidate triggers, so this doesn't have to wait for the
+   * next full-document reconciliation. Best-effort throughout: an
+   * already-keyed wrapper (e.g. from a `retag`/manual edit racing this) is
+   * left alone, and any missing pack/store dependency just skips auto-keying
+   * for that wrapper.
+   */
+  private async autoKeyWrapperCandidates(results: ApplyResult[]): Promise<void> {
+    if (!this.store) return;
+    const wrapperElements = results
+      .filter(
+        (result) =>
+          result.outcome === 'applied' &&
+          (result.suggestion.compoundMembers?.length ?? 0) > 0 &&
+          result.element,
+      )
+      .map((result) => result.element!);
+    if (wrapperElements.length === 0) return;
+
+    const projectIndex = await this.loadProjectWrapperFactsIndex();
+    const readPack = cachedPackReader();
+    const newFacts: WrapperFactRecord[] = [];
+    const documentKey = autoTaggingDocumentKey(this.writer);
+
+    // Immediately intake the wrapper's structured content (nobleTitle,
+    // origin, office, nationality) into the resolved entity's own SQLite
+    // record — the same step a manually accepted Disambiguate candidate
+    // triggers right after keying. Without this, the facts would only reach
+    // SQLite on the next full-document reconciliation (scanMentions), not now.
+    const ingestWrapperData = async (wrapper: Element, entityId: string): Promise<void> => {
+      const occurrence =
+        Array.from(wrapper.ownerDocument!.getElementsByTagName('name'))
+          .filter((candidate) => candidate.getAttribute('type') === 'personWrapper')
+          .indexOf(wrapper) + 1;
+      const source = personWrapperSource(documentKey, occurrence);
+      const assertions = extractRegisteredEntityData({ wrapper, documentKey });
+      if (assertions.length === 0) return;
+      try {
+        await ingestExtractedEntityDataSqlite(
+          this.store!,
+          documentKey,
+          entityId,
+          source,
+          assertions,
+        );
+      } catch (error) {
+        console.warn('[auto-tagging] Wrapper data intake failed:', error);
+      }
+    };
+
+    for (const wrapper of wrapperElements) {
+      if (wrapper.getAttribute('key')?.trim()) continue;
+      const query = wrapperDisambiguationQueryFromElement(wrapper);
+      if (!query) continue;
+      const identity = wrapperIdentityElement(wrapper);
+      if (!identity) continue;
+
+      const projectMatches = projectIndex?.resolve(query) ?? [];
+      if (projectMatches.length === 1) {
+        assignEntity({ element: identity, entityId: projectMatches[0]! });
+        await ingestWrapperData(wrapper, projectMatches[0]!);
+        continue;
+      }
+      if (projectMatches.length > 1 || !readPack) continue;
+
+      let norbertIndex: WrapperDisambiguationIndex;
+      try {
+        this.wrapperDisambiguationIndexPromise ??= (async () =>
+          wrapperDisambiguationIndexFromPack(await readPack('norbert-persons')))();
+        norbertIndex = await this.wrapperDisambiguationIndexPromise;
+      } catch {
+        continue; // Pack is optional.
+      }
+      const matches = norbertIndex.resolve(query);
+      if (matches.length !== 1) continue;
+
+      try {
+        const { id: entityId } = await mintOrLinkEntitySqlite(this.store, {
+          kind: 'person',
+          name: query.persName,
+          authorityIds: [{ type: 'NORBERT', value: matches[0]! }],
+          authoritySource: `NORBERT:${matches[0]!}`,
+        });
+        assignEntity({ element: identity, entityId });
+        await ingestWrapperData(wrapper, entityId);
+        newFacts.push({ when: new Date().toISOString(), query, entityId });
+      } catch (error) {
+        console.warn('[auto-tagging] Wrapper auto-key failed:', error);
+      }
+    }
+
+    if (newFacts.length > 0) {
+      try {
+        await this.store.appendWrapperFacts(newFacts);
+        this.projectWrapperFactsIndexPromise = null;
+      } catch (error) {
+        console.warn('[auto-tagging] Failed to record wrapper facts:', error);
+      }
+    }
+  }
+
   /**
    * Apply accepted suggestions to a fresh copy of the XML source and reload
    * the editor. Returns the apply engine's per-suggestion outcomes.
@@ -2019,10 +2161,11 @@ export class AutoTaggingSession {
 
     const doc = await this.getDocument();
     const applyOptions = this.buildApplyOptions(userRules, onProgress);
-    const raw = await applySuggestions(doc, accepted, applyOptions);
+    const raw = await applyWithWrapperCandidates(doc, accepted, applyOptions);
     const result = withApplyDiagnostics(doc, raw, applyOptions);
 
     if (result.applied > 0) {
+      await this.autoKeyWrapperCandidates(result.results);
       onProgress?.(total, total);
       await yieldToUi();
       this.snapshots.push(result.snapshot);

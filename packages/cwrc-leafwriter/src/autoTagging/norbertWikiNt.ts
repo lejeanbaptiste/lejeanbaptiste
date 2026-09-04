@@ -1,5 +1,11 @@
 import type { AuthorityCandidate } from './authority';
 
+/** Rank that also takes a 皇-prefixed form independent of fief/dynasty, e.g. 皇太子勇. */
+const HEIR_APPARENT_RANK = '太子';
+
+/** Consort/dowager ranks matched as 皇 + rank + surname + 氏, e.g. 皇太后常氏. */
+const CONSORT_SURNAME_RANKS = new Set(['太后', '太妃']);
+
 /**
  * Concatenates a noble title's components (fief, rank, posthumous name,
  * optional dynasty prefix) — and, for each given person name, the
@@ -16,12 +22,15 @@ export function buildNobleTitleSearchStrings(params: {
   posthumousNameAbbr?: string | null;
   dynasty?: string | null;
   personNames?: readonly string[];
+  /** Surname alone — feeds the 皇太后/皇太妃 + surname + 氏 consort/dowager form. */
+  familyName?: string | null;
 }): { titleSearchStrings: string[]; wrapperSearchStrings: string[] } {
   const fief = params.fief?.trim();
   const roleName = params.roleName?.trim();
   const posthumousName = params.posthumousName?.trim();
   const posthumousNameAbbr = params.posthumousNameAbbr?.trim();
   const dynasty = params.dynasty?.trim();
+  const familyName = params.familyName?.trim();
   const uniqueNames = [
     ...new Set((params.personNames ?? []).map((name) => name.trim()).filter(Boolean)),
   ];
@@ -57,6 +66,19 @@ export function buildNobleTitleSearchStrings(params: {
     if (dynastyDistinctFromFief && roleName) {
       add(wrapperSearchStrings, [dynasty, fief, roleName, name].join(''));
     }
+    // Heir apparent: 皇 + rank + given name, independent of fief/dynasty — the
+    // bare "太子勇" form already falls out of the fief-less forms above (a
+    // 太子 title normally has no fief), but the 皇-prefixed form doesn't.
+    if (roleName === HEIR_APPARENT_RANK) {
+      add(wrapperSearchStrings, `皇${roleName}${name}`);
+    }
+  }
+
+  // Consort/dowager: 皇 + rank + surname + 氏 (e.g. 皇太后常氏) — the identity
+  // here is the surname, not a given name, since a consort's given name is
+  // usually unrecorded.
+  if (familyName && roleName && CONSORT_SURNAME_RANKS.has(roleName)) {
+    add(wrapperSearchStrings, `皇${roleName}${familyName}氏`);
   }
 
   return { titleSearchStrings, wrapperSearchStrings };
@@ -85,6 +107,7 @@ export function expandNorbertWikiNtCandidate(
     ...(candidate.names ?? []).map((name) => name.text.trim()),
     person?.trim() ?? '',
   ].filter(Boolean);
+  const familyName = candidate.names?.find((name) => name.type === 'family')?.text?.trim();
 
   const { titleSearchStrings, wrapperSearchStrings } = buildNobleTitleSearchStrings({
     fief: title.fief,
@@ -93,6 +116,7 @@ export function expandNorbertWikiNtCandidate(
     posthumousNameAbbr: title.posthumousNameAbbr,
     dynasty: metadata.dynasty,
     personNames,
+    familyName,
   });
 
   const expanded: AuthorityCandidate[] = [];
