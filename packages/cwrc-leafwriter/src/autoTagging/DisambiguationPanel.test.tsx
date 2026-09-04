@@ -97,6 +97,37 @@ function createGroup(): MentionGroup {
   };
 }
 
+/** A title mentioned with no name attached — empty, keyless identity persName. */
+function createBareTitleGroup(): MentionGroup {
+  const doc = new DOMParser().parseFromString(
+    '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>' +
+      '<name type="personWrapper" cert="unknown">' +
+      '<nobleTitle><placeName>建安</placeName><roleName>王</roleName></nobleTitle>' +
+      '<persName/>' +
+      '</name></p></body></text></TEI>',
+    'application/xml',
+  );
+  const element = doc.getElementsByTagName('name')[0]!;
+  const textNode = element.getElementsByTagName('placeName')[0]!.firstChild as Text;
+  const anchor = createAnchor('doc-1', doc, textNode, 0, textNode.data.length, 'ignore');
+  return {
+    tag: 'name',
+    surface: '建安王',
+    fullyResolved: false,
+    instances: [
+      {
+        documentId: 'doc-1',
+        tag: 'name',
+        surface: '建安王',
+        element,
+        anchor,
+        hasKey: false,
+        isUnresolved: true,
+      },
+    ],
+  };
+}
+
 function createPlaceGroup(surface = '竟陵'): MentionGroup {
   const doc = new DOMParser().parseFromString(
     `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><placeName>${surface}</placeName></p></body></text></TEI>`,
@@ -142,6 +173,7 @@ function createSession() {
       local: [],
       entitiesDoc,
     }),
+    titleOnlyDisambiguationCandidates: jest.fn().mockResolvedValue([]),
   } as any;
 }
 
@@ -253,6 +285,38 @@ describe('DisambiguationPanel', () => {
 
     const toggle = await screen.findByRole('button', { name: /AI curation is always on/i });
     expect((toggle as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('queries fief+role candidates for a title mentioned with no name, and shows the results', async () => {
+    mockBuildDisambiguationCandidates.mockResolvedValue([]);
+    const session = createSession();
+    session.titleOnlyDisambiguationCandidates = jest.fn().mockResolvedValue([
+      {
+        id: 'p1',
+        label: '劉休仁',
+        sources: ['entity-file'],
+        localEntityId: 'p1',
+        fromEntityFile: true,
+      },
+    ]);
+
+    render(<DisambiguationPanel session={session} groups={[createBareTitleGroup()]} />);
+
+    expect(await screen.findByText('劉休仁')).toBeTruthy();
+    expect(session.titleOnlyDisambiguationCandidates).toHaveBeenCalledWith('建安', '王');
+    // The wrapper's identity persName is empty by design for a bare title —
+    // there's no inner person name to disambiguate first, so this warning
+    // (meant for a wrapper whose identity has a real, unresolved name) must
+    // not appear here.
+    expect(screen.queryByText(/Disambiguate the inner person name first/)).toBeNull();
+  });
+
+  it('does not query fief+role candidates for an ordinary named mention', async () => {
+    const session = createSession();
+    render(<DisambiguationPanel session={session} groups={[createGroup()]} />);
+
+    await screen.findAllByText('沈攸之');
+    expect(session.titleOnlyDisambiguationCandidates).not.toHaveBeenCalled();
   });
 
   it('bypasses saved caches when disambiguation caching is disabled', async () => {

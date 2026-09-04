@@ -41,6 +41,7 @@ import { BdrcIcon, CbdbIcon, DilaIcon, ViafIcon } from '../icons/custom/Authorit
 import { WikipediaIcon } from '../icons/custom/Wikipedia';
 import { openExternalUrl } from '../utilities/DOM';
 import { cachedPackReader } from '../services/authority-pack-lookup';
+import { bareNobleTitleQuery } from './nobleTitleAutoResolve';
 import {
   buildDisambiguationCandidates,
   candidateLinks,
@@ -118,8 +119,16 @@ const wrapperIdentityElement = (element: Element): Element | null =>
     (person) => !person.getAttribute('type'),
   ) ?? null;
 
-const wrapperNeedsPersonResolution = (instance: MentionInstance): boolean =>
-  instance.tag === 'name' && !wrapperIdentityElement(instance.element)?.getAttribute('key');
+const wrapperNeedsPersonResolution = (instance: MentionInstance): boolean => {
+  if (instance.tag !== 'name') return false;
+  const identity = wrapperIdentityElement(instance.element);
+  // A bare title with no attached name has an empty, keyless identity
+  // persName by design (see bareNobleTitleQuery) — there's no inner person
+  // to disambiguate first; the wrapper itself resolves directly against the
+  // relaxed fief+role candidate list.
+  if (!identity?.textContent?.trim()) return false;
+  return !identity.getAttribute('key');
+};
 
 const wrapperHasKeyConflict = (instance: MentionInstance): boolean => {
   if (instance.tag !== 'name') return false;
@@ -841,6 +850,20 @@ export const DisambiguationPanel = ({
       setRateLimitRetry(null);
       setAiRanked(false);
 
+      // A title mentioned with no name at all (empty identity persName —
+      // `parseChildlessNobleTitles`'s no-personSlot case) has nothing for the
+      // ordinary surface search to find: the "surface" here is the title
+      // text, never a person's actual name. Query this project's own PEDB
+      // directly by fief+role instead, and merge the results in below.
+      const representativeElement = targetGroup.instances[0]?.element;
+      const bareTitle =
+        targetGroup.tag === 'name' && representativeElement
+          ? bareNobleTitleQuery(representativeElement)
+          : null;
+      const titleOnlyCandidates = bareTitle
+        ? await session.titleOnlyDisambiguationCandidates(bareTitle.fief, bareTitle.roleName)
+        : [];
+
       const pendingCache = cacheDisabled
         ? null
         : session.getPendingCandidates(targetGroup.tag, targetGroup.surface);
@@ -864,7 +887,7 @@ export const DisambiguationPanel = ({
             targetGroup.surface,
           );
           const rows = mergeCandidates(
-            [dbSources.local, dbSources.central?.candidates ?? [], cached],
+            [dbSources.local, dbSources.central?.candidates ?? [], cached, titleOnlyCandidates],
             {
               tag: targetGroup.tag,
               placeProximityKm,
@@ -899,25 +922,28 @@ export const DisambiguationPanel = ({
           targetGroup.tag,
           targetGroup.surface,
         );
-        const rows = await buildDisambiguationCandidates(
-          dbSources.entitiesDoc,
-          targetGroup.tag,
-          targetGroup.surface,
-          cache,
-          ['Wikidata', 'VIAF'],
-          forceRefresh,
-          cachedPackReader(),
-          session.dilaPlaceDetailCache ?? undefined,
-          undefined,
-          () => {
-            if (currentKeyRef.current !== groupKey) return;
-            void refreshDilaDates(targetGroup, cache, dbSources);
-          },
-          projectLang,
-          dbSources.central,
-          placeProximityKm,
-          dbSources.local,
-        );
+        const rows = [
+          ...(await buildDisambiguationCandidates(
+            dbSources.entitiesDoc,
+            targetGroup.tag,
+            targetGroup.surface,
+            cache,
+            ['Wikidata', 'VIAF'],
+            forceRefresh,
+            cachedPackReader(),
+            session.dilaPlaceDetailCache ?? undefined,
+            undefined,
+            () => {
+              if (currentKeyRef.current !== groupKey) return;
+              void refreshDilaDates(targetGroup, cache, dbSources);
+            },
+            projectLang,
+            dbSources.central,
+            placeProximityKm,
+            dbSources.local,
+          )),
+          ...titleOnlyCandidates,
+        ];
         if (!cacheDisabled) {
           session.rememberPendingCandidates(targetGroup.tag, targetGroup.surface, rows);
           await session.savePendingCache();

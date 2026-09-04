@@ -95,13 +95,16 @@ import {
 import { crawlDocuments } from './crawl';
 import { dictionaryTag, dictionaryTagProjection, type DictionaryEntry } from './dictionary';
 import { compoundWrapperSuggestions, seedSuggestions, suggestionsFromSeedMatches } from './seed';
-import { runGroupAndClean, type GroupAndCleanResult } from './groupAndClean';
+import { runGroupAndClean, parseChildlessNobleTitles, type GroupAndCleanResult } from './groupAndClean';
 import { buildNobleTitleVocabulary } from './nobleTitleSpanParser';
 import {
   autoResolveNobleTitles,
+  bareNobleTitleQuery,
   buildPackTitleNorbertIndex,
   buildPersonTitleIndex,
+  buildTitleOnlyPersonIndex,
   nobleTitleMatchKey,
+  titleOnlyMatchKey,
 } from './nobleTitleAutoResolve';
 import { formatNorbertAuthorityValue, norbertAuthorityLookupValues } from './norbertAuthorityId';
 import {
@@ -266,12 +269,23 @@ async function autoResolveNobleTitlesInDocument(
   let packTitleIndex = new Map<string, string[]>();
   const packOfficeByRank = new Map<string, string>();
   let vocabularyRanks: Set<string> | undefined;
+  let changedByParsing = false;
   if (readPack) {
     try {
       const wikiNt = await readPack('norbert-wiki-nt');
       const wikiCandidates = [...iterateAuthorityNdjson(wikiNt)];
       packTitleIndex = buildPackTitleNorbertIndex(wikiCandidates);
-      vocabularyRanks = buildNobleTitleVocabulary(wikiCandidates).ranks;
+      const vocabulary = buildNobleTitleVocabulary(wikiCandidates);
+      vocabularyRanks = vocabulary.ranks;
+      // Decompose any still-flat <nobleTitle> spans (e.g. a bare mention
+      // like 建安王薨 with no attached name) into structured children and
+      // wrap them for Disambiguate, same as the manual "Group and Clean"
+      // action — this must run automatically here so the feature doesn't
+      // depend on the user remembering to invoke that toolbar action.
+      const touched = new Set<Element>();
+      if (doc.documentElement && parseChildlessNobleTitles(doc.documentElement, vocabulary, touched) > 0) {
+        changedByParsing = true;
+      }
     } catch {
       // Wiki-nt pack is optional.
     }
@@ -332,7 +346,7 @@ async function autoResolveNobleTitlesInDocument(
       return local.length ? local : pedbIds;
     },
   });
-  return result.changed;
+  return result.changed || changedByParsing;
 }
 
 /**
@@ -657,6 +671,61 @@ export class AutoTaggingSession {
       },
       entitiesDoc: this.getEntitiesDocument(),
     };
+  }
+
+  /**
+   * Disambiguate candidates for a person wrapper whose title was mentioned
+   * with no name attached at all (`bareNobleTitleQuery` — an empty identity
+   * `<persName>`). The surface-based lookup `disambiguationDbSources` uses
+   * can't help here — there's no name text to search on, only a fief+rank —
+   * so this queries this project's own PEDB entities directly by fief+role
+   * (`buildTitleOnlyPersonIndex`, deliberately not requiring a posthumous
+   * name, unlike the strong auto-resolve case) and returns every match as an
+   * ordinary candidate. Expected to return more than one hit often — many
+   * people can hold the same title across different reigns — so this always
+   * feeds the review list, never an auto-key.
+   */
+  async titleOnlyDisambiguationCandidates(
+    fief: string,
+    roleName: string,
+  ): Promise<DisambiguationCandidate[]> {
+    if (!this.store) return [];
+    const records = (await this.store.sqliteCandidateRecords('person')) as
+      | { id: string; nobleTitles?: { fief?: string | null; roleName?: string | null }[] }[]
+      | null;
+    if (!records) return [];
+    const index = buildTitleOnlyPersonIndex(records);
+    const ids = index.get(titleOnlyMatchKey(fief, roleName)) ?? [];
+    if (ids.length === 0) return [];
+
+    const candidates: DisambiguationCandidate[] = [];
+    for (const id of ids) {
+      const summary = (await this.store.sqliteEntitySummary(id)) as {
+        description?: string | null;
+        authorities?: DisambiguationCandidate['authorityIds'];
+        names?: { text: string; status?: string }[];
+        startYear?: number | null;
+        endYear?: number | null;
+      } | null;
+      if (!summary) continue;
+      const nameTexts = (summary.names ?? [])
+        .filter((name) => name.status !== 'rejected' && name.status !== 'withdrawn')
+        .map((name) => name.text.trim())
+        .filter(Boolean);
+      candidates.push({
+        id,
+        label: nameTexts[0] ?? id,
+        description: summary.description ?? undefined,
+        sources: ['entity-file'],
+        localEntityId: id,
+        authorityIds: summary.authorities ?? [],
+        fromEntityFile: true,
+        startYear: summary.startYear ?? undefined,
+        endYear: summary.endYear ?? undefined,
+        projectLangName: nameTexts[0],
+      });
+    }
+    return candidates;
   }
 
   /** Project source language (BCP-47) from the desktop bridge; cached for the session. */

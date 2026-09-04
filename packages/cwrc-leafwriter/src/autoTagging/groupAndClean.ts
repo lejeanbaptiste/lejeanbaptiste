@@ -179,10 +179,18 @@ export function rollPlaceIntoRole(
 }
 
 /**
- * Parse every childless `<nobleTitle>` in scope into structured components.
- * A trailing identity name (the parser's `personName` slot) never becomes a
- * `<nobleTitle>` child — it's split out into a sibling `<persName>` inside a
- * new `<name type="personWrapper">` that replaces the title in place.
+ * Parse every childless `<nobleTitle>` in scope into structured components,
+ * and wrap every standalone `<nobleTitle>` — childless-parsed or already
+ * structured (e.g. produced directly by tag-bombing/wrapper-candidate
+ * suggestions) — that sits outside any `<name type="personWrapper">`.
+ *
+ * A trailing identity name (the childless parser's `personName` slot) never
+ * becomes a `<nobleTitle>` child — it's split out into a sibling `<persName>`
+ * inside a new wrapper that replaces the title in place. When there's no
+ * trailing name at all (the title was mentioned alone), the wrapper still
+ * gets created, with an empty, keyless identity `<persName/>` — see
+ * `bareNobleTitleQuery` / `buildTitleOnlyPersonIndex`, which feed that case
+ * into Disambiguate as a fief+role candidate list.
  */
 export function parseChildlessNobleTitles(
   scopeRoot: Element,
@@ -193,41 +201,104 @@ export function parseChildlessNobleTitles(
   const doc = scopeRoot.ownerDocument;
   if (!doc) return 0;
   const ns = doc.documentElement?.namespaceURI ?? null;
-  for (const el of Array.from(scopeRoot.getElementsByTagName('nobleTitle'))) {
-    if (el.children.length > 0) continue;
-    const text = el.textContent ?? '';
-    if (!text.trim()) continue;
-    const result = parseNobleTitleSpan([{ kind: 'text', text }], vocabulary);
-    if (result.confidence === 'none') continue;
 
-    const dynastySlot = result.slots.find((slot) => slot.role === 'dynasty');
-    const personSlot = result.slots.find((slot) => slot.role === 'personName');
-    if (dynastySlot) el.setAttribute('dynasty', dynastySlot.text);
-    while (el.firstChild) el.removeChild(el.firstChild);
-    for (const slot of result.slots) {
-      if (slot.role === 'dynasty' || slot.role === 'personName') continue;
-      const child = doc.createElementNS(ns, SLOT_TAG[slot.role]);
-      if (slot.role === 'posthumousName') child.setAttribute('type', 'posthumous');
-      child.textContent = slot.text;
-      el.appendChild(child);
-    }
-
-    if (personSlot) {
-      const wrapper = doc.createElementNS(ns, 'name');
-      wrapper.setAttribute('type', 'personWrapper');
-      wrapper.setAttribute('cert', 'unknown');
-      el.parentNode!.insertBefore(wrapper, el);
-      wrapper.appendChild(el);
-      const persNameEl = doc.createElementNS(ns, 'persName');
-      persNameEl.textContent = personSlot.text;
-      wrapper.appendChild(persNameEl);
-      touched.add(wrapper);
-    } else {
-      touched.add(el);
-    }
+  const wrap = (el: Element, personNameText: string | null): void => {
+    const wrapper = doc.createElementNS(ns, 'name');
+    wrapper.setAttribute('type', 'personWrapper');
+    wrapper.setAttribute('cert', 'unknown');
+    el.parentNode!.insertBefore(wrapper, el);
+    wrapper.appendChild(el);
+    const persNameEl = doc.createElementNS(ns, 'persName');
+    if (personNameText) persNameEl.textContent = personNameText;
+    wrapper.appendChild(persNameEl);
+    touched.add(wrapper);
     parsed++;
+  };
+
+  for (const el of Array.from(scopeRoot.getElementsByTagName('nobleTitle'))) {
+    if (isInsidePersonWrapper(el)) continue;
+
+    if (el.children.length === 0) {
+      const text = el.textContent ?? '';
+      if (!text.trim()) continue;
+      const result = parseNobleTitleSpan([{ kind: 'text', text }], vocabulary);
+      if (result.confidence === 'none') continue;
+
+      const dynastySlot = result.slots.find((slot) => slot.role === 'dynasty');
+      const personSlot = result.slots.find((slot) => slot.role === 'personName');
+      if (dynastySlot) el.setAttribute('dynasty', dynastySlot.text);
+      while (el.firstChild) el.removeChild(el.firstChild);
+      for (const slot of result.slots) {
+        if (slot.role === 'dynasty' || slot.role === 'personName') continue;
+        const child = doc.createElementNS(ns, SLOT_TAG[slot.role]);
+        if (slot.role === 'posthumousName') child.setAttribute('type', 'posthumous');
+        child.textContent = slot.text;
+        el.appendChild(child);
+      }
+
+      // An embedded name in the title's own text (the parser's personSlot)
+      // always wraps immediately — it's the title's identity, not a sibling
+      // to reconcile against.
+      if (personSlot) {
+        wrap(el, personSlot.text);
+        continue;
+      }
+
+      // No embedded name. If a real `<persName>` sibling immediately
+      // follows in the document, this isn't a bare title — leave it for the
+      // normal contiguous-run wrap (manual "Group and Clean" step 4, or the
+      // suggestion-level wrapper grouping) to combine title + name together,
+      // rather than wrapping the title alone with an empty identity and
+      // orphaning the real name beside it.
+      if (hasFollowingPersonName(el)) continue;
+
+      // Otherwise wrap only when there's a roleName slot — a title genuinely
+      // mentioned with no name attached (e.g. 建安王薨) still gets a wrapper,
+      // with an empty, keyless identity persName. A parse with no role isn't
+      // queryable by the relaxed lookup and isn't wrapped, matching the
+      // original conservative behavior — this also avoids feeding SQLite
+      // intake a nobleTitle assertion with no role, which the person_titles
+      // schema can't represent meaningfully.
+      const roleSlot = result.slots.find((slot) => slot.role === 'rank');
+      if (!roleSlot) {
+        touched.add(el);
+        continue;
+      }
+      wrap(el, null);
+      continue;
+    }
+
+    // Already structured and standing alone outside any personWrapper — a
+    // bare title with no name attached (e.g. tag-bombing produced the
+    // <placeName>/<roleName> children directly) still needs the empty-
+    // identity wrap to enter Disambiguate. But if a real name immediately
+    // follows, leave it for the normal contiguous-run wrap to combine them.
+    // Requires both fief and role, matching `bareNobleTitleQuery` — a
+    // role-only title (no fief) isn't queryable by the relaxed lookup.
+    if (hasFollowingPersonName(el)) continue;
+    const childTags = new Set(Array.from(el.children).map((child) => localNameOf(child)));
+    if (!childTags.has('roleName') || !childTags.has('placeName')) continue;
+    wrap(el, null);
   }
   return parsed;
+}
+
+/** Does a real, unwrapped `<persName>` immediately follow in the same contiguous run? */
+function hasFollowingPersonName(el: Element): boolean {
+  let cursor: ChildNode | null = el.nextSibling;
+  while (cursor) {
+    if (isWrapperComponent(cursor)) {
+      if (localNameOf(cursor) === 'persName') return true;
+      cursor = cursor.nextSibling;
+      continue;
+    }
+    if (isWhitespaceText(cursor)) {
+      cursor = cursor.nextSibling;
+      continue;
+    }
+    break;
+  }
+  return false;
 }
 
 /**

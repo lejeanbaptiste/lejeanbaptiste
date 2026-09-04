@@ -107,7 +107,16 @@ describe('parseChildlessNobleTitles', () => {
     const title = doc.getElementsByTagName('nobleTitle')[0]!;
     expect(parsed).toBe(1);
     expect(title.children.length).toBeGreaterThan(0);
-    expect(touched.has(title)).toBe(true);
+    // No trailing name in "魏武帝" (fief+posthumous+role only) — the title
+    // still gets wrapped, with an empty, keyless identity persName so it can
+    // enter Disambiguate as a fief+role candidate list.
+    const wrapper = doc.getElementsByTagName('name')[0]!;
+    expect(wrapper.getAttribute('type')).toBe('personWrapper');
+    expect(wrapper.getElementsByTagName('nobleTitle')[0]).toBe(title);
+    const identity = Array.from(wrapper.children).find((child) => child.tagName === 'persName')!;
+    expect(identity.textContent).toBe('');
+    expect(identity.getAttribute('key')).toBeNull();
+    expect(touched.has(wrapper)).toBe(true);
   });
 
   it('leaves a nobleTitle with existing children untouched', () => {
@@ -117,6 +126,39 @@ describe('parseChildlessNobleTitles', () => {
     const vocabulary = buildNobleTitleVocabulary([]);
     const parsed = parseChildlessNobleTitles(doc.documentElement, vocabulary, new Set());
     expect(parsed).toBe(0);
+  });
+
+  it('wraps an already-structured standalone nobleTitle with no attached name', () => {
+    // Produced directly by tag-bombing/wrapper-candidate suggestions with
+    // placeName+roleName children already in place — not flat text — and
+    // no name attached at all (e.g. 南陽王薨 with no preceding persName).
+    const doc = parse(
+      `${TEI_OPEN}<p><nobleTitle><placeName>南陽</placeName><roleName ref="NORBERT:office-1311">王</roleName></nobleTitle>薨</p>${TEI_CLOSE}`,
+    );
+    const vocabulary = buildNobleTitleVocabulary([]);
+    const touched = new Set<Element>();
+    const parsed = parseChildlessNobleTitles(doc.documentElement, vocabulary, touched);
+
+    expect(parsed).toBe(1);
+    const wrapper = doc.getElementsByTagName('name')[0]!;
+    expect(wrapper.getAttribute('type')).toBe('personWrapper');
+    expect(wrapper.getElementsByTagName('nobleTitle').length).toBe(1);
+    const identity = Array.from(wrapper.children).find((child) => child.tagName === 'persName')!;
+    expect(identity.textContent).toBe('');
+    expect(identity.getAttribute('key')).toBeNull();
+    expect(touched.has(wrapper)).toBe(true);
+  });
+
+  it('does not wrap an already-structured nobleTitle when a real name follows', () => {
+    const doc = parse(
+      `${TEI_OPEN}<p><nobleTitle><placeName>貞陽</placeName><roleName>公</roleName></nobleTitle><persName key="p1">柳世隆</persName></p>${TEI_CLOSE}`,
+    );
+    const vocabulary = buildNobleTitleVocabulary([]);
+    const touched = new Set<Element>();
+    const parsed = parseChildlessNobleTitles(doc.documentElement, vocabulary, touched);
+
+    expect(parsed).toBe(0);
+    expect(doc.getElementsByTagName('name').length).toBe(0);
   });
 });
 
@@ -314,12 +356,18 @@ describe('runGroupAndClean (integration, user-reported case)', () => {
 
     expect(result.rolledPlaceNames).toBe(1); // only 益州 + 刺史
     expect(result.createdWrappers).toBe(3);
+    // 江夏王 has no attached name at all — it gets its own bare wrapper with
+    // an empty, keyless identity persName (see parseChildlessNobleTitles),
+    // counted separately under parsedNobleTitles, not createdWrappers.
+    expect(result.parsedNobleTitles).toBe(1);
     const wrappers = Array.from(doc.getElementsByTagName('name')).filter(
       (el) => el.getAttribute('type') === 'personWrapper',
     );
-    expect(wrappers.length).toBe(3);
-    // Each wrapper's key was copied straight down from its already-keyed persName.
+    expect(wrappers.length).toBe(4);
+    // Each named wrapper's key was copied straight down from its already-keyed persName;
+    // the bare 江夏王 wrapper stays keyless for Disambiguate to pick up.
     expect(wrappers.map((w) => w.getAttribute('key')).sort()).toEqual([
+      null,
       'person-1',
       'person-2',
       'person-4',
@@ -329,10 +377,10 @@ describe('runGroupAndClean (integration, user-reported case)', () => {
       '<nobleTitle><placeName>貞陽</placeName><roleName>公</roleName></nobleTitle>',
     );
     expect(serialize(doc)).toContain(
-      '<nobleTitle><placeName>江夏</placeName><roleName>王</roleName></nobleTitle>',
+      '<name type="personWrapper" cert="unknown"><nobleTitle><placeName>江夏</placeName><roleName>王</roleName></nobleTitle><persName/></name>',
     );
     // The lone name (鋒, no preceding role/place/title) stays unwrapped.
-    expect(doc.getElementsByTagName('persName').length).toBe(4);
+    expect(doc.getElementsByTagName('persName').length).toBe(5);
     const loneName = Array.from(doc.getElementsByTagName('persName')).find(
       (el) => el.textContent === '鋒',
     );

@@ -4955,8 +4955,8 @@ export class EntitySqliteRepository {
           )
           .run(
             wrapper.entityId,
-            item.place || null,
-            item.role || null,
+            item.place,
+            item.role,
             item.posthumous || null,
             item.ref,
             item.placeRef,

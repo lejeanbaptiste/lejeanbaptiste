@@ -477,6 +477,10 @@ CBETA and similar texts often split a running string across milestones, e.g. `�
 - **Native-script labels.** Lookup and Disambiguate prefer the project's script as the primary name when Wikidata (or a pack) has it: Tibetan uchen with Wylie as romanization (not the English transcription); Chinese, Japanese, and Korean Han/kana/Hangul the same way. Transliteration appears on the line below only when the row has no description or dates. VIAF-only hits now also take the vernacular heading from the VIAF cluster JSON (`bo`, `zh`, `ja`, …) instead of the Latin form LINCS reconcile returns.
 - **VIAF native language (fix).** Cluster JSON is fetched in the desktop main process (the renderer was blocked by CORS/Cloudflare), and only _name_ fields (`mainHeadings` / `x400`) are used — not book titles. When several Tibetan/Chinese forms exist, we pick the one that matches the Latin preferred heading (e.g. `སྨོན་ལམ་དཔལ` for VIAF 156162422732732460008, `ཀརྨ༌སྨོན༌ལམ` for 50659832).
 
+### Find and Replace (2026-09-04)
+
+- **Find query now persists across sessions.** The match-case and regex toggles already stuck around; the typed query itself reset to empty every time the panel remounted. It's now saved to local storage on every change and restored on mount, like the other sticky sidebar prefs. (Closes #42.)
+
 ## Upstream
 
 - **Disambiguate: DILA place dates (備註/朝代) now actually load.** The background scrape that fills in a DILA place candidate's date range and dynasty was fetching `place/?fromInner=<id>` — an empty frameset shell — instead of `place/search.php?code=<id>`, the frame that actually holds the `wiki_Class_id`/`wiki_Dynasty` fields. Every scrape silently came back empty, and because an empty result was still cached for 180 days, no amount of clicking refresh in the disambiguation panel would recover it. Fixed the URL, and an empty scrape (no 備註, no 朝代) is no longer cached, so a lookup that starts failing again won't stay poisoned. Purged the stale empty cache entries already on disk for the two live test projects.

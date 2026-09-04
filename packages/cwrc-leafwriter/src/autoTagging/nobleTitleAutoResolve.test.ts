@@ -1,8 +1,11 @@
 import {
   autoResolveNobleTitles,
+  bareNobleTitleQuery,
   buildPackTitleNorbertIndex,
   buildPersonTitleIndex,
+  buildTitleOnlyPersonIndex,
   nobleTitleMatchKey,
+  titleOnlyMatchKey,
 } from './nobleTitleAutoResolve';
 import { collectMentions } from './mentions';
 
@@ -113,5 +116,61 @@ describe('nobleTitleAutoResolve', () => {
       },
     ]);
     expect(index.get(nobleTitleMatchKey('魏', '帝', '武'))).toEqual(['person-12']);
+  });
+});
+
+describe('buildTitleOnlyPersonIndex', () => {
+  it('indexes by fief+role alone, no posthumous name required', () => {
+    const index = buildTitleOnlyPersonIndex([
+      { id: 'p1', nobleTitles: [{ fief: '建安', roleName: '王' }] },
+    ]);
+    expect(index.get(titleOnlyMatchKey('建安', '王'))).toEqual(['p1']);
+  });
+
+  it('collects every person who held the same fief+role, across reigns', () => {
+    const index = buildTitleOnlyPersonIndex([
+      { id: 'p1', nobleTitles: [{ fief: '建安', roleName: '王' }] },
+      { id: 'p2', nobleTitles: [{ fief: '建安', roleName: '王' }] },
+    ]);
+    expect(index.get(titleOnlyMatchKey('建安', '王'))?.sort()).toEqual(['p1', 'p2']);
+  });
+
+  it('skips a title missing fief or role', () => {
+    const index = buildTitleOnlyPersonIndex([
+      { id: 'p1', nobleTitles: [{ fief: '建安' }, { roleName: '王' }] },
+    ]);
+    expect(index.size).toBe(0);
+  });
+});
+
+describe('bareNobleTitleQuery', () => {
+  const parseWrapper = (xml: string): Element =>
+    parse(`${TEI_OPEN}<p>${xml}</p>${TEI_CLOSE}`).getElementsByTagName('name')[0]!;
+
+  it('reads fief+role from a wrapper whose identity persName is empty', () => {
+    const wrapper = parseWrapper(
+      '<name type="personWrapper" cert="unknown"><nobleTitle><placeName>建安</placeName><roleName>王</roleName></nobleTitle><persName/></name>',
+    );
+    expect(bareNobleTitleQuery(wrapper)).toEqual({ fief: '建安', roleName: '王' });
+  });
+
+  it('returns null when the wrapper already has a real name', () => {
+    const wrapper = parseWrapper(
+      '<name type="personWrapper" cert="unknown"><nobleTitle><placeName>建安</placeName><roleName>王</roleName></nobleTitle><persName>休仁</persName></name>',
+    );
+    expect(bareNobleTitleQuery(wrapper)).toBeNull();
+  });
+
+  it('returns null for a wrapper with no nobleTitle child', () => {
+    const wrapper = parseWrapper(
+      '<name type="personWrapper" cert="unknown"><roleName>刺史</roleName><persName/></name>',
+    );
+    expect(bareNobleTitleQuery(wrapper)).toBeNull();
+  });
+
+  it('returns null for a non-personWrapper element', () => {
+    const wrapper = parse(`${TEI_OPEN}<p><placeName>建安</placeName></p>${TEI_CLOSE}`)
+      .getElementsByTagName('placeName')[0]!;
+    expect(bareNobleTitleQuery(wrapper)).toBeNull();
   });
 });

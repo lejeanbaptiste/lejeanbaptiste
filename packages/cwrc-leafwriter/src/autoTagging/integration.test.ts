@@ -19,6 +19,10 @@ import { AutoTaggingSession, reconcilePersonWrapperKeys, type WriterLike } from 
 import type { AuthorityPackId } from './packPaths';
 import { groupWrapperCandidateSuggestions } from './wrapperCandidates';
 import type { WrapperFactRecord } from './wrapperFactsLog';
+import {
+  clearPluginEntityDataExtractor,
+  registerPluginEntityDataExtractor,
+} from '../plugins/entityDataExtractors';
 
 const XML = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>
 <p>張衡居洛陽，張衡造渾天儀。</p>
@@ -314,6 +318,55 @@ describe('AutoTaggingSession', () => {
       await session.apply([groups[0]!.suggestion]);
 
       expect(await store.readWrapperFacts()).toEqual([seed]);
+    });
+
+    it('intakes the wrapper structured content into SQLite immediately on auto-key', async () => {
+      registerPluginEntityDataExtractor('test-origin-extractor', ({ wrapper }) => {
+        const place = Array.from(wrapper.getElementsByTagName('placeName')).find(
+          (el) => el.parentElement === wrapper,
+        );
+        const value = place?.textContent?.trim();
+        return value ? [{ element: 'placeName', value }] : [];
+      });
+      try {
+        const { writer } = makeWriter(WRAPPER_XML);
+        const { store } = makeFactStore([
+          {
+            when: '2026-01-01T00:00:00Z',
+            query: { persName: '謝超宗', originPlace: '陳郡' },
+            entityId: 'entity-existing',
+          },
+        ]);
+        const reconcileSpy = jest
+          .spyOn(store, 'sqliteReconcileXmlExtractedData')
+          .mockResolvedValue({ wrappers: 1, added: 1, removed: 0, retained: 0 });
+        const session = new AutoTaggingSession(writer, 'ignore', store);
+
+        const doc = await session.getDocument();
+        const [placeName, persName] = dictionaryTag(
+          doc,
+          [
+            { string: '陳郡', tag: 'placeName' },
+            { string: '謝超宗', tag: 'persName' },
+          ],
+          'ignore',
+        );
+        const { groups } = groupWrapperCandidateSuggestions([placeName!, persName!]);
+        await session.apply([groups[0]!.suggestion]);
+
+        expect(reconcileSpy).toHaveBeenCalledTimes(1);
+        const [call] = reconcileSpy.mock.calls;
+        expect(call![0]).toMatchObject({
+          wrappers: [
+            {
+              entityId: 'entity-existing',
+              assertions: [{ element: 'placeName', value: '陳郡' }],
+            },
+          ],
+        });
+      } finally {
+        clearPluginEntityDataExtractor('test-origin-extractor');
+      }
     });
   });
 

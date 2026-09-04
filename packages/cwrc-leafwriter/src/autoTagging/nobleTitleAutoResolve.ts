@@ -120,6 +120,69 @@ export function buildPersonTitleIndex(
   return index;
 }
 
+/** Signature for the relaxed, fief+role-only title lookup (see {@link buildTitleOnlyPersonIndex}). */
+export function titleOnlyMatchKey(place: string, role: string): string {
+  return `${place}\0${role}`;
+}
+
+/**
+ * Build fief|role → personId(s) from PEDB candidate records — deliberately
+ * looser than {@link buildPersonTitleIndex} (no posthumous-name requirement),
+ * for the case a title is mentioned with no name attached at all (e.g.
+ * `建安王薨`, nobody's name in sight). A living title never carries a
+ * posthumous name, so the strong-match index can never help there. This is
+ * expected to return more than one id often — many people can hold the same
+ * fief+rank across different reigns — so it feeds the ordinary Disambiguate
+ * candidate list, never an auto-resolve.
+ */
+export function buildTitleOnlyPersonIndex(
+  records: readonly {
+    id: string;
+    nobleTitles?: readonly { fief?: string | null; roleName?: string | null }[] | null;
+  }[],
+): Map<string, string[]> {
+  const index = new Map<string, string[]>();
+  for (const record of records) {
+    for (const title of record.nobleTitles ?? []) {
+      const place = title.fief?.trim() ?? '';
+      const role = title.roleName?.trim() ?? '';
+      if (!place || !role) continue;
+      const key = titleOnlyMatchKey(place, role);
+      const list = index.get(key) ?? [];
+      if (!list.includes(record.id)) list.push(record.id);
+      index.set(key, list);
+    }
+  }
+  return index;
+}
+
+/**
+ * A person wrapper's own `<nobleTitle>` fief+rank, but only when the
+ * wrapper's identity `<persName>` is empty — i.e. the title was mentioned
+ * with no name attached (`parseChildlessNobleTitles`'s no-personSlot case).
+ * A wrapper that already has a real name uses the ordinary surface-based
+ * Disambiguate path instead; this is strictly for the nameless case.
+ */
+export function bareNobleTitleQuery(wrapper: Element): { fief: string; roleName: string } | null {
+  if (localNameOf(wrapper) !== 'name' || wrapper.getAttribute('type') !== 'personWrapper') {
+    return null;
+  }
+  const identity = Array.from(wrapper.getElementsByTagName('persName')).find(
+    (person) => !person.getAttribute('type'),
+  );
+  if (!identity || identity.textContent?.trim()) return null;
+  const title = Array.from(wrapper.children).find((child) => localNameOf(child) === 'nobleTitle');
+  if (!title) return null;
+  const fief = Array.from(title.children)
+    .find((part) => localNameOf(part) === 'placeName')
+    ?.textContent?.trim();
+  const roleName = Array.from(title.children)
+    .find((part) => localNameOf(part) === 'roleName')
+    ?.textContent?.trim();
+  if (!fief || !roleName) return null;
+  return { fief, roleName };
+}
+
 /**
  * Index wiki-nt / Norbert title candidates that carry place+role+posthumous
  * and a linked Norbert person id, for PEDB authority lookup.

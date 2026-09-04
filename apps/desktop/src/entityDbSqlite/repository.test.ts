@@ -1379,6 +1379,39 @@ describe('EntitySqliteRepository', () => {
     repository.close();
   });
 
+  it('reconciles a nobleTitle assertion missing a roleName without violating NOT NULL', () => {
+    // A bare title mention with no attached name (e.g. 建安王薨) can produce
+    // a wrapper whose nobleTitle only has a placeName, or only a roleName —
+    // person_titles.place_name/role_name are NOT NULL, so reconciliation
+    // must coerce a missing side to '' rather than passing null through.
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'person-xml-bare', kind: 'person' });
+
+    expect(() =>
+      repository.reconcileXmlExtractedData({
+        documentKey: 'chapter-1',
+        wrappers: [
+          {
+            entityId: 'person-xml-bare',
+            source: 'xml:chapter-1#personWrapper:1',
+            assertions: [
+              {
+                element: 'nobleTitle',
+                value: '建安王',
+                children: [{ element: 'placeName', value: '建安' }],
+              },
+            ],
+          },
+        ],
+      }),
+    ).not.toThrow();
+
+    expect(repository.getPanelSummary('person-xml-bare')).toMatchObject({
+      nobleTitles: expect.arrayContaining([expect.objectContaining({ fief: '建安' })]),
+    });
+    repository.close();
+  });
+
   it('rolls back a failed transaction', () => {
     const repository = new EntitySqliteRepository();
     expect(() =>

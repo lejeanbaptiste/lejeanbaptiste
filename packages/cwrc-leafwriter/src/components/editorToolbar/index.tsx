@@ -58,7 +58,7 @@ export interface MenuItem extends Item {
 export const EditorToolbar = () => {
   const { t } = useTranslation();
   const { schemaId } = useAppState().document;
-  const { translationMode } = useAppState().ui;
+  const { disambiguationReview, translationMode } = useAppState().ui;
   const translationActive = translationMode.active;
   const { choiceDisplayMode, isReadonly, showBreaks, showNotes, showTags, textLocked } =
     useAppState().editor;
@@ -333,6 +333,11 @@ export const EditorToolbar = () => {
       hide: isReadonly || translationActive,
       icon: 'disambiguate',
       onClick: () => {
+        // Already in disambiguate mode — clicking again used to dismiss and
+        // immediately restart the review pane, which left the panel gone
+        // and the flanking dock panels stuck unexpandable. Do nothing
+        // instead; the user exits disambiguate mode from within the panel.
+        if (disambiguationReview.active) return;
         // No launcher popup — start review directly. AI curation reflects the
         // panel's own persisted toggle (or 'Always on' from AI API settings),
         // same effective logic the old popup's Start button used to compute.

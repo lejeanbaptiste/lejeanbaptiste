@@ -22,6 +22,7 @@ import {
 import { clearFindHighlights } from '@src/desktop/find/findEditorHighlights';
 import { DOC_SCOPE_LABEL_KEYS, type DocScope } from '@src/desktop/find/docScope';
 import { useFindPanelUndo } from '@src/desktop/find/findPanelUndo';
+import { readStoredFindQuery, writeStoredFindQuery } from '@src/desktop/find/findQueryPrefs';
 import {
   DESKTOP_EDITOR_VIEW_MODE_EVENT,
   DESKTOP_FIND_FOCUS_EVENT,
@@ -86,7 +87,7 @@ export const SidebarFindTab = () => {
   const { t } = useTranslation();
   const { activeTabPath, openTabs, rootPath } = useAppState().project;
 
-  const [findQuery, setFindQuery] = useState('');
+  const [findQuery, setFindQuery] = useState(() => readStoredFindQuery());
   const [replaceQuery, setReplaceQuery] = useState('');
   const [scope, setScope] = useState<SearchScope>('currentFile');
   const [docScope, setDocScope] = useState<DocScope>('both');
@@ -344,6 +345,10 @@ export const SidebarFindTab = () => {
     window.addEventListener(DESKTOP_FIND_FOCUS_EVENT, focusFindField);
     return () => window.removeEventListener(DESKTOP_FIND_FOCUS_EVENT, focusFindField);
   }, []);
+
+  useEffect(() => {
+    writeStoredFindQuery(findQuery);
+  }, [findQuery]);
 
   useEffect(() => {
     itemRefs.current.clear();
