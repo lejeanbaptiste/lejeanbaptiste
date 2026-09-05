@@ -481,7 +481,7 @@ CBETA and similar texts often split a running string across milestones, e.g. `�
 
 - **Find query now persists across sessions.** The match-case and regex toggles already stuck around; the typed query itself reset to empty every time the panel remounted. It's now saved to local storage on every change and restored on mount, like the other sticky sidebar prefs. (Closes #42.)
 
-## v0.1.0-beta.12
+## v0.1.0-beta.13
 
 - **Disambiguate: DILA place dates (備註/朝代) now actually load.** The background scrape that fills in a DILA place candidate's date range and dynasty was fetching `place/?fromInner=<id>` — an empty frameset shell — instead of `place/search.php?code=<id>`, the frame that actually holds the `wiki_Class_id`/`wiki_Dynasty` fields. Every scrape silently came back empty, and because an empty result was still cached for 180 days, no amount of clicking refresh in the disambiguation panel would recover it. Fixed the URL, and an empty scrape (no 備註, no 朝代) is no longer cached, so a lookup that starts failing again won't stay poisoned. Purged the stale empty cache entries already on disk for the two live test projects.
 - **Database viewer: dropped the redundant "(central)" label in synced projects.** The sidebar database list showed `(central)` on every single row once a project synced to a central database, since the per-row project key it falls back on only ever exists for entities that also carry a local, non-synced identity. The label (and its copy-id button) is now hidden for a row when the project is synced and that row has no project-local key, instead of printing the same word on every entity in the list.
