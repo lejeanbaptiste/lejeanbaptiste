@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { PlaceComparisonMap, type MapPin } from './PlaceComparisonMap';
 
 const mockFitBounds = jest.fn();
@@ -50,6 +50,7 @@ jest.mock(
       }
     }
     class MockMarker {
+      constructor(private options: { element: HTMLElement }) {}
       setLngLat(...args: unknown[]) {
         mockSetLngLat(...args);
         return this;
@@ -60,10 +61,15 @@ jest.mock(
       }
       addTo(...args: unknown[]) {
         mockAddTo(...args);
+        // Real MapLibre appends the marker element to the DOM; the click
+        // listener the component attaches lives on that element, so tests
+        // that click a pin (by data-testid) need it actually mounted.
+        document.body.appendChild(this.options.element);
         return this;
       }
       remove() {
         mockMarkerRemove();
+        this.options.element.remove();
       }
     }
     class MockPopup {
@@ -105,6 +111,7 @@ function makePin(overrides: Partial<MapPin> = {}): MapPin {
     lat: 30.65,
     lon: 113.15,
     sources: ['CBDB', 'CHGIS'],
+    memberIds: ['cbdb:a'],
     ...overrides,
   };
 }
@@ -176,6 +183,40 @@ describe('PlaceComparisonMap', () => {
     expect(mockExtend).toHaveBeenCalledTimes(2);
     expect(mockFitBounds).toHaveBeenCalledTimes(1);
     expect(mockJumpTo).not.toHaveBeenCalled();
+  });
+
+  it('calls onPinClick with the clicked pin', async () => {
+    const onPinClick = jest.fn();
+    const pin = makePin({ id: 'a', memberIds: ['a', 'a-viaf'] });
+    await renderMap(
+      <PlaceComparisonMap
+        open
+        pins={[pin]}
+        title="Single place"
+        onClose={jest.fn()}
+        onPinClick={onPinClick}
+      />,
+    );
+    onLoadCallback?.();
+
+    fireEvent.click(screen.getByTestId('map-pin-a'));
+
+    expect(onPinClick).toHaveBeenCalledTimes(1);
+    expect(onPinClick).toHaveBeenCalledWith(pin);
+  });
+
+  it('does not error on a pin click when onPinClick is not provided', async () => {
+    await renderMap(
+      <PlaceComparisonMap
+        open
+        pins={[makePin({ id: 'a' })]}
+        title="Single place"
+        onClose={jest.fn()}
+      />,
+    );
+    onLoadCallback?.();
+
+    expect(() => fireEvent.click(screen.getByTestId('map-pin-a'))).not.toThrow();
   });
 
   it('refreshes the rendered markers when the pins change while the dialog stays open', async () => {

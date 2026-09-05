@@ -1023,7 +1023,11 @@ export const DisambiguationPanel = ({
     );
   }, [filteredCandidates, placeClusterLabelById]);
 
-  const [mapModal, setMapModal] = useState<{ title: string; pins: MapPin[] } | null>(null);
+  const [mapModal, setMapModal] = useState<{
+    title: string;
+    pins: MapPin[];
+    groupKey: string;
+  } | null>(null);
 
   /**
    * Pins for a group's header map icon, or null/empty when there's nothing
@@ -1059,6 +1063,7 @@ export const DisambiguationPanel = ({
         lon: cluster.centroid.lon,
         sources: [...new Set(cluster.members.flatMap((member) => member.sources))],
         description: [...new Set(cluster.members.map((member) => member.label))].join(' / '),
+        memberIds: cluster.members.map((member) => member.id),
       }));
     },
     [placeProximityKm, session, group, currentKey, filteredCandidates],
@@ -1239,6 +1244,37 @@ export const DisambiguationPanel = ({
     if (!instance || !selected || !group) return;
     try {
       await session.resolveMention(instance, selected);
+      afterChange(group);
+      controller.next();
+      rerender();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  /**
+   * Map pin click — acts like checking that pin's cluster then hitting Enter.
+   * When the map was opened for a group that isn't currently active (its
+   * candidates aren't loaded into this panel yet), just switches to it
+   * instead — same as clicking the group's header — rather than racing an
+   * async candidate load.
+   */
+  const resolvePinCluster = async (pin: MapPin) => {
+    if (!mapModal) return;
+    if (mapModal.groupKey !== currentKey) {
+      controller.selectGroup(mapModal.groupKey, { focus: true, expand: true });
+      setMapModal(null);
+      rerender();
+      return;
+    }
+    if (!instance || !group) return;
+    const merged = mergeSelectedCandidates(
+      filteredCandidates.filter((candidate) => pin.memberIds.includes(candidate.id)),
+    );
+    if (!merged) return;
+    try {
+      await session.resolveMention(instance, merged);
+      setMapModal(null);
       afterChange(group);
       controller.next();
       rerender();
@@ -1924,6 +1960,7 @@ export const DisambiguationPanel = ({
                       setMapModal({
                         title: `${targetGroup.surface} — compare clusters`,
                         pins: mapPinsForGroup(targetGroup),
+                        groupKey: key,
                       })
                     }
                   />
@@ -2127,6 +2164,7 @@ export const DisambiguationPanel = ({
         pins={mapModal?.pins ?? []}
         title={mapModal?.title ?? ''}
         onClose={() => setMapModal(null)}
+        onPinClick={(pin) => void resolvePinCluster(pin)}
       />
       <Dialog
         open={newEntityDialogOpen}

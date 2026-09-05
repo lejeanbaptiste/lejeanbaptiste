@@ -103,7 +103,6 @@ import {
 import { buildNobleTitleVocabulary } from './nobleTitleSpanParser';
 import {
   autoResolveNobleTitles,
-  bareNobleTitleQuery,
   buildPackTitleNorbertIndex,
   buildPersonTitleIndex,
   buildTitleOnlyPersonIndex,

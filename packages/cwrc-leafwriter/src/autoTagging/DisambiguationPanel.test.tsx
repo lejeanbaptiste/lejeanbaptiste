@@ -61,10 +61,25 @@ jest.mock('react-virtuoso', () => ({
 // the ESM-only maplibre-gl package, and so tests can assert the panel wires
 // the right pins/title through without rendering an actual map.
 jest.mock('./mapView/PlaceComparisonMap', () => ({
-  PlaceComparisonMap: ({ open, pins, title }: { open: boolean; pins: unknown[]; title: string }) =>
+  PlaceComparisonMap: ({
+    open,
+    pins,
+    title,
+    onPinClick,
+  }: {
+    open: boolean;
+    pins: { id: string }[];
+    title: string;
+    onPinClick?: (pin: { id: string }) => void;
+  }) =>
     open ? (
       <div data-testid="place-comparison-map">
         {title} ({pins.length} pins)
+        {pins.map((pin) => (
+          <button key={pin.id} data-testid={`map-pin-${pin.id}`} onClick={() => onPinClick?.(pin)}>
+            pin {pin.id}
+          </button>
+        ))}
       </div>
     ) : null,
 }));
@@ -516,5 +531,82 @@ describe('DisambiguationPanel', () => {
     const mapDialog = await screen.findByTestId('place-comparison-map');
     expect(mapDialog.textContent).toContain('甲 — compare clusters');
     expect(mapDialog.textContent).toContain('2 pins');
+  });
+
+  it('clicking a pin for the active group resolves the mention, same as accepting that candidate', async () => {
+    mockBuildDisambiguationCandidates.mockResolvedValue([]);
+    mockRankDisambiguationCandidates.mockResolvedValue({
+      selectedCandidateIds: [],
+      rationales: {},
+      confidences: {},
+      suggestCreateNew: false,
+    });
+
+    const session = createSession();
+    session.resolveMention = jest.fn().mockResolvedValue(undefined);
+    session.getPendingCandidates.mockReturnValue([
+      { id: 'cbdb:a', label: '甲', sources: ['CBDB'], geo: { lat: 30.65, lon: 113.15 } },
+      { id: 'chgis:b', label: '甲', sources: ['CHGIS'], geo: { lat: 39.9, lon: 116.4 } },
+    ]);
+
+    // A single group is auto-selected as current by the controller, so its
+    // candidates (seeded from getPendingCandidates) populate filteredCandidates
+    // and mapPinsForGroup takes the "active group" branch — see mapPinsForGroup.
+    render(
+      <DisambiguationPanel
+        session={session}
+        groups={[createPlaceGroup('甲')]}
+        aiCuration={false}
+      />,
+    );
+
+    (await screen.findByLabelText('Compare 甲 on map')).click();
+    (await screen.findByTestId('map-pin-cbdb:a')).click();
+
+    await waitFor(() => expect(session.resolveMention).toHaveBeenCalledTimes(1));
+    expect(session.resolveMention).toHaveBeenCalledWith(
+      expect.objectContaining({ surface: '甲' }),
+      expect.objectContaining({ id: 'cbdb:a' }),
+    );
+    // The map closes once the resolve goes through.
+    expect(screen.queryByTestId('place-comparison-map')).toBeNull();
+  });
+
+  it('clicking a pin for a non-active group selects it instead of resolving (candidates not loaded yet)', async () => {
+    mockBuildDisambiguationCandidates.mockResolvedValue([]);
+    mockRankDisambiguationCandidates.mockResolvedValue({
+      selectedCandidateIds: [],
+      rationales: {},
+      confidences: {},
+      suggestCreateNew: false,
+    });
+
+    const session = createSession();
+    session.resolveMention = jest.fn().mockResolvedValue(undefined);
+    session.getPendingCandidates.mockImplementation((tag: string, surface: string) => {
+      if (surface !== '乙') return null;
+      return [
+        { id: 'cbdb:a', label: '乙', sources: ['CBDB'], geo: { lat: 30.65, lon: 113.15 } },
+        { id: 'chgis:b', label: '乙', sources: ['CHGIS'], geo: { lat: 39.9, lon: 116.4 } },
+      ];
+    });
+
+    // 甲 is auto-selected as current (it's first); 乙's map icon/pins come from
+    // the pending-candidates cache since 乙 isn't loaded into the panel.
+    render(
+      <DisambiguationPanel
+        session={session}
+        groups={[createPlaceGroup('甲'), createPlaceGroup('乙')]}
+        aiCuration={false}
+      />,
+    );
+
+    (await screen.findByLabelText('Compare 乙 on map')).click();
+    (await screen.findByTestId('map-pin-cbdb:a')).click();
+
+    // The map closes; the panel switches to 乙 the same way clicking its header would.
+    await waitFor(() => expect(screen.queryByTestId('place-comparison-map')).toBeNull());
+    expect(session.resolveMention).not.toHaveBeenCalled();
+    expect(await screen.findByLabelText('Compare 乙 on map')).toBeTruthy();
   });
 });

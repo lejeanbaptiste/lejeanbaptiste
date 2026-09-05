@@ -43,6 +43,8 @@ export interface MapPin {
   lon: number;
   sources: string[];
   description?: string;
+  /** Every candidate id in this pin's cluster (id is just the first member). */
+  memberIds: string[];
 }
 
 export interface PlaceComparisonMapProps {
@@ -50,6 +52,8 @@ export interface PlaceComparisonMapProps {
   onClose: () => void;
   pins: MapPin[];
   title: string;
+  /** Resolve this pin's cluster — mirrors accepting the selected candidates (Enter). */
+  onPinClick?: (pin: MapPin) => void;
 }
 
 /**
@@ -131,7 +135,20 @@ function centroidOfPins(pins: MapPin[]): { lat: number; lon: number } | null {
   return { lat, lon };
 }
 
-export function PlaceComparisonMap({ open, onClose, pins, title }: PlaceComparisonMapProps) {
+export function PlaceComparisonMap({
+  open,
+  onClose,
+  pins,
+  title,
+  onPinClick,
+}: PlaceComparisonMapProps) {
+  // Read via a ref inside the marker click listener so the map-mount effect
+  // below (keyed on [open, container, pins]) doesn't need onPinClick in its
+  // deps — a fresh callback identity from the parent must not tear down and
+  // rebuild the whole MapLibre map.
+  const onPinClickRef = useRef(onPinClick);
+  onPinClickRef.current = onPinClick;
+
   // MUI's Dialog mounts its Portal content in a commit after the initial
   // render, so a plain useRef's `.current` isn't populated yet the first
   // time an effect keyed on `open` runs. A state-backed callback ref
@@ -236,6 +253,8 @@ export function PlaceComparisonMap({ open, onClose, pins, title }: PlaceComparis
           justifyContent: 'center',
         });
         el.textContent = pin.label;
+        el.style.cursor = onPinClickRef.current ? 'pointer' : '';
+        el.addEventListener('click', () => onPinClickRef.current?.(pin));
 
         const popupHtml = [
           `<strong>${pin.label}</strong>`,
