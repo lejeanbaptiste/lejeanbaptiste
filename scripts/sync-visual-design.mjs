@@ -78,7 +78,7 @@ const BRANDING_TARGETS = [
   ['menu_norbert_dark.svg', 'apps/commons/src/icons/menu_norbert.dark.svg'],
   ['norbert-mini.png', 'apps/commons/src/assets/images/norbert-mini.png'],
   ['splash.svg', 'apps/desktop/resources/branding/splash.svg'],
-  ['splash_new.png', 'apps/desktop/resources/branding/splash_new.png'],
+  ['grognard.png', 'apps/desktop/resources/branding/splash_new.png'],
 ];
 
 const CLEANUP_TARGETS = [
