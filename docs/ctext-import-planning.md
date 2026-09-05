@@ -142,9 +142,9 @@ User query / URL
 | -------------------------------------- | ----------------------------------------------------------------------------- |
 | Manifest, optional bundled title index | `plugins/packages/plugin-ctext-import/`                                       |
 | Python: API client thin wrapper        | plugin Python (wrap `ctext` PyPI or raw `api.ctext.org` JSON)                 |
-| JSON bridge                            | extend pattern of `grognard_bridge.py` (`op: "ctext_gettext"`, etc.)               |
+| JSON bridge                            | extend pattern of `grognard_bridge.py` (`op: "ctext_gettext"`, etc.)          |
 | Wiki parallel fetch                    | **Reuse** `scripts/ctext-wiki-parallel.mjs` + `ctextWikiParallel.ts` IPC      |
-| Wizard UI                              | Grognard host module (like `kanripoImportUi`)                                      |
+| Wizard UI                              | Grognard host module (like `kanripoImportUi`)                                 |
 | HTTP to API                            | **Main process** (no CORS; centralise rate limiting and API key)              |
 | TEI wrap                               | Reuse `buildSkeletonForCatalog` / `kanripoImportXml`-style provenance helpers |
 

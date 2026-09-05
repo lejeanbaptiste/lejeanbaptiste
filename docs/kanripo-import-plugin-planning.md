@@ -87,7 +87,7 @@ search index (bundled) ──► pick KR_ID
 | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Manifest, work index, normalisation CSVs, Python conversion | `plugins/packages/plugin-kanripo-import/` (name TBD)                                       |
 | Thin `register.mjs`                                         | plugin package                                                                             |
-| Wizard + coverage UI                                        | Grognard host module (`loadHostModule`), so the plugin does not bundle React                    |
+| Wizard + coverage UI                                        | Grognard host module (`loadHostModule`), so the plugin does not bundle React               |
 | File menu injection, git clone IPC, fetch URL, write files  | desktop main process                                                                       |
 | Python IPC                                                  | existing `plugins:invokePython` (needs a longer timeout and non-Sanmiao-specific resolver) |
 
@@ -417,7 +417,7 @@ Use the **Daozang import** plugin’s bundled 方瞳子 UTF-8 corpus as an offli
 | Daozang `index.json` + search (import dialog)     | **Done** — see [daozang-import-planning.md](daozang-import-planning.md)                                                                                                                         |
 | Bundled concordance (`data/concordance/`)         | **Done** — `krp_dz_collation.csv`, `kanripo_org_concordance.csv`, `dz_corpus_works.csv`, `duren_jing_index.csv`, `kanripo_daozang_overrides.csv`                                                |
 | `kanripo_daozang_map.json` (KR id → `rel_path`)   | **Done** — 1,483 entries; built by `scripts/build-concordance-data.py` (`npm run build:concordance`) from `chinese_corpus_metadata` + Daozang corpus index + optional `dz_krp` Duren jing index |
-| Python lookup + bridge                            | **Done** — `concordance.lookup_daozang_rel_path(kr_id)`; `grognard_bridge` op `concordance_lookup`                                                                                                   |
+| Python lookup + bridge                            | **Done** — `concordance.lookup_daozang_rel_path(kr_id)`; `grognard_bridge` op `concordance_lookup`                                                                                              |
 | Load `.txt` as parallel tape in Kanripo import UI | **Done** — auto on work select when Daozang plugin enabled + map hit                                                                                                                            |
 | Import UI “Use bundled Daozang punctuation”       | **Partial** — auto-load + reload button; manual search picker still open                                                                                                                        |
 

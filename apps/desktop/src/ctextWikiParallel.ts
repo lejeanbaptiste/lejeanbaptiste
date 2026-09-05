@@ -64,7 +64,9 @@ export const listCtextWikiSections = async (
     ) => { id: string; slug: string; title: string; rowCount: number }[];
   };
   const html = await fetch(url, {
-    headers: { 'User-Agent': 'grognard-plugin-kanripo-import/0.1 (+https://github.com/leJeanBaptiste)' },
+    headers: {
+      'User-Agent': 'grognard-plugin-kanripo-import/0.1 (+https://github.com/leJeanBaptiste)',
+    },
   }).then((response) => {
     if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
     return response.text();

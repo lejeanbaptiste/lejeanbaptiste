@@ -80,7 +80,8 @@ export const useCommonsUiBridge = () => {
       if (name) setEncoderNameState(name);
     };
     window.addEventListener('grognardEncoderNameInherited', syncInheritedEncoderName);
-    return () => window.removeEventListener('grognardEncoderNameInherited', syncInheritedEncoderName);
+    return () =>
+      window.removeEventListener('grognardEncoderNameInherited', syncInheritedEncoderName);
   }, []);
 
   useEffect(() => {

@@ -347,7 +347,8 @@ export function summarizeEntity(
       new Set(
         Array.from(item.children)
           .filter(
-            (child) => child.localName !== 'note' || child.getAttribute('type') !== 'grognard-changed',
+            (child) =>
+              child.localName !== 'note' || child.getAttribute('type') !== 'grognard-changed',
           )
           .filter((child) => readEntityValueProvenance(child).status === 'active')
           .map((child) => readEntityValueProvenance(child).origin),
@@ -371,7 +372,9 @@ export function summarizeEntity(
       allRejections,
     ),
     assertions: Array.from(item.children)
-      .filter((child) => child.localName !== 'note' || child.getAttribute('type') !== 'grognard-changed')
+      .filter(
+        (child) => child.localName !== 'note' || child.getAttribute('type') !== 'grognard-changed',
+      )
       .map((child) => ({
         key: entityValueKey(child),
         element: child.localName,
@@ -406,7 +409,9 @@ export interface EntityAssertionSummary {
 export function listEntityAssertions(doc: Document, id: string): EntityAssertionSummary[] {
   const item = requireEntity(doc, id);
   return Array.from(item.children)
-    .filter((child) => child.localName !== 'note' || child.getAttribute('type') !== 'grognard-changed')
+    .filter(
+      (child) => child.localName !== 'note' || child.getAttribute('type') !== 'grognard-changed',
+    )
     .map((child) => {
       const provenance = readEntityValueProvenance(child);
       return {

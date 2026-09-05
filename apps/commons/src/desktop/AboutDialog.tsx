@@ -12,8 +12,7 @@ import { useActions } from '@src/overmind';
 import { useEffect, useState } from 'react';
 
 const PROJECT_URL = 'https://github.com/grognard/grognard';
-const BUG_REPORT_URL =
-  'https://github.com/grognard/grognard/issues/new?template=bug_report.md';
+const BUG_REPORT_URL = 'https://github.com/grognard/grognard/issues/new?template=bug_report.md';
 
 interface AboutDialogProps {
   onClose: () => void;

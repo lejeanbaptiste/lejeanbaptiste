@@ -41,7 +41,7 @@ This document reframes auto-tagging priorities after the first live AI runs: **w
 
 **The feeling of being lost is structural, not a failure of the AI work.** Grognard has been building shared infrastructure (suggestion objects, review UI, apply engine, chunking, cache) plus two different _products_ at once:
 
-| Layer              | Job                                | Maturity in Grognard                                                                                                                          |
+| Layer              | Job                                | Maturity in Grognard                                                                                                                     |
 | ------------------ | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | **Tag bomb**       | Match known strings → wrap in tags | Engine ready (`dictionaryTag`, `MultiStringMatcher`, `seedSuggestions`); CBDB/DILA download manager built; **compile + UI not finished** |
 | **AI suggest**     | Find mentions lists miss           | Wired (desktop); Groq Qwen3.6 + `suggest.v3` ≈ F1 0.74 on Chinese gold                                                                   |
@@ -146,11 +146,11 @@ provenance preserved. See
 
 ### 3.3 Distribution model
 
-| Who builds packs             | When                                                                                                                                |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| **Grognard project (pre-ship)**   | Chinese: CBDB + DILA + one Wikidata subset; Japanese: NDL name sample. **Not shipping:** GeoNames place packs (decision 2026-08-02) |
-| **User import**              | CSV/TSV/xlsx (already works)                                                                                                        |
-| **Future: pack builder CLI** | Power users compile custom packs from SQL/Wikidata SPARQL                                                                           |
+| Who builds packs                | When                                                                                                                                |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Grognard project (pre-ship)** | Chinese: CBDB + DILA + one Wikidata subset; Japanese: NDL name sample. **Not shipping:** GeoNames place packs (decision 2026-08-02) |
+| **User import**                 | CSV/TSV/xlsx (already works)                                                                                                        |
+| **Future: pack builder CLI**    | Power users compile custom packs from SQL/Wikidata SPARQL                                                                           |
 
 **Updates:** manifest + sha256; user accepts updates (never auto-replace mid-project) — same rule as [authority-databases-planning.md](authority-databases-planning.md) §6.
 
@@ -364,9 +364,9 @@ gold XML → run suggest → measure P/R/F1 → LLM proposes edit to task block 
 TEI does not offer one standard for “person P held office O in year Y” that matches Norbert’s SQL attributes.
 
 | Norbert pattern                                        | Grognard direction                                                                                   |
-| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| Nested `<appointment>` with persName + roleName + date | **Deferred TEI modeling** — appointment clues are in authority packs, without dates/order       |
-| `person_id` on `<roleName>`                            | **Non-TEI** — avoid in interchange; use `@corresp` / standoff / event table later               |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Nested `<appointment>` with persName + roleName + date | **Deferred TEI modeling** — appointment clues are in authority packs, without dates/order            |
+| `person_id` on `<roleName>`                            | **Non-TEI** — avoid in interchange; use `@corresp` / standoff / event table later                    |
 | Flat tag bomb then CSV disambiguation                  | **Current Grognard path** — matches Phase 2–4 design; appointment metadata supplies additional clues |
 
 **Do not block tag-bomb work on appointment modeling.** Tag offices as

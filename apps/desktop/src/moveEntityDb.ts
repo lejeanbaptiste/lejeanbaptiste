@@ -47,9 +47,7 @@ const assertSourceHasEntities = async (source: string): Promise<void> => {
 const assertNotProjectFolder = async (folder: string): Promise<void> => {
   try {
     await fs.access(path.join(folder, PROJECT_FILE_NAME));
-    throw new MoveEntityDbError(
-      'That folder is a Grognard project. Choose a different folder.',
-    );
+    throw new MoveEntityDbError('That folder is a Grognard project. Choose a different folder.');
   } catch (error) {
     if (error instanceof MoveEntityDbError) throw error;
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;

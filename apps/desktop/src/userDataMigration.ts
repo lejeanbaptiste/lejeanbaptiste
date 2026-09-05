@@ -76,7 +76,11 @@ export const migrateLegacyUserData = (): void => {
 
     if (existsSync(currentDir) && !isEffectivelyEmpty(currentDir)) {
       // The user already has data under the new name — don't overwrite it.
-      recordMarker(currentDir, { ok: true, migrated: false, reason: 'new profile already populated' });
+      recordMarker(currentDir, {
+        ok: true,
+        migrated: false,
+        reason: 'new profile already populated',
+      });
       return;
     }
 
@@ -106,7 +110,9 @@ export const migrateLegacyUserData = (): void => {
       at: new Date().toISOString(),
       skipped,
     });
-    console.log(`[userDataMigration] imported profile from ${legacyDir} (skipped: ${skipped.join(', ') || 'none'})`);
+    console.log(
+      `[userDataMigration] imported profile from ${legacyDir} (skipped: ${skipped.join(', ') || 'none'})`,
+    );
   } catch (error) {
     // Record the failure so we don't retry a partial copy on every launch.
     recordMarker(currentDir, {

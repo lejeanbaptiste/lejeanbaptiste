@@ -25,20 +25,20 @@ never drops entries it can't `pathExists` — that prune _was_ the Story A–F b
 
 Shipped modules (all in `packages/cwrc-leafwriter/src/autoTagging/` unless noted):
 
-| Piece                                                             | Module                                                                                                                                                                |
-| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Per-entity `changed` timestamp (`<note type="grognard-changed" when>`) | `entities.ts` — `touchEntity`/`getEntityChanged`/`backfillEntityTimestamps`                                                                                           |
-| UUID minting both sides                                           | `entities.ts` — `mintEntityId`                                                                                                                                        |
-| `grognard-central` concordance rows                                    | `concordance.ts`                                                                                                                                                      |
-| `userStableId` in `{entityDbFolder}/user-id.txt`                  | `userStableId.ts`                                                                                                                                                     |
-| Per-corpus-file PEDB stamp (`<idno type="grognard-project-database">`) | `corpusStamp.ts`                                                                                                                                                      |
-| Order log + cursor + compose/union                                | `entityOrders.ts`; replay in `apps/commons/.../entityDb/applyOrders.ts`                                                                                               |
-| Classified orphan sweep (genuine vs stray-file)                   | `orphanSweep.ts`; orchestrated in `entityDatabaseCheck.ts`; gentle prompt on open in `useEntityDatabaseLifecycle.ts`                                                  |
-| Field-level reconcile (union/fill/conflict)                       | `reconcile.ts`                                                                                                                                                        |
-| Link / Promote (authority-first)                                  | `promote.ts`                                                                                                                                                          |
-| Bridge inbox (unlinked/broken/syncable/conflict)                  | `bridgeInbox.ts`; dialog `apps/commons/.../sidebar/BridgeInboxDialog.tsx` (Hub icon in the database toolbar)                                                          |
-| Central Time Machine tab                                          | `TimeMachineDialog.tsx` — snapshots the central folder into its own `.grognard-time-machine` (roams with the folder); restore preserves the order log via `unionOrderLogs` |
-| Fork-merge of two central copies                                  | `centralForkMerge.ts` (engine + tests; menu entry point still to wire)                                                                                                |
+| Piece                                                                  | Module                                                                                                                                                                     |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Per-entity `changed` timestamp (`<note type="grognard-changed" when>`) | `entities.ts` — `touchEntity`/`getEntityChanged`/`backfillEntityTimestamps`                                                                                                |
+| UUID minting both sides                                                | `entities.ts` — `mintEntityId`                                                                                                                                             |
+| `grognard-central` concordance rows                                    | `concordance.ts`                                                                                                                                                           |
+| `userStableId` in `{entityDbFolder}/user-id.txt`                       | `userStableId.ts`                                                                                                                                                          |
+| Per-corpus-file PEDB stamp (`<idno type="grognard-project-database">`) | `corpusStamp.ts`                                                                                                                                                           |
+| Order log + cursor + compose/union                                     | `entityOrders.ts`; replay in `apps/commons/.../entityDb/applyOrders.ts`                                                                                                    |
+| Classified orphan sweep (genuine vs stray-file)                        | `orphanSweep.ts`; orchestrated in `entityDatabaseCheck.ts`; gentle prompt on open in `useEntityDatabaseLifecycle.ts`                                                       |
+| Field-level reconcile (union/fill/conflict)                            | `reconcile.ts`                                                                                                                                                             |
+| Link / Promote (authority-first)                                       | `promote.ts`                                                                                                                                                               |
+| Bridge inbox (unlinked/broken/syncable/conflict)                       | `bridgeInbox.ts`; dialog `apps/commons/.../sidebar/BridgeInboxDialog.tsx` (Hub icon in the database toolbar)                                                               |
+| Central Time Machine tab                                               | `TimeMachineDialog.tsx` — snapshots the central folder into its own `.grognard-time-machine` (roams with the folder); restore preserves the order log via `unionOrderLogs` |
+| Fork-merge of two central copies                                       | `centralForkMerge.ts` (engine + tests; menu entry point still to wire)                                                                                                     |
 
 Deliberate semantics worth remembering:
 
@@ -165,7 +165,7 @@ So this isn't a hypothetical edge case or generic tech debt — it's a correctne
 
 | Verb        | Meaning                                                                                             | Touches corpus `@key`?                                                        |
 | ----------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| **Link**    | Project UUID ↔ existing central id (write `grognard-central` mapping)                                    | No                                                                            |
+| **Link**    | Project UUID ↔ existing central id (write `grognard-central` mapping)                               | No                                                                            |
 | **Promote** | Create (or authority-match) a central record from a project entity, then Link                       | No                                                                            |
 | **Absorb**  | Two project entities (or two central entities) are the same person; keep one, remap keys / mappings | **Yes** for project-side absorb (remap `@key` across registered corpus files) |
 
@@ -190,10 +190,10 @@ Central may lag the edition. That is acceptable; the inbox makes lag visible.
 
 Align with [`versioning-planning.md`](versioning-planning.md):
 
-| Scope                               | History location                        |
-| ----------------------------------- | --------------------------------------- |
+| Scope                               | History location                             |
+| ----------------------------------- | -------------------------------------------- |
 | Corpus + **project** `entities.xml` | `<project>/.grognard/history/` (Project tab) |
-| **Central** `entities.xml`          | Electron userData (Entity database tab) |
+| **Central** `entities.xml`          | Electron userData (Entity database tab)      |
 
 **Rule:** restoring one file does **not** auto-restore the other or the corpus.
 
@@ -210,14 +210,14 @@ Always take a `rollback-pre` snapshot before overwrite (existing versioning plan
 ## Mental model (SQL analogy for teaching)
 
 | SQL idea                   | Grognard dual model                          |
-| -------------------------- | --------------------------------------- |
-| Shared team database       | Project `entities.xml`                  |
-| Personal research DB       | Central `entities.xml`                  |
-| Primary key in the edition | Project UUID (`xml:id`)                 |
-| Foreign key in texts       | `@key` on mentions → project UUID only  |
-| External authority PK      | `<idno type="CBDB">` etc.               |
+| -------------------------- | -------------------------------------------- |
+| Shared team database       | Project `entities.xml`                       |
+| Personal research DB       | Central `entities.xml`                       |
+| Primary key in the edition | Project UUID (`xml:id`)                      |
+| Foreign key in texts       | `@key` on mentions → project UUID only       |
+| External authority PK      | `<idno type="CBDB">` etc.                    |
 | User-specific synonym      | `<idno type="grognard-central" subtype="…">` |
-| ETL / sync job             | Bridge: Link / Promote / Absorb         |
+| ETL / sync job             | Bridge: Link / Promote / Absorb              |
 
 ---
 

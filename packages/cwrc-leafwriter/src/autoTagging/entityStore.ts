@@ -547,7 +547,10 @@ export class EntityStore {
     this.aiCacheDir = joinPath(paths.projectGrognardDir, AI_CACHE_DIR);
     this.aiDisambiguationCacheDir = joinPath(paths.projectGrognardDir, AI_DISAMBIGUATION_CACHE_DIR);
     this.dilaPlaceDetailCacheDir = joinPath(paths.projectGrognardDir, DILA_PLACE_DETAIL_CACHE_DIR);
-    this.disambiguationPendingPath = joinPath(paths.projectGrognardDir, DISAMBIGUATION_PENDING_FILE);
+    this.disambiguationPendingPath = joinPath(
+      paths.projectGrognardDir,
+      DISAMBIGUATION_PENDING_FILE,
+    );
     this.wrapperFactsPath = joinPath(paths.projectGrognardDir, WRAPPER_FACTS_FILE);
   }
 

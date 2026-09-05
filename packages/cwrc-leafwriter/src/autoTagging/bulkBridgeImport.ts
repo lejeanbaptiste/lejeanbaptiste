@@ -64,7 +64,9 @@ const nameOf = (item: Element): string | null =>
 
 const authoritiesOf = (item: Element) =>
   Array.from(item.children)
-    .filter((child) => child.localName === 'idno' && child.getAttribute('type') !== 'grognard-central')
+    .filter(
+      (child) => child.localName === 'idno' && child.getAttribute('type') !== 'grognard-central',
+    )
     .map((child) => ({
       type: child.getAttribute('type')?.trim() ?? '',
       value: child.textContent?.trim() ?? '',

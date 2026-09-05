@@ -145,9 +145,9 @@ If the project thinks it was built against catalogue X but you attached catalogu
 
 Under the dual plan, keep these mentally separate:
 
-| Where you merge                  | What should move                                                                                                                       |
-| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **Project catalogue** (edition)  | Union cards; rewrite `@key` in **this edition’s** texts (and only those). Collaborators all see the same Absorb.                       |
+| Where you merge                  | What should move                                                                                                                            |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Project catalogue** (edition)  | Union cards; rewrite `@key` in **this edition’s** texts (and only those). Collaborators all see the same Absorb.                            |
 | **Central catalogue** (personal) | Union _your_ cards; update **mappings** (`grognard-central`) on project cards if needed. Corpus `@key`s should **not** flip to central ids. |
 
 If central Absorb still walked the old registry and rewrote corpus keys, you would break collaborators’ editions. The bridge plan’s Absorb verb must respect that boundary.

@@ -310,7 +310,7 @@ Not an SQL server. The entity database is a TEI standoff file: `<standOff>` / pe
 | --------------------------------------------- | ----------------------------------- | ---------------------------- |
 | Central entity database                       | `{user-chosen folder}/entities.xml` | Yes — open in any TEI editor |
 | Project entity database (opt-in)              | `<projectRoot>/entities.xml`        | Yes                          |
-| Decision log, pending caches, project backups | `<projectRoot>/.grognard/`               | Hidden                       |
+| Decision log, pending caches, project backups | `<projectRoot>/.grognard/`          | Hidden                       |
 | App prefs (central DB folder path, etc.)      | Electron userData                   | Hidden                       |
 
 **Central database folder** — chosen at **first-run / install** (folder picker, not file). Grognard explains: this folder holds your **entity database** (`entities.xml`); we **suggest** keeping your projects as subfolders here, but that layout is optional. Changeable in **App Settings → Entity database location**. Pointer-only on move (no automatic file migration) + strong warning.

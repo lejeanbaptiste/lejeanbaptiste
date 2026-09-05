@@ -49,9 +49,15 @@ describe('migrateLegacyUserData', () => {
 
     migrateLegacyUserData();
 
-    expect(await fs.readFile(path.join(userDataDir, 'project-prefs.json'), 'utf8')).toBe('{"recent":[]}');
-    expect(await fs.readFile(path.join(userDataDir, 'entity-database/main.sqlite'), 'utf8')).toBe('DB');
-    expect(await fs.readFile(path.join(userDataDir, 'plugins/norbert/manifest.json'), 'utf8')).toBe('{}');
+    expect(await fs.readFile(path.join(userDataDir, 'project-prefs.json'), 'utf8')).toBe(
+      '{"recent":[]}',
+    );
+    expect(await fs.readFile(path.join(userDataDir, 'entity-database/main.sqlite'), 'utf8')).toBe(
+      'DB',
+    );
+    expect(await fs.readFile(path.join(userDataDir, 'plugins/norbert/manifest.json'), 'utf8')).toBe(
+      '{}',
+    );
     const marker = await readMarker();
     expect(marker).toMatchObject({ ok: true, migrated: true });
   });
@@ -93,7 +99,11 @@ describe('migrateLegacyUserData', () => {
 
   it('records a marker and does nothing when there is no legacy profile', async () => {
     migrateLegacyUserData();
-    expect(await readMarker()).toMatchObject({ ok: true, migrated: false, reason: 'no legacy profile' });
+    expect(await readMarker()).toMatchObject({
+      ok: true,
+      migrated: false,
+      reason: 'no legacy profile',
+    });
   });
 
   it('does not overwrite an already-populated new profile', async () => {
@@ -103,7 +113,12 @@ describe('migrateLegacyUserData', () => {
 
     migrateLegacyUserData();
 
-    expect(await fs.readFile(path.join(userDataDir, 'project-prefs.json'), 'utf8')).toBe('{"from":"new"}');
-    expect(await readMarker()).toMatchObject({ migrated: false, reason: 'new profile already populated' });
+    expect(await fs.readFile(path.join(userDataDir, 'project-prefs.json'), 'utf8')).toBe(
+      '{"from":"new"}',
+    );
+    expect(await readMarker()).toMatchObject({
+      migrated: false,
+      reason: 'new profile already populated',
+    });
   });
 });

@@ -150,7 +150,7 @@ Estimated effort: **2–4 days** for namespace refactor + tests on TEI fixtures.
 | Fix                                                        | File                       | Effort  |
 | ---------------------------------------------------------- | -------------------------- | ------- |
 | `tei:nmd_gz` → `tei:nmdgz` (or local-name)                 | `bulk_processing.py`       | Trivial |
-| Export `propose_dates` / `row_to_tei_attrs`                | new `grognard_bridge.py`        | Small   |
+| Export `propose_dates` / `row_to_tei_attrs`                | new `grognard_bridge.py`   | Small   |
 | Unit test: TEI-namespaced `<date>` round-trip via fragment | `tests/test_ljb_bridge.py` | Small   |
 
 ---
@@ -222,10 +222,10 @@ PYTHONPATH=src .venv/bin/python -m pytest tests/test_tei_ns.py -q
 
 ## Decision matrix
 
-| Approach                               | Sanmiao changes                                                                               | Namespace risk                                                       | Re-resolve stored parse  |
-| -------------------------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------ |
-| **Fragment bridge (v1 Grognard)**           | `tei_bridge.py`                                                                               | Low                                                                  | `resolve_date_element()` |
-| **In-document tagging**                | Done in core (ns helpers)                                                                     | Low–medium                                                           | Native                   |
+| Approach                               | Sanmiao changes                                                                               | Namespace risk                                                            | Re-resolve stored parse  |
+| -------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------ |
+| **Fragment bridge (v1 Grognard)**      | `tei_bridge.py`                                                                               | Low                                                                       | `resolve_date_element()` |
+| **In-document tagging**                | Done in core (ns helpers)                                                                     | Low–medium                                                                | Native                   |
 | **Paragraph batch with implied carry** | `propose_dates_batch()` passes `implied` from chunk to chunk when `sequential=True` (0.2.10+) | Grognard sends one `<p>` per chunk; cross-paragraph 其三年 still resolves |
 
 **Recommendation:** Grognard calls `propose_dates()` / `resolve_date_element()` via subprocess; apply TEI mutations in TypeScript. Sanmiao core is now TEI-capable for standalone batch use too.

@@ -27,7 +27,7 @@ Secondary goal (concordance ready, UI not wired): when importing a **Kanripo** D
 | Index builder                     | `python/daozang_import/corpus_index.py`                                        |
 | Mandoku-style → TEI body          | `python/daozang_import/daozang_tei.py`                                         |
 | Desktop IPC                       | `daozang:search`, `daozang:resolveText`, `daozang:status`, corpus install/sync |
-| Wizard UI                         | Grognard host module `daozangImportUi`                                              |
+| Wizard UI                         | Grognard host module `daozangImportUi`                                         |
 | **Kanripo ↔ Daozang concordance** | `plugin-kanripo-import/data/concordance/` (see below)                          |
 
 Provenance: **方瞳子源** (Fang Tongzi / homeinmists.com) transcriptions of the Zhengtong and Wanli Supplement Daozang.

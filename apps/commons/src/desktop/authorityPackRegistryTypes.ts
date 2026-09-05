@@ -6,8 +6,7 @@ export type { AuthorityLifecycleProfile } from './authorityLifecycleTypes';
 
 /** Latest published authoritypacks release assets. */
 export const AUTHORITY_PACK_REGISTRY = {
-  releaseDownloadBaseUrl:
-    'https://github.com/grognard/authoritypacks/releases/latest/download',
+  releaseDownloadBaseUrl: 'https://github.com/grognard/authoritypacks/releases/latest/download',
 } as const;
 
 export const PACKS_INDEX_FILENAME = 'packs-index.json';

@@ -100,7 +100,9 @@ const URI_PATTERNS: {
 ];
 
 export function parseAuthorityUri(uri: string): ParsedAuthorityRef | null {
-  const localPack = uri.match(/^urn:grognard:authority:(cbdb|norbert):(person|place|office):(.+)$/i);
+  const localPack = uri.match(
+    /^urn:grognard:authority:(cbdb|norbert):(person|place|office):(.+)$/i,
+  );
   if (localPack) {
     const source = localPack[1]!.toLowerCase();
     const entityType = localPack[2]!.toLowerCase();

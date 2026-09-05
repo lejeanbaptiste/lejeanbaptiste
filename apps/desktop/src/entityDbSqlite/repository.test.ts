@@ -45,7 +45,8 @@ describe('EntitySqliteRepository', () => {
     repository.createEntity({ id: 'person-note-1', kind: 'person', description: 'Short bio' });
     const first =
       '<div type="grognard-entity-note"><note type="body" xml:lang="fr">Bonjour <note place="foot">Source</note></note></div>';
-    const second = '<div type="grognard-entity-note"><note type="body" xml:lang="zh">你好</note></div>';
+    const second =
+      '<div type="grognard-entity-note"><note type="body" xml:lang="zh">你好</note></div>';
 
     repository.setEntityNote('person-note-1', first);
     expect(repository.getEntityNotes('person-note-1')).toEqual([{ xml: first }]);

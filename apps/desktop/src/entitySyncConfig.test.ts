@@ -59,7 +59,9 @@ describe('entitySyncConfig', () => {
       endpoint: '  https://grognard-entity-sync.example.workers.dev/  ',
     });
     expect(saved.endpoint).toBe('https://grognard-entity-sync.example.workers.dev');
-    expect((await readSyncConfig()).endpoint).toBe('https://grognard-entity-sync.example.workers.dev');
+    expect((await readSyncConfig()).endpoint).toBe(
+      'https://grognard-entity-sync.example.workers.dev',
+    );
   });
 
   it('clamps the interval into range', async () => {

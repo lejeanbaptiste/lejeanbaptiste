@@ -160,11 +160,11 @@ Grognard should receive the import dialog for that source. More detail on what e
 
 ### Troubleshooting
 
-| Problem                                           | What to try                                                                                                                                                                                                              |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Import** does nothing or says it cannot connect | Quit and reopen Grognard so the native host is registered again. Confirm Grognard is running before you click Import.                                                                                                              |
-| Extension missing after browser update            | Reload the unpacked folder (Chromium) or load the temporary add-on again (Firefox).                                                                                                                                      |
-| Wrong or empty import                             | Check the URL matches the supported patterns above; use **File → Import from URL…** in Grognard with the same link to compare.                                                                                                |
+| Problem                                           | What to try                                                                                                                                                                                           |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Import** does nothing or says it cannot connect | Quit and reopen Grognard so the native host is registered again. Confirm Grognard is running before you click Import.                                                                                 |
+| Extension missing after browser update            | Reload the unpacked folder (Chromium) or load the temporary add-on again (Firefox).                                                                                                                   |
+| Wrong or empty import                             | Check the URL matches the supported patterns above; use **File → Import from URL…** in Grognard with the same link to compare.                                                                        |
 | SmartScreen or security warning                   | The extension is not from a store; you install it manually from the Grognard release. Only download zips from [github.com/grognard/grognard/releases](https://github.com/grognard/grognard/releases). |
 
 ## Entity database — cloud backup and multi-machine sync

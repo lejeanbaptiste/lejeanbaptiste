@@ -207,7 +207,7 @@ the user.
 | 1. K1               | UTF-8 preservation, palette/input, tests, font/export checks.                       | Dedicated characters round-trip losslessly.                                  |
 | 2. K2               | Schema-confirmed source-position pattern, facsimile linkage, inspector support.     | Complex placements can be encoded without a local ad-hoc element.            |
 | 3. K3               | Reviewed tokenisation/linking workflow and validation.                              | A verified kundoku sequence is navigable and exportable without altering K1. |
-| 4. Interchange      | Import/export mapping and public profile documentation.                             | A partner can create valid Grognard kaeriten data without relying on the UI.      |
+| 4. Interchange      | Import/export mapping and public profile documentation.                             | A partner can create valid Grognard kaeriten data without relying on the UI. |
 
 ## Initial recommendation
 

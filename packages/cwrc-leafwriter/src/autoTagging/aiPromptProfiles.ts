@@ -170,7 +170,10 @@ export async function readAiPromptProfilesFromDesktop(): Promise<AiPromptProfile
 export async function persistAiPromptProfiles(state: AiPromptProfilesState): Promise<void> {
   const store = entityStoreFromDesktop();
   if (!store) return;
-  await store.writeProjectGrognardFile(AI_PROMPT_PROFILES_FILE, serializeAiPromptProfilesFile(state));
+  await store.writeProjectGrognardFile(
+    AI_PROMPT_PROFILES_FILE,
+    serializeAiPromptProfilesFile(state),
+  );
 }
 
 export function newAiPromptProfileId(): string {

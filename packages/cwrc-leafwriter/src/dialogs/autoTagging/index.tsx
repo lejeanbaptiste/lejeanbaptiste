@@ -1377,8 +1377,8 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
               {!entityDbFolder && (
                 <Alert severity="warning" sx={{ py: 0.5 }}>
                   No entity database folder configured. Choose any folder — a blank one is fine; Le
-                  Grognard will set up the database there. Prefer a cloud-synced folder if you
-                  use more than one machine.
+                  Grognard will set up the database there. Prefer a cloud-synced folder if you use
+                  more than one machine.
                   <Box sx={{ mt: 1 }}>
                     <Button
                       size="small"

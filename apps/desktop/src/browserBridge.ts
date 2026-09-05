@@ -144,9 +144,11 @@ const resolveNativeHostFile = (basename: string): string => {
   return candidates.find((p) => fs.existsSync(p)) ?? candidates[1];
 };
 
-export const resolveNativeHostScript = (): string => resolveNativeHostFile('grognard-browser-host.mjs');
+export const resolveNativeHostScript = (): string =>
+  resolveNativeHostFile('grognard-browser-host.mjs');
 
-export const resolveNativeHostLauncher = (): string => resolveNativeHostFile('grognard-browser-host');
+export const resolveNativeHostLauncher = (): string =>
+  resolveNativeHostFile('grognard-browser-host');
 
 const shSingleQuote = (value: string): string => `'${value.replace(/'/g, `'\\''`)}'`;
 

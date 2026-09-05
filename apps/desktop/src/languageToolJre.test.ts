@@ -48,9 +48,9 @@ describe('languageTool JRE helpers', () => {
   });
 
   test('isManagedJavaPath recognizes userData grognard-java paths', () => {
-    expect(isManagedJavaPath('/tmp/grognard-java-test/grognard-java/runtime/Contents/Home/bin/java')).toBe(
-      true,
-    );
+    expect(
+      isManagedJavaPath('/tmp/grognard-java-test/grognard-java/runtime/Contents/Home/bin/java'),
+    ).toBe(true);
     expect(isManagedJavaPath('/usr/bin/java')).toBe(false);
   });
 });

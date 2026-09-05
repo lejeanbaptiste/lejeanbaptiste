@@ -51,7 +51,9 @@ describe('runAchievementsSync', () => {
     );
     await fs.rm(ENTITY_DIR, { recursive: true, force: true });
     await fs.mkdir(ENTITY_DIR, { recursive: true });
-    await fs.rm('/tmp/grognard-test-userdata/entity-sync-achievements-marker.json', { force: true });
+    await fs.rm('/tmp/grognard-test-userdata/entity-sync-achievements-marker.json', {
+      force: true,
+    });
   });
 
   it('pushes a new local blob when the server is empty', async () => {

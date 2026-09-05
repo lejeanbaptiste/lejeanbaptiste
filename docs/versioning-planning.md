@@ -201,7 +201,7 @@ export interface ProjectFileConfig {
 | `apps/commons/src/dialogs/HistoryDialog.tsx` (new)         | Per-file history                   |
 | `apps/commons/src/dialogs/ProjectRollbackDialog.tsx` (new) | Project rollback                   |
 | `apps/commons/src/pages/project/NativeSettingsPage.tsx`    | History retention settings         |
-| `.grognard/history/manifest.jsonl`                              | Per-project index                  |
+| `.grognard/history/manifest.jsonl`                         | Per-project index                  |
 
 ---
 
@@ -217,19 +217,19 @@ export interface ProjectFileConfig {
 
 ## Testing plan
 
-| Case                           | Expect                                       |
-| ------------------------------ | -------------------------------------------- |
-| Save with content change       | New snapshot + manifest line                 |
-| Save unchanged content         | No new snapshot                              |
-| 51st save on one file          | Oldest over limit pruned                     |
-| History &gt; 500 MB            | Global prune removes oldest                  |
-| File → History → Restore       | Live file replaced; tab reloads              |
-| Restore                        | `rollback-pre` snapshot exists               |
-| Project → Rollback             | All affected files restored to ≤ chosen time |
-| Temp untitled tab              | No snapshots until Save As                   |
-| History disabled in Settings   | Save works; no snapshots                     |
-| File outside project           | Not snapshotted                              |
-| Open project on second machine | History travels with `.grognard/` folder copy     |
+| Case                           | Expect                                        |
+| ------------------------------ | --------------------------------------------- |
+| Save with content change       | New snapshot + manifest line                  |
+| Save unchanged content         | No new snapshot                               |
+| 51st save on one file          | Oldest over limit pruned                      |
+| History &gt; 500 MB            | Global prune removes oldest                   |
+| File → History → Restore       | Live file replaced; tab reloads               |
+| Restore                        | `rollback-pre` snapshot exists                |
+| Project → Rollback             | All affected files restored to ≤ chosen time  |
+| Temp untitled tab              | No snapshots until Save As                    |
+| History disabled in Settings   | Save works; no snapshots                      |
+| File outside project           | Not snapshotted                               |
+| Open project on second machine | History travels with `.grognard/` folder copy |
 
 ---
 

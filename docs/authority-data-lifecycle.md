@@ -63,12 +63,12 @@ User entity SQLite (names, nationality, origin, appointments, noble titles)
 
 ## Licenses (distribution constraints)
 
-| Source      | License                                                               | Tagging packs (GitHub releases)                          | Reference download                                                                                                                            |
-| ----------- | --------------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| **CBDB**    | [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) | **OK** — attribute CBDB; release derivatives under NC-SA | **Stripped person sqlite** in `authority-reference-person-*.zip` (not full HuggingFace dump)                                                  |
-| **Norbert** | internal-derived-public                                               | **OK** — attribution in manifest                         | Same reference zip (`norbert.sqlite3`)                                                                                                        |
+| Source      | License                                                               | Tagging packs (GitHub releases)                          | Reference download                                                                                                                                 |
+| ----------- | --------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CBDB**    | [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) | **OK** — attribute CBDB; release derivatives under NC-SA | **Stripped person sqlite** in `authority-reference-person-*.zip` (not full HuggingFace dump)                                                       |
+| **Norbert** | internal-derived-public                                               | **OK** — attribution in manifest                         | Same reference zip (`norbert.sqlite3`)                                                                                                             |
 | **DILA**    | CC-BY-SA 3.0                                                          | **OK** — attribute DILA                                  | Browse [Open Content Downloads](https://authority.dila.edu.tw/docs/open_content/download.php); Grognard fetches the GitHub TEI mirror of that data |
-| **CHGIS**   | Academic EULA — no standalone redistribution                          | **OK as bundled derivative** in chinese pack             | Local Dataverse compile only                                                                                                                  |
+| **CHGIS**   | Academic EULA — no standalone redistribution                          | **OK as bundled derivative** in chinese pack             | Local Dataverse compile only                                                                                                                       |
 
 Pack manifests must record `license` accurately (CBDB: `CC-BY-NC-SA-4.0`, not vague “academic terms”). Settings UI shows attribution strings.
 
@@ -250,15 +250,15 @@ Historical China **places** — complements CBDB places and DILA. See [authority
 
 ## Implementation phases
 
-| Step | Track | Deliverable                                                        | Status                   |
-| ---- | ----- | ------------------------------------------------------------------ | ------------------------ |
-| 1    | A5    | This spec; lifecycle IPC + Settings UI (spike)                     | partial                  |
-| 2    | C3/D3 | GitHub Actions → publish pack bundle + `packs-index.json`          | done                     |
+| Step | Track | Deliverable                                                             | Status                   |
+| ---- | ----- | ----------------------------------------------------------------------- | ------------------------ |
+| 1    | A5    | This spec; lifecycle IPC + Settings UI (spike)                          | partial                  |
+| 2    | C3/D3 | GitHub Actions → publish pack bundle + `packs-index.json`               | done                     |
 | 3    | A5    | Grognard: fetch packs from GitHub contents (`authorityPackRegistry.ts`) | done                     |
-| 4    | A5    | Reference-data checkbox + keep A1 fetcher for tier 2               | done / in use            |
-| 5    | A6    | `authorityRef:lookup` for disambiguation / entity enrichment       | done (person enrichment) |
-| 6    | D1    | DILA recompile (D0 `<note>`/`<add>` variants); bump policy         | planned                  |
-| 7    | H     | CHGIS compile + fold into `chinese` Tier 1 pack bundle             | done                     |
+| 4    | A5    | Reference-data checkbox + keep A1 fetcher for tier 2                    | done / in use            |
+| 5    | A6    | `authorityRef:lookup` for disambiguation / entity enrichment            | done (person enrichment) |
+| 6    | D1    | DILA recompile (D0 `<note>`/`<add>` variants); bump policy              | planned                  |
+| 7    | H     | CHGIS compile + fold into `chinese` Tier 1 pack bundle                  | done                     |
 
 **Exit criteria:** User enables once; packs install from GitHub without terminal; reference data optional; tag bomb works; update offers new pack bundle; disambiguation can show rich CBDB/DILA detail from local reference; disable + delete reclaims disk.
 

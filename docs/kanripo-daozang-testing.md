@@ -295,7 +295,7 @@ Issues:
 | File → Import from Daozang does nothing               | Plugins enabled? Project open? Console `[plugins] Failed to load daozang-import`? Restart `dev:desktop`. |
 | Dialog opens but list duplicates / React key warnings | Refresh index in dialog or restart app (index v2 with hashed ids).                                       |
 | Python import error / mojibake                        | Daozang `.txt` GB decoding — rerun `plugin-daozang-import` python tests.                                 |
-| Schema compile error in console                       | Reopen project; confirm `grognard-sanmiao-merge v14+` in `schema/tei_all.rng`.                                |
+| Schema compile error in console                       | Reopen project; confirm `grognard-sanmiao-merge v14+` in `schema/tei_all.rng`.                           |
 | No Daozang match in Kanripo wizard                    | KR id in `kanripo_daozang_map.json`? Both plugins enabled? Parallel mode on?                             |
 | Punctuation wrong but import “succeeds”               | Check yellow quality warnings; try Wikisource or manual parallel for comparison.                         |
 

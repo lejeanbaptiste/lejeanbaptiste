@@ -97,8 +97,7 @@ const replaceExtension = (filePath: string, extension: string): string => {
   return joinPath(dir, `${name || 'Untitled'}.${extension.replace(/^\./, '')}`);
 };
 
-const isTempDocumentPath = (filePath: string): boolean =>
-  /[/\\]grognard[/\\]/.test(filePath);
+const isTempDocumentPath = (filePath: string): boolean => /[/\\]grognard[/\\]/.test(filePath);
 
 const isTempTab = (tab: { filePath: string; isTemp?: boolean }) =>
   tab.isTemp || isTempDocumentPath(tab.filePath);

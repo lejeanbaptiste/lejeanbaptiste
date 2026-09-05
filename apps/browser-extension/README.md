@@ -55,10 +55,10 @@ Starting Grognard registers the native host `org.grognard.import`
 so the extension can reach the running app. This is automatic on **macOS,
 Linux, and Windows**:
 
-|         | Chrome / Brave / Chromium / Edge                                                                                                  | Firefox                                                                |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| macOS   | `~/Library/Application Support/<Browser>/NativeMessagingHosts/org.grognard.import.json`                                     | `~/Library/Application Support/Mozilla/NativeMessagingHosts/…`         |
-| Linux   | `~/.config/<browser>/NativeMessagingHosts/org.grognard.import.json`                                                         | `~/.mozilla/native-messaging-hosts/…`                                  |
+|         | Chrome / Brave / Chromium / Edge                                                                                    | Firefox                                                          |
+| ------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| macOS   | `~/Library/Application Support/<Browser>/NativeMessagingHosts/org.grognard.import.json`                             | `~/Library/Application Support/Mozilla/NativeMessagingHosts/…`   |
+| Linux   | `~/.config/<browser>/NativeMessagingHosts/org.grognard.import.json`                                                 | `~/.mozilla/native-messaging-hosts/…`                            |
 | Windows | `HKCU\Software\<Vendor>\…\NativeMessagingHosts\org.grognard.import` → manifest in `%APPDATA%\Grognard\native-host\` | `HKCU\Software\Mozilla\NativeMessagingHosts\org.grognard.import` |
 
 The manifest allows the Chrome extension id `dddnkaleimllefhfolmhdfbidnjfojjh`

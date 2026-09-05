@@ -4101,7 +4101,11 @@ const createWindow = async () => {
 
   // Surface renderer console output in the terminal for startup debugging.
   mainWindow.webContents.on('console-message', (event) => {
-    if (process.env.GROGNARD_DEBUG === '1' || event.level === 'warning' || event.level === 'error') {
+    if (
+      process.env.GROGNARD_DEBUG === '1' ||
+      event.level === 'warning' ||
+      event.level === 'error'
+    ) {
       console.log(`[renderer:${event.level}] ${event.message}`);
     }
   });

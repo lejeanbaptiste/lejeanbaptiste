@@ -116,11 +116,11 @@ The existing `AuthorityCandidate` normalizer can consume these at compile time i
 Map to Grognard / LEAF types ([`entities.ts`](../packages/cwrc-leafwriter/src/autoTagging/entities.ts)):
 
 | Grognard kind | TEI tag                  | Wikidata strategy                                                                           |
-| -------- | ------------------------ | ------------------------------------------------------------------------------------------- |
-| `person` | `persName`               | `P31` → `human (Q5)`                                                                        |
-| `place`  | `placeName` / `geogName` | `P31` → geographic types (see below)                                                        |
-| `org`    | `orgName`                | `P31` → `organization (Q43229)` and subclasses (business, religious org, dynasty as org, …) |
-| `work`   | `title`                  | `P31` → `creative work`, `literary work`, `book`, `poem`, …                                 |
+| ------------- | ------------------------ | ------------------------------------------------------------------------------------------- |
+| `person`      | `persName`               | `P31` → `human (Q5)`                                                                        |
+| `place`       | `placeName` / `geogName` | `P31` → geographic types (see below)                                                        |
+| `org`         | `orgName`                | `P31` → `organization (Q43229)` and subclasses (business, religious org, dynasty as org, …) |
+| `work`        | `title`                  | `P31` → `creative work`, `literary work`, `book`, `poem`, …                                 |
 
 ### 4.1 Persons — “Chinese people” without a single class
 
@@ -368,8 +368,8 @@ Ship small, validate, expand.
 | `wikidata-person-zh-hant-ming` / `-qing`                 | tens of k    | P0                                                                         |
 | `wikidata-person-zh-hans` (all periods, metadata filter) | 100k+        | P1 — modern/simple                                                         |
 | `wikidata-work-zh-hant`                                  | 5k–20k       | P1 — **title** tag for classical Chinese corpora                           |
-| `wikidata-place-zh-hant`                                 | 254k         | P2 — noisy; compare CHGIS; **opt-in** in Grognard                               |
-| `wikidata-place-ja`                                      | 514k         | P2 — noisy; compare NDL; **opt-in** in Grognard (`wikidata-places-ja`)          |
+| `wikidata-place-zh-hant`                                 | 254k         | P2 — noisy; compare CHGIS; **opt-in** in Grognard                          |
+| `wikidata-place-ja`                                      | 514k         | P2 — noisy; compare NDL; **opt-in** in Grognard (`wikidata-places-ja`)     |
 | `wikidata-org-zh-hant`                                   | 5k–15k       | P2                                                                         |
 | `wikidata-person-ja`                                     | 50k+         | P3 — **supplement** to NDL persons (not replacement)                       |
 | `wikidata-work-ja`                                       | varies       | P2 — **title**; NDL works batch is small (~900)                            |
