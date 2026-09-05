@@ -17,6 +17,8 @@
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
     "installerHeader": "resources/branding/installer-header.bmp",
+    "installerSidebar": "resources/branding/installer-sidebar.bmp",
+    "uninstallerSidebar": "resources/branding/installer-sidebar.bmp",
     "include": "installer.nsh"
   },
   "win": {
