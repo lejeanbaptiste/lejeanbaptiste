@@ -118,6 +118,7 @@ import {
 } from './entitySyncService';
 import type { EntitySyncConfigPatch } from './entitySyncService';
 import { setAppLocale } from './appLocale';
+import { migrateLegacyUserData } from './userDataMigration';
 import { mainT } from './mainI18n';
 import { checkLanguageToolText, testLanguageToolConnection } from './languageToolClient';
 import { applyWhitelistToMatches, loadLanguageToolEntityWhitelist } from './languageToolWhitelist';
@@ -818,6 +819,11 @@ if (process.platform === 'darwin') {
 
 // Must run before app.ready so macOS uses this name in the menu bar (dev and packaged).
 app.setName(APP_NAME);
+
+// One-time import of the user's profile from the pre-rename app ("Le Jean-Baptiste").
+// Must run after setName (so userData resolves to the new location) and before
+// anything reads a userData path.
+migrateLegacyUserData();
 
 const getIconPath = () => {
   const base = app.isPackaged
