@@ -198,15 +198,58 @@ jobs:
           APPLE_NOTARY_API_PRIVATE_KEY_P8: ${{ secrets.APPLE_NOTARY_API_PRIVATE_KEY_P8 }}
         run: printf '%s\n' "$APPLE_NOTARY_API_PRIVATE_KEY_P8" > "$RUNNER_TEMP/notary_key.p8"
 
+      # Do not hand electron-builder CSC_LINK/CSC_KEY_PASSWORD. Its own keychain
+      # path (app-builder-lib createKeychain -> importCerts) creates the
+      # keychain with a random password but then calls
+      #   security set-key-partition-list ... -k <p12 export password>
+      # which wants the *keychain* password, not the .p12 one. That mismatch
+      # fails with "SecKeychainUnlock: The user name or passphrase you entered
+      # is not correct" whenever security actually has to unlock at that point —
+      # it took down the arm64 job of the v0.1.0-beta.12 release while x64
+      # passed on the same commit. Building the keychain here and passing it as
+      # CSC_KEYCHAIN makes electron-builder skip that code path entirely
+      # (macPackager: no cscLink => use process.env.CSC_KEYCHAIN).
+      - name: Set up signing keychain
+        env:
+          APP_P12_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_P12_BASE64 }}
+          APP_P12_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_P12_PASSWORD }}
+          INSTALLER_P12_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_INSTALLER_P12_BASE64 }}
+          INSTALLER_P12_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_INSTALLER_P12_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -base64 32)"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          # 6h timeout comfortably outlasts the ~30m build; without it the
+          # keychain can relock mid-signing.
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          import_p12() {
+            if [ -n "$1" ]; then
+              printf '%s' "$1" | base64 -d > "$RUNNER_TEMP/cert.p12"
+              security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$2" \
+                -T /usr/bin/codesign -T /usr/bin/productsign -T /usr/bin/productbuild
+              rm -f "$RUNNER_TEMP/cert.p12"
+            fi
+          }
+          import_p12 "$APP_P12_BASE64" "$APP_P12_PASSWORD"
+          import_p12 "$INSTALLER_P12_BASE64" "$INSTALLER_P12_PASSWORD"
+          # The keychain password, which is the argument this actually wants.
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          # scripts/sign-mac-extra-resources.mjs runs `security find-identity`
+          # with no keychain argument, so the keychain has to be on the user
+          # search list for the afterPack hook to sign extraResources at all.
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+          echo "CSC_KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+          security find-identity -v -p codesigning "$KEYCHAIN"
+
       - name: Build signed and notarized package
         env:
-          # electron-builder imports these into a temporary keychain and signs
-          # the app (Developer ID Application) and the .pkg (Developer ID
-          # Installer), then notarizes the app with the API key below.
-          CSC_LINK: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_P12_BASE64 }}
-          CSC_KEY_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_P12_PASSWORD }}
-          CSC_INSTALLER_LINK: ${{ secrets.APPLE_DEVELOPER_ID_INSTALLER_P12_BASE64 }}
-          CSC_INSTALLER_KEY_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_INSTALLER_P12_PASSWORD }}
+          # Certificates already live in CSC_KEYCHAIN (previous step);
+          # electron-builder auto-discovers the Developer ID Application and
+          # Developer ID Installer identities there, then notarizes with the
+          # API key below.
           APPLE_API_KEY: ${{ runner.temp }}/notary_key.p8
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
