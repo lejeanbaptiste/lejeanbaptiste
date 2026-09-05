@@ -55,6 +55,7 @@ import {
   type AuthorityId,
   type EntityKind,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import { readPersistedAuthoritySettings } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/authoritySettings';
 import {
   groupFieldAssertions,
   type CentralMergeConflict,
@@ -116,6 +117,7 @@ import { useActions, useAppState } from '@src/overmind';
 import { EntityLookupField, type EntityLookupValue } from '@src/desktop/EntityLookupField';
 import { readStoredKindFilter, writeStoredKindFilter } from '../databaseViewPrefs';
 import { EntityNamesAccordion, type NameRow } from './EntityNamesAccordion';
+import { EntityRelationsEditor } from './EntityRelationsEditor';
 import { entityLookupDialogAtom } from '@cwrc/leafwriter';
 import { getDefaultStore } from 'jotai';
 import { RESET } from 'jotai/utils';
@@ -767,6 +769,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     setKindFilterState(kind);
     writeStoredKindFilter(kind);
   }, []);
+  const [subtypeFilter, setSubtypeFilter] = useState<string>('');
+  // Read fresh each render (cheap in-memory getter) rather than memoized, so a
+  // type added in Project Settings shows up here without remounting the tab.
+  const thingTypeOptions = readPersistedAuthoritySettings()?.customThingTypes ?? [];
+  useEffect(() => {
+    if (kindFilter !== 'thing') setSubtypeFilter('');
+  }, [kindFilter]);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [showRejected, setShowRejected] = useState(false);
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
@@ -1276,6 +1285,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       { value: 'org', label: t('LWC.desktop.sidebar.database.entity_types.organization') },
       { value: 'work', label: t('LWC.desktop.sidebar.database.entity_types.work') },
       { value: 'office', label: t('LWC.desktop.sidebar.database.entity_types.office') },
+      { value: 'thing', label: t('LWC.desktop.sidebar.database.entity_types.thing') },
     ],
     [t],
   );
@@ -1336,6 +1346,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const folded = foldForSearch(search.trim());
     return entities.filter((entity) => {
       if (entity.kind !== kindFilter) return false;
+      if (kindFilter === 'thing' && subtypeFilter && entity.subtype !== subtypeFilter) {
+        return false;
+      }
       if (!regex && !folded) return true;
       // Check the precomputed folded blob first: a single Map lookup + substring
       // test, versus building a fresh haystack array and running a regex against
@@ -1349,7 +1362,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       if (entity.romanized && regex.test(entity.romanized)) return true;
       return entity.names.some((name) => regex.test(name));
     });
-  }, [entities, foldedIndex, kindFilter, regex, search]);
+  }, [entities, foldedIndex, kindFilter, subtypeFilter, regex, search]);
 
   const toggleSelected = useCallback((id: string) => {
     setSelected((previous) => {
@@ -3375,6 +3388,26 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               />
             )}
           />
+          {kindFilter === 'thing' && thingTypeOptions.length > 0 && (
+            <Autocomplete
+              size="small"
+              autoHighlight
+              openOnFocus
+              options={thingTypeOptions}
+              value={thingTypeOptions.find((option) => option.id === subtypeFilter) ?? null}
+              onChange={(_event, option) => setSubtypeFilter(option?.id ?? '')}
+              getOptionLabel={(option) => option.label}
+              isOptionEqualToValue={(a, b) => a.id === b.id}
+              sx={{ flex: 1, minWidth: 140 }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label={t('LWC.desktop.sidebar.database.subtype_filter')}
+                  aria-label={t('LWC.desktop.sidebar.database.subtype_filter')}
+                />
+              )}
+            />
+          )}
           {!syncToCentral && (
             <Tooltip
               title={
@@ -4167,6 +4200,36 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             label={t('LWC.desktop.sidebar.database.one_line_description')}
             onValueChange={handleEditDescriptionChange}
           />
+          {editEntity?.kind === 'thing' && (
+            <TextField
+              select
+              fullWidth
+              size="small"
+              sx={{ mt: 1.5 }}
+              label={t('LWC.desktop.sidebar.database.subtype_filter')}
+              value={editEntity.subtype ?? ''}
+              onChange={(event) => {
+                const value = event.target.value || null;
+                void runSqliteEntityMutation(
+                  editEntity.id,
+                  t('LWC.desktop.sidebar.database.saving_subtype'),
+                  async (targetStore) => {
+                    await targetStore.sqliteUpdateSubtype(editEntity.id, value);
+                  },
+                );
+              }}
+            >
+              <MenuItem value="">
+                <em>{t('LWC.desktop.sidebar.database.subtype_none')}</em>
+              </MenuItem>
+              {thingTypeOptions.map((option) => (
+                <MenuItem key={option.id} value={option.id}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+          {editEntity && <EntityRelationsEditor entityId={editEntity.id} />}
           {editEntity &&
             descriptionGroups.pending.map((assertion) => (
               <Stack

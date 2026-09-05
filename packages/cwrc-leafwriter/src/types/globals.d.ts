@@ -1,3 +1,5 @@
+import type { EntityKind } from '../autoTagging/entities';
+
 export {};
 
 declare global {
@@ -44,10 +46,10 @@ declare global {
     entitySqliteImportXml?: (request: { databasePath: string; xml: string }) => Promise<unknown>;
     entitySqliteCandidates?: (request: {
       databasePath: string;
-      kind: 'person' | 'place' | 'work' | 'office' | 'org';
+      kind: EntityKind;
     }) => Promise<Array<{
       id: string;
-      kind: 'person' | 'place' | 'work' | 'office' | 'org';
+      kind: EntityKind;
       names: Array<{ text: string; type?: string }>;
       description?: string;
       startYear?: number;
@@ -76,6 +78,11 @@ declare global {
       databasePath: string;
       entityId: string;
       description: string | null;
+    }) => Promise<void>;
+    entitySqliteUpdateSubtype?: (request: {
+      databasePath: string;
+      entityId: string;
+      subtype: string | null;
     }) => Promise<void>;
     entitySqliteGetNotes?: (request: {
       databasePath: string;
@@ -277,10 +284,35 @@ declare global {
         droppedCentralId: string;
       }>;
     }>;
+    entitySqliteCreateRelation?: (request: {
+      databasePath: string;
+      subjectEntityId: string;
+      objectEntityId: string;
+      relationType: string;
+      symmetric?: boolean;
+      reference?: string | null;
+    }) => Promise<number>;
+    entitySqliteListRelations?: (request: { databasePath: string; entityId: string }) => Promise<
+      Array<{
+        id: number;
+        relationType: string;
+        isSubject: boolean;
+        symmetric: boolean;
+        reference: string | null;
+        otherEntityId: string | null;
+        otherEntityKind: EntityKind | null;
+        otherEntityName: string | null;
+      }>
+    >;
+    entitySqliteUpdateRelationStatus?: (request: {
+      databasePath: string;
+      relationId: number;
+      status: 'active' | 'rejected' | 'withdrawn';
+    }) => Promise<boolean>;
     entitySqliteCreatePopulated?: (request: {
       databasePath: string;
       id: string;
-      kind: 'person' | 'place' | 'work' | 'office' | 'org';
+      kind: EntityKind;
       description?: string | null;
       names?: Array<{
         text: string;
@@ -411,13 +443,13 @@ declare global {
     entitySqliteCountEntities?: (request: { databasePath: string }) => Promise<number | null>;
     entitySqliteFindByAuthority?: (request: {
       databasePath: string;
-      kind: 'person' | 'place' | 'work' | 'office' | 'org';
+      kind: EntityKind;
       type: string;
       value: string;
     }) => Promise<string[]>;
     entitySqliteFindByNameDates?: (request: {
       databasePath: string;
-      kind: 'person' | 'place' | 'work' | 'office' | 'org';
+      kind: EntityKind;
       name: string;
       startYear?: number | null;
       endYear?: number | null;
@@ -429,7 +461,7 @@ declare global {
     }) => Promise<boolean>;
     entitySqliteSearch?: (request: {
       databasePath: string;
-      kind: 'person' | 'place' | 'work' | 'office' | 'org';
+      kind: EntityKind;
       query: string;
       limit?: number;
     }) => Promise<Array<{
@@ -445,11 +477,11 @@ declare global {
     entitySqliteDatabaseId?: (databasePath: string) => Promise<string | null>;
     entitySqliteListIds?: (request: {
       databasePath: string;
-      kind?: 'person' | 'place' | 'work' | 'office' | 'org';
+      kind?: EntityKind;
     }) => Promise<string[] | null>;
     entitySqliteListPanelSummaries?: (request: {
       databasePath: string;
-      kind?: 'person' | 'place' | 'work' | 'office' | 'org';
+      kind?: EntityKind;
     }) => Promise<unknown[] | null>;
     entitySqliteAuthorityDuplicates?: (databasePath: string) => Promise<unknown[] | null>;
     lspStart: (options?: {
@@ -999,6 +1031,7 @@ declare global {
               labelsByLang?: Record<string, string>;
               bucket: 'phase1' | 'phase2' | 'never';
             }>;
+            customThingTypes?: Array<{ id: string; label: string }>;
             artMinCodePoints?: number;
             yearFilterEnabled?: boolean;
             hideUndated?: boolean;
@@ -1019,6 +1052,7 @@ declare global {
           labelsByLang?: Record<string, string>;
           bucket: 'phase1' | 'phase2' | 'never';
         }>;
+        customThingTypes?: Array<{ id: string; label: string }>;
         artMinCodePoints?: number;
         yearFilterEnabled?: boolean;
         hideUndated?: boolean;

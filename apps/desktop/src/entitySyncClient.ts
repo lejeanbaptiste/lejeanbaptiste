@@ -9,7 +9,7 @@
  * retried.
  */
 
-export type SyncEntityKind = 'person' | 'place' | 'work' | 'office' | 'org';
+export type SyncEntityKind = 'person' | 'place' | 'work' | 'office' | 'org' | 'thing';
 
 export interface SyncPushEntity {
   localId: string;

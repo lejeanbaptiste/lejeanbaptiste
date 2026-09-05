@@ -102,6 +102,69 @@ describe('seedSuggestions + bucketSeeds', () => {
     );
   });
 
+  it("sets attributes.type on an rs suggestion from a thing candidate's sub-type", () => {
+    const doc = parse(TEI);
+    const candidate = cand({
+      kind: 'thing',
+      authorityId: 'thing-qi',
+      primaryName: '張衡',
+      searchStrings: ['張衡'],
+      metadata: { subtype: 'philosophical_concept' },
+    });
+    const [suggestion] = suggestionsFromSeedMatches(seedSuggestions(doc, [candidate], 'ignore'));
+    expect(suggestion?.tag).toBe('rs');
+    expect(suggestion?.attributes).toEqual({ type: 'philosophical_concept' });
+  });
+
+  it('sets no attributes for a thing candidate with no sub-type', () => {
+    const doc = parse(TEI);
+    const candidate = cand({
+      kind: 'thing',
+      authorityId: 'thing-qi',
+      primaryName: '張衡',
+      searchStrings: ['張衡'],
+    });
+    const [suggestion] = suggestionsFromSeedMatches(seedSuggestions(doc, [candidate], 'ignore'));
+    expect(suggestion?.tag).toBe('rs');
+    expect(suggestion?.attributes).toBeUndefined();
+  });
+
+  it('routes a same-surface, two-different-subtype collision into the ambiguous bucket, distinguishable by attributes', () => {
+    const doc = parse(TEI);
+    const candidates = [
+      cand({
+        kind: 'thing',
+        authorityId: 'thing-a',
+        primaryName: '張衡',
+        searchStrings: ['張衡'],
+        metadata: { subtype: 'philosophical_concept' },
+      }),
+      cand({
+        kind: 'thing',
+        authorityId: 'thing-b',
+        primaryName: '張衡',
+        searchStrings: ['張衡'],
+        metadata: { subtype: 'medicinal_plant' },
+      }),
+    ];
+    const matches = seedSuggestions(doc, candidates, 'ignore');
+    const { ambiguous } = bucketSeeds(matches);
+    const zhangAmbiguous = ambiguous.filter((m) => m.suggestion.anchor.surface === '張衡');
+    expect(zhangAmbiguous.length).toBeGreaterThan(0);
+    expect(zhangAmbiguous[0]!.candidates).toHaveLength(2);
+
+    // suggestionsFromSeedMatches is bucket-agnostic — confirm the ambiguous
+    // bucket's own matches still carry through to a real, attribute-bearing
+    // suggestion (only the first/representative candidate's subtype wins per
+    // match — the review panel distinguishes alternatives via each
+    // candidate's own metadata, not via this suggestion array).
+    const suggestions = suggestionsFromSeedMatches(zhangAmbiguous);
+    expect(suggestions[0]?.tag).toBe('rs');
+    expect(['philosophical_concept', 'medicinal_plant']).toContain(
+      suggestions[0]?.attributes?.type,
+    );
+  });
+
   it('never fabricates a posthumous name the document never contained — matched the bare (fief+rank) form', () => {
     // Reproduces a real bug: one candidate's full "fief+posthumousName+roleName"
     // and bare "fief+roleName" search strings share one metadata.nobleTitle

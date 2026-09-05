@@ -1,4 +1,6 @@
 import type { NodeDetail, Target as PossibleNodesAtTarget } from '@cwrc/leafwriter-validator';
+import { TAG_TO_KIND } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import type { CustomThingType } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/thingTypePolicy';
 import { DEFAULT_INSERT_TAG } from './keybindings';
 import type { TagCommandMode } from './tagCommand';
 import { getSelectionRange } from './taggerRuntime';
@@ -296,6 +298,34 @@ export const withInsertModeFallbacks = (
   return tags;
 };
 
+/**
+ * Splice one synthetic suggestion per project-defined thing sub-type into the
+ * Enter-popup's suggestion list — e.g. "Medicinal plant" alongside the plain
+ * `rs` entry. Each carries `.name === 'rs'` (so schema validity / insert-vs-
+ * wrap placement resolution treats it exactly like the real `rs` suggestion)
+ * plus a `displayLabel` and `attributeOverrides: { type: <the type's id> }`
+ * that override the generic `type="thing"` default on apply. Not from the
+ * schema validator — same synthesis pattern as `pinParagraphInsertOption`.
+ */
+export const withCustomThingTypeOptions = (
+  tags: NodeDetail[],
+  customTypes: readonly CustomThingType[],
+): NodeDetail[] => {
+  if (customTypes.length === 0) return tags;
+  if (!tags.some((tag) => tag.name === 'rs' && !tag.invalid)) return tags;
+  return [
+    ...tags,
+    ...customTypes.map((customType): NodeDetail => ({
+      name: 'rs',
+      type: 'tag',
+      eventType: 'enterStartTag',
+      invalid: false,
+      displayLabel: customType.label,
+      attributeOverrides: { type: customType.id },
+    })),
+  ];
+};
+
 export const sortTagSuggestions = (
   tags: NodeDetail[],
   tagCounts: Record<string, number>,
@@ -318,15 +348,39 @@ export const sortTagSuggestions = (
   return [preferred, ...sorted];
 };
 
+/**
+ * Entity-kind label → the TEI tag name(s) it's tagged with. Lets a user type
+ * the kind's familiar name (e.g. "thing") in the Enter-popup filter even when
+ * it shares no substring with its actual tag name — true for `rs`/"thing"
+ * (and, less obviously, for `title`/"work" and `roleName`/"office" too).
+ */
+const KIND_LABEL_TO_TAGS: Record<string, string[]> = (() => {
+  const byKind: Record<string, string[]> = {};
+  for (const [tagName, kind] of Object.entries(TAG_TO_KIND)) {
+    (byKind[kind] ??= []).push(tagName);
+  }
+  return { ...byKind, organization: byKind.org ?? [] };
+})();
+
 export const filterTagSuggestions = (tags: NodeDetail[], query: string): NodeDetail[] => {
   const trimmed = query.trim().toLowerCase();
   if (!trimmed) return tags;
+  const kindAliasedTags = new Set(KIND_LABEL_TO_TAGS[trimmed] ?? []);
   const matchRank = (tag: NodeDetail): number | null => {
     const name = tag.name.toLowerCase();
     const fullName = tag.fullName?.toLowerCase();
-    if (name.startsWith(trimmed)) return 0;
+    const label = tag.displayLabel?.toLowerCase();
+    // Synthetic thing-type entries all share tag.name === 'rs', so they must
+    // be matched on their own displayLabel rather than the shared tag name —
+    // otherwise typing a custom type's label would also surface every other
+    // rs-tagged suggestion, and typing "rs"/"thing" would surface all of them
+    // indiscriminately instead of just the plain generic entry.
+    if (label?.startsWith(trimmed)) return 0;
+    if (kindAliasedTags.has(tag.name) && !tag.displayLabel) return 0;
+    if (name.startsWith(trimmed) && !tag.displayLabel) return 0;
     if (fullName?.startsWith(trimmed)) return 1;
-    if (name.includes(trimmed)) return 2;
+    if (label?.includes(trimmed)) return 2;
+    if (name.includes(trimmed) && !tag.displayLabel) return 2;
     if (fullName?.includes(trimmed)) return 3;
     return null;
   };

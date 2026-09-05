@@ -36,6 +36,7 @@ export const LOOKUP_TYPE_TO_KIND: Partial<Record<NamedEntityType, EntityKind>> =
   work: 'work',
   citation: 'work',
   office: 'office',
+  thing: 'thing',
 };
 
 const MAX_RESULTS = 20;

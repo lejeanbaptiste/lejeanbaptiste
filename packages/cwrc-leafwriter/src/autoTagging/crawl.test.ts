@@ -57,6 +57,18 @@ describe('crawlEntities', () => {
     ]);
   });
 
+  it('crawls <rs> generically for project-things, dropping @type (accepted generic fallback)', () => {
+    const doc = parse(
+      `<TEI xmlns="http://www.tei-c.org/ns/1.0"><p>
+        <rs type="philosophical_concept">氣</rs>與<rs type="medicinal_plant">當歸</rs>論道。
+      </p></TEI>`,
+    );
+    const entries = crawlEntities(doc, 'ignore', ['rs']);
+    expect(entries).toHaveLength(2);
+    expect(byString(entries, '氣')).toEqual({ string: '氣', tag: 'rs' });
+    expect(byString(entries, '當歸')).toEqual({ string: '當歸', tag: 'rs' });
+  });
+
   it('normalizes surfaces with the whitespace policy so they match later', () => {
     const doc = parse(
       `<TEI xmlns="http://www.tei-c.org/ns/1.0"><p><persName>上\n  陽子</persName></p></TEI>`,

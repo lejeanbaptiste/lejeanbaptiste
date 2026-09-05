@@ -132,6 +132,24 @@ export const conformanceScenarios: ConformanceScenario[] = [
     },
   },
   {
+    name: 'accepts a `thing` entity (custom sub-type tagging) end to end',
+    run: async (c) => {
+      const res = await push(c, [
+        {
+          localId: 'thing-qi-1',
+          kind: 'thing',
+          contentXml: '<rs xml:id="thing-qi-1" type="philosophical_concept">氣</rs>',
+        },
+      ]);
+      assert.equal(res.status, 200);
+      matches(res.body.applied![0], { centralId: 'thing-qi-1', revision: 1, seq: 1 });
+
+      const pulled = await pull(c, 0);
+      assert.equal(pulled.body.changes?.length, 1);
+      matches(pulled.body.changes![0], { centralId: 'thing-qi-1', kind: 'thing', revision: 1 });
+    },
+  },
+  {
     name: 're-seeds an unknown centralId, keeping revisions climbing',
     run: async (c) => {
       const res = await push(c, [

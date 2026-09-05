@@ -169,8 +169,9 @@ describe('bareNobleTitleQuery', () => {
   });
 
   it('returns null for a non-personWrapper element', () => {
-    const wrapper = parse(`${TEI_OPEN}<p><placeName>建安</placeName></p>${TEI_CLOSE}`)
-      .getElementsByTagName('placeName')[0]!;
+    const wrapper = parse(
+      `${TEI_OPEN}<p><placeName>建安</placeName></p>${TEI_CLOSE}`,
+    ).getElementsByTagName('placeName')[0]!;
     expect(bareNobleTitleQuery(wrapper)).toBeNull();
   });
 });

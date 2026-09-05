@@ -78,6 +78,8 @@ export interface AutoTaggingAuthoritySettings {
     labelsByLang?: Record<string, string>;
     bucket: 'phase1' | 'phase2' | 'never';
   }[];
+  /** Project-scoped custom `<rs>` sub-types (e.g. "philosophical concept"). */
+  customThingTypes?: { id: string; label: string }[];
   artMinCodePoints?: number;
   /** @deprecated */
   yearFilterEnabled?: boolean;

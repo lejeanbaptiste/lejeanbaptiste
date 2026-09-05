@@ -18,12 +18,20 @@ const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const CURSOR_KEY = 'sync_cursor';
 const DEVICE_KEY = 'sync_device_id';
 
-const ENTITY_LIST_BY_KIND: Record<SqliteEntityKind, string> = {
-  person: 'listPerson',
-  place: 'listPlace',
-  org: 'listOrg',
-  office: 'listOrg',
-  work: 'listBibl',
+/**
+ * `org`/`office` and `work`/`thing` share a wrapper tag, distinguished only by
+ * the wrapper's `type` attribute (see `ENTITY_KINDS` in xmlCodec.ts) — without
+ * it, `kindForList` on the receiving side reads the wrong kind back and
+ * `replaceEntityContentFrom`'s kind-match check silently drops the pulled
+ * entity.
+ */
+const ENTITY_LIST_BY_KIND: Record<SqliteEntityKind, { tag: string; type?: string }> = {
+  person: { tag: 'listPerson' },
+  place: { tag: 'listPlace' },
+  org: { tag: 'listOrg' },
+  office: { tag: 'listOrg', type: 'offices' },
+  work: { tag: 'listBibl' },
+  thing: { tag: 'list', type: 'things' },
 };
 
 // --- cursor / device --------------------------------------------------------
@@ -288,13 +296,14 @@ export const applyRemoteEntity = (
     };
   }
 
+  const wrapper = ENTITY_LIST_BY_KIND[change.kind];
+  const openTag = wrapper.type ? `<${wrapper.tag} type="${wrapper.type}">` : `<${wrapper.tag}>`;
   const wrapped =
     `<?xml version="1.0" encoding="UTF-8"?>` +
     `<TEI xmlns="${TEI_NS}"><teiHeader><fileDesc><publicationStmt>` +
     `<idno type="ljb-entity-database">ljb-entity-sync</idno>` +
     `</publicationStmt></fileDesc></teiHeader>` +
-    `<standOff><${ENTITY_LIST_BY_KIND[change.kind]}>${change.contentXml}` +
-    `</${ENTITY_LIST_BY_KIND[change.kind]}></standOff></TEI>`;
+    `<standOff>${openTag}${change.contentXml}</${wrapper.tag}></standOff></TEI>`;
 
   const staging = new RepoCtor(':memory:');
   try {

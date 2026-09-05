@@ -146,7 +146,7 @@ export interface OrphanStubSpec {
 
 /** Infer entity kind from a local id prefix (`person-…`, `place-…`, …). */
 export function kindFromEntityId(id: string): EntityKind | null {
-  const match = /^(person|place|work|office|org)-/i.exec(id);
+  const match = /^(person|place|work|office|org|thing)-/i.exec(id);
   if (!match) return null;
   return match[1]!.toLowerCase() as EntityKind;
 }

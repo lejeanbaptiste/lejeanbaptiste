@@ -27,6 +27,7 @@ import {
   markDatesPassApplied,
   markDatesPassRan,
   persistValidationSettings,
+  readPersistedAuthoritySettings,
   readPersistedValidationSettings,
   validateSuggestions,
   prepareSuggestionsForReview,
@@ -755,6 +756,7 @@ export const AutoTaggingReviewPane = () => {
                   onRefresh={handleRefresh}
                   refreshing={refreshing}
                   mandatoryStage={mandatoryStage}
+                  customThingTypes={readPersistedAuthoritySettings()?.customThingTypes}
                 />
               );
             })()

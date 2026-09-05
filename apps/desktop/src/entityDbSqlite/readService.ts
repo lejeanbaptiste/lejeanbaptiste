@@ -34,6 +34,8 @@ import {
   type XmlExtractedRefreshInput,
   type XmlExtractedRefreshResult,
   type SqliteEntityNote,
+  type SqliteEntityRelation,
+  type SqliteValueStatus,
 } from './repository';
 
 export interface EntitySqliteReadRequest {
@@ -82,6 +84,12 @@ export interface EntitySqliteUpdateDescriptionRequest {
   databasePath: string;
   entityId: string;
   description: string | null;
+}
+
+export interface EntitySqliteUpdateSubtypeRequest {
+  databasePath: string;
+  entityId: string;
+  subtype: string | null;
 }
 
 export interface EntitySqliteNotesRequest {
@@ -198,6 +206,26 @@ export interface EntitySqliteMergeRequest {
   databasePath: string;
   keepId: string;
   dropIds: string[];
+}
+
+export interface EntitySqliteCreateRelationRequest {
+  databasePath: string;
+  subjectEntityId: string;
+  objectEntityId: string;
+  relationType: string;
+  symmetric?: boolean;
+  reference?: string | null;
+}
+
+export interface EntitySqliteListRelationsRequest {
+  databasePath: string;
+  entityId: string;
+}
+
+export interface EntitySqliteUpdateRelationStatusRequest {
+  databasePath: string;
+  relationId: number;
+  status: SqliteValueStatus;
 }
 
 export interface EntitySqliteCreatePopulatedRequest extends CreatePopulatedEntityInput {
@@ -451,6 +479,14 @@ export async function updateEntitySqliteDescription(
   repositoryFor(request.databasePath).updateDescription(request.entityId, request.description);
 }
 
+export async function updateEntitySqliteSubtype(
+  request: EntitySqliteUpdateSubtypeRequest,
+): Promise<void> {
+  if (!validDatabasePath(request.databasePath))
+    throw new Error('Invalid entity SQLite database path.');
+  repositoryFor(request.databasePath).updateSubtype(request.entityId, request.subtype);
+}
+
 export async function getEntitySqliteNotes(
   request: EntitySqliteNotesRequest,
 ): Promise<SqliteEntityNote[]> {
@@ -654,6 +690,39 @@ export async function mergeEntitySqlite(
   if (!validDatabasePath(request.databasePath))
     throw new Error('Invalid entity SQLite database path.');
   return repositoryFor(request.databasePath).mergeEntities(request.keepId, request.dropIds);
+}
+
+export async function createEntitySqliteRelation(
+  request: EntitySqliteCreateRelationRequest,
+): Promise<number> {
+  if (!validDatabasePath(request.databasePath))
+    throw new Error('Invalid entity SQLite database path.');
+  return repositoryFor(request.databasePath).createRelation({
+    subjectEntityId: request.subjectEntityId,
+    objectEntityId: request.objectEntityId,
+    relationType: request.relationType,
+    symmetric: request.symmetric,
+    reference: request.reference,
+  });
+}
+
+export async function listEntitySqliteRelations(
+  request: EntitySqliteListRelationsRequest,
+): Promise<SqliteEntityRelation[]> {
+  if (!validDatabasePath(request.databasePath))
+    throw new Error('Invalid entity SQLite database path.');
+  return repositoryFor(request.databasePath).listRelationsForEntity(request.entityId);
+}
+
+export async function updateEntitySqliteRelationStatus(
+  request: EntitySqliteUpdateRelationStatusRequest,
+): Promise<boolean> {
+  if (!validDatabasePath(request.databasePath))
+    throw new Error('Invalid entity SQLite database path.');
+  return repositoryFor(request.databasePath).updateRelationStatus(
+    request.relationId,
+    request.status,
+  );
 }
 
 export async function createPopulatedEntitySqlite(

@@ -25,6 +25,10 @@ describe('parsePushRequest', () => {
     expect(bad.ok).toBe(false);
   });
 
+  it('accepts a `thing` kind', () => {
+    expect(parsePushRequest({ entities: [entity({ kind: 'thing' })] }).ok).toBe(true);
+  });
+
   it('rejects a missing localId, bad kind, and negative baseRevision', () => {
     expect(parsePushRequest({ entities: [entity({ localId: '' })] }).ok).toBe(false);
     expect(parsePushRequest({ entities: [entity({ kind: 'planet' })] }).ok).toBe(false);

@@ -152,7 +152,7 @@ export const TagCommandPopup = ({
             const pluginForTag = pluginItems.find((item) => item.schemaTag === tag.name);
             return (
               <ListItemButton
-                key={`${tag.name}-${tag.fullName ?? ''}`}
+                key={`${tag.name}-${tag.displayLabel ?? tag.fullName ?? ''}`}
                 ref={index === highlightedIndex ? selectedItemRef : undefined}
                 selected={index === highlightedIndex}
                 disabled={Boolean(tag.invalid)}
@@ -172,8 +172,10 @@ export const TagCommandPopup = ({
                   />
                 ) : null}
                 <ListItemText
-                  primary={tag.name}
-                  secondary={tag.invalid ? 'Not valid here' : tag.fullName}
+                  primary={tag.displayLabel ?? tag.name}
+                  secondary={
+                    tag.invalid ? 'Not valid here' : tag.displayLabel ? tag.name : tag.fullName
+                  }
                   primaryTypographyProps={{ fontSize: '0.8125rem' }}
                   secondaryTypographyProps={{ fontSize: '0.7rem' }}
                 />

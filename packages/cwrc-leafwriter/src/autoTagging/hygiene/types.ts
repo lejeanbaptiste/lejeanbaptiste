@@ -93,6 +93,8 @@ export interface CompareCardModel {
   roles?: string[];
   nobleTitles?: string[];
   description: string | null;
+  /** thing kind only: user-defined sub-category id. */
+  subtype?: string | null;
   authorities: { type: string; value: string }[];
   /** Field keys to lightly highlight as differing / proposed. */
   highlightFields?: string[];
@@ -127,6 +129,7 @@ export function entityToCompareCard(
         [title.fief, title.posthumousName, title.title].filter(Boolean).join('') || title.title,
     ),
     description: entity.description,
+    subtype: entity.subtype,
     authorities: entity.authorities,
     highlightFields: options?.highlightFields,
   };

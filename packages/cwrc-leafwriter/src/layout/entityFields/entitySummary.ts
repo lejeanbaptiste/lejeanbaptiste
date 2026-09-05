@@ -1,6 +1,8 @@
 /** Shared with the Word add-in's display rules (wordprocessor/src/entityDisplay.ts). */
 
-export type EntityKind = 'person' | 'place' | 'org' | 'work' | 'office';
+import type { EntityKind } from '../../autoTagging/entities';
+
+export type { EntityKind };
 
 export interface EntityDates {
   startYear: number | null;

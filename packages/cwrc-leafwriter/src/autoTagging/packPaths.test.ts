@@ -1,6 +1,9 @@
 import {
   expandAuthorityPackIds,
+  groupAuthorityPacksByTagType,
+  packPath,
   AUTHORITY_PACKS,
+  UI_AUTHORITY_PACK_IDS,
   persistedPacksFromUi,
   uiPacksFromPersisted,
   WIKIDATA_PERSON_CHILD_PACK_IDS,
@@ -54,5 +57,35 @@ describe('authority pack UI helpers', () => {
     expect(
       AUTHORITY_PACKS.find((pack) => pack.id === 'wikidata-bdrc-concordance')?.relativePath,
     ).toBe('wikidata/bdrc-wikidata-concordance.ndjson');
+  });
+});
+
+describe('the "things" pack quintet (pedb/cedb/project/list)', () => {
+  const thingIds = ['pedb-things', 'cedb-things', 'project-things', 'list-things'] as const;
+
+  it('registers all four ids with defaultTag "rs"', () => {
+    for (const id of thingIds) {
+      const spec = AUTHORITY_PACKS.find((pack) => pack.id === id);
+      expect(spec?.defaultTag).toBe('rs');
+    }
+  });
+
+  it('appears in UI_AUTHORITY_PACK_IDS', () => {
+    for (const id of thingIds) {
+      expect(UI_AUTHORITY_PACK_IDS).toContain(id);
+    }
+  });
+
+  it('groups under a "Things" tag-type group', () => {
+    const groups = groupAuthorityPacksByTagType(thingIds as unknown as string[] as never);
+    const thingsGroup = groups.find((group) => group.tag === 'rs');
+    expect(thingsGroup?.label).toBe('Things');
+    expect(thingsGroup?.packs.map((pack) => pack.id).sort()).toEqual([...thingIds].sort());
+  });
+
+  it('has no NDJSON file — packPath() throws for each, same as the other pedb/cedb/project/list kinds', () => {
+    for (const id of thingIds) {
+      expect(() => packPath('/base', id)).toThrow(/has no NDJSON file/);
+    }
   });
 });

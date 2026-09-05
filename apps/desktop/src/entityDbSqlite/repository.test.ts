@@ -1798,3 +1798,151 @@ describe('EntitySqliteRepository', () => {
     repository.close();
   });
 });
+
+describe('the "thing" entity kind', () => {
+  it('creates a things subtype row', () => {
+    const repository = new EntitySqliteRepository();
+    const entity = repository.createEntity({ id: 'thing-qi', kind: 'thing' });
+
+    expect(entity.kind).toBe('thing');
+    expect(
+      repository.db.prepare('SELECT 1 FROM things WHERE entity_id = ?').get('thing-qi'),
+    ).toEqual({ 1: 1 });
+    expect(repository.integrityCheck()).toEqual(['ok']);
+    repository.close();
+  });
+
+  it('createPopulatedEntity accepts kind "thing" with names and authorities', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createPopulatedEntity({
+      id: 'thing-qi-2',
+      kind: 'thing',
+      description: 'A foundational concept in Chinese philosophy',
+      names: [{ text: '氣', isPrimary: true }],
+      authorities: [{ type: 'Wikidata', value: 'Q838368' }],
+    });
+
+    const summary = repository.getPanelSummary('thing-qi-2');
+    expect(summary?.kind).toBe('thing');
+    expect(summary?.names.map((n) => n.text)).toEqual(['氣']);
+    repository.close();
+  });
+
+  it('updateSubtype writes, overwrites, and clears a subtype', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'thing-subtype-1', kind: 'thing' });
+
+    expect(repository.getPanelSummary('thing-subtype-1')?.subtype).toBeNull();
+
+    repository.updateSubtype('thing-subtype-1', 'philosophical_concept');
+    expect(repository.getPanelSummary('thing-subtype-1')?.subtype).toBe('philosophical_concept');
+    expect(
+      repository.db
+        .prepare(`SELECT value FROM entity_metadata WHERE entity_id = ? AND key = 'subtype'`)
+        .get('thing-subtype-1'),
+    ).toEqual({ value: 'philosophical_concept' });
+
+    repository.updateSubtype('thing-subtype-1', 'medicinal_plant');
+    expect(repository.getPanelSummary('thing-subtype-1')?.subtype).toBe('medicinal_plant');
+    expect(
+      repository.db
+        .prepare(`SELECT COUNT(*) AS count FROM entity_metadata WHERE key = 'subtype'`)
+        .get(),
+    ).toEqual({ count: 1 });
+
+    repository.updateSubtype('thing-subtype-1', null);
+    expect(repository.getPanelSummary('thing-subtype-1')?.subtype).toBeNull();
+
+    repository.close();
+  });
+
+  it('surfaces subtype through listPanelSummaries as well as getPanelSummary', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'thing-subtype-2', kind: 'thing' });
+    repository.updateSubtype('thing-subtype-2', 'bibliographic_category');
+
+    const list = repository.listPanelSummaries('thing');
+    expect(list.find((entity) => entity.id === 'thing-subtype-2')?.subtype).toBe(
+      'bibliographic_category',
+    );
+
+    repository.close();
+  });
+
+  it('surfaces subtype through listCandidateRecords for tag-bomb, but only for thing entities', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'thing-subtype-3', kind: 'thing' });
+    repository.updateSubtype('thing-subtype-3', 'medicinal_plant');
+    repository.createEntity({ id: 'person-no-subtype', kind: 'person' });
+
+    const things = repository.listCandidateRecords('thing');
+    expect(things.find((record) => record.id === 'thing-subtype-3')?.subtype).toBe(
+      'medicinal_plant',
+    );
+
+    const persons = repository.listCandidateRecords('person');
+    expect(persons.find((record) => record.id === 'person-no-subtype')?.subtype).toBeUndefined();
+
+    repository.close();
+  });
+});
+
+describe('entity_relations repository methods', () => {
+  it('creates a relation and lists it from both the subject and the object side', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'thing-qi', kind: 'thing' });
+    repository.createEntity({ id: 'person-zhuangzi', kind: 'person' });
+
+    const relationId = repository.createRelation({
+      subjectEntityId: 'person-zhuangzi',
+      objectEntityId: 'thing-qi',
+      relationType: 'discussion',
+    });
+    expect(relationId).toBeGreaterThan(0);
+
+    const fromSubject = repository.listRelationsForEntity('person-zhuangzi');
+    expect(fromSubject).toEqual([
+      expect.objectContaining({
+        id: relationId,
+        relationType: 'discussion',
+        isSubject: true,
+        otherEntityId: 'thing-qi',
+        otherEntityKind: 'thing',
+      }),
+    ]);
+
+    const fromObject = repository.listRelationsForEntity('thing-qi');
+    expect(fromObject).toEqual([
+      expect.objectContaining({
+        id: relationId,
+        relationType: 'discussion',
+        isSubject: false,
+        otherEntityId: 'person-zhuangzi',
+        otherEntityKind: 'person',
+      }),
+    ]);
+
+    repository.close();
+  });
+
+  it('soft-removes a relation: it disappears from listings but the row survives withdrawn', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'thing-a', kind: 'thing' });
+    repository.createEntity({ id: 'thing-b', kind: 'thing' });
+    const relationId = repository.createRelation({
+      subjectEntityId: 'thing-a',
+      objectEntityId: 'thing-b',
+      relationType: 'association',
+      symmetric: true,
+    });
+
+    expect(repository.updateRelationStatus(relationId, 'withdrawn')).toBe(true);
+    expect(repository.listRelationsForEntity('thing-a')).toEqual([]);
+    expect(repository.listRelationsForEntity('thing-b')).toEqual([]);
+    expect(
+      repository.db.prepare('SELECT status FROM entity_relations WHERE id = ?').get(relationId),
+    ).toEqual({ status: 'withdrawn' });
+
+    repository.close();
+  });
+});

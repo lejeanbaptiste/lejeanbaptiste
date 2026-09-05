@@ -162,6 +162,31 @@ export const EntityCompareCard = ({
             </Typography>
           </Box>
 
+          {model.subtype && (
+            <Box
+              component="fieldset"
+              sx={{
+                minWidth: 0,
+                m: 0,
+                px: 1.5,
+                pb: 1,
+                border: 1,
+                borderColor: 'divider',
+                borderRadius: 1,
+              }}
+            >
+              <Typography
+                component="legend"
+                variant="caption"
+                color="text.secondary"
+                sx={{ px: 0.5 }}
+              >
+                Sub-type
+              </Typography>
+              <Typography variant="body1">{model.subtype}</Typography>
+            </Box>
+          )}
+
           <Box
             sx={{
               display: 'grid',
@@ -302,6 +327,12 @@ export const EntityCompareCard = ({
               {model.description?.trim() ? model.description : dash}
             </Typography>
           </Field>
+
+          {model.subtype && (
+            <Field label="Sub-type" highlight={hl.has('subtype')}>
+              <Typography variant="body2">{model.subtype}</Typography>
+            </Field>
+          )}
 
           <Field label="Authorities" highlight={hl.has('authorities')}>
             <Stack direction="row" flexWrap="wrap" gap={0.5}>

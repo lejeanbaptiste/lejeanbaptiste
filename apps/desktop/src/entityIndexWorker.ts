@@ -26,6 +26,7 @@ const summariesFromSqlite = (repository: EntitySqliteRepository): EntitySummary[
         })),
         romanized: activeNames.find((name) => name.language?.endsWith('-Latn'))?.text ?? null,
         description: summary.description,
+        subtype: summary.subtype,
         authorities: summary.authorities,
         familyName: summary.familyName,
         givenName: summary.givenName,

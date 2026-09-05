@@ -34,6 +34,34 @@ describe('candidatesFromEntityDatabase', () => {
     expect(candidate!.searchStrings).toEqual(expect.arrayContaining(['王安石', '宋荊國公王安石']));
   });
 
+  it('threads a thing sub-type into candidate.metadata.subtype', () => {
+    const [candidate] = candidatesFromEntityDatabaseRecords(
+      [
+        {
+          id: 'thing-qi',
+          kind: 'thing',
+          names: [{ text: '氣' }],
+          subtype: 'philosophical_concept',
+          nobleTitles: [],
+        },
+      ],
+      'PEDB',
+    );
+    expect(candidate).toMatchObject({
+      authorityId: 'thing-qi',
+      kind: 'thing',
+      metadata: { subtype: 'philosophical_concept' },
+    });
+  });
+
+  it('omits metadata entirely for a thing with no subtype and no other metadata', () => {
+    const [candidate] = candidatesFromEntityDatabaseRecords(
+      [{ id: 'thing-qi-2', kind: 'thing', names: [{ text: '氣' }], nobleTitles: [] }],
+      'PEDB',
+    );
+    expect(candidate?.metadata).toBeUndefined();
+  });
+
   it('recovers search strings, dates, and description for a person', () => {
     const doc = parseEntities(createEntitiesScaffold());
     addEntity(doc, 'person', {

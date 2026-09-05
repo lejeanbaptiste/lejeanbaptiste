@@ -17,7 +17,9 @@ import { readSourceDescriptionFromXml } from './sourceDescription';
 import {
   loadNameTypeTaggingPolicyState,
   loadProjectMetadataDialogState,
+  loadThingTypePolicyState,
   persistNameTypeTaggingPolicyChanges,
+  persistThingTypePolicyChanges,
   saveProjectMetadataChanges,
   type ProjectMetadataSaveDeps,
   type ProjectMetadataSavePayload,
@@ -92,6 +94,10 @@ declare global {
         customTypes?: AutoTaggingAuthoritySettings['customNameTypes'];
         artMinCodePoints?: number;
       }) => ReturnType<typeof persistNameTypeTaggingPolicyChanges>;
+      getThingTypePolicyState?: () => ReturnType<typeof loadThingTypePolicyState>;
+      persistThingTypePolicy?: (payload: {
+        customTypes: AutoTaggingAuthoritySettings['customThingTypes'];
+      }) => ReturnType<typeof persistThingTypePolicyChanges>;
     };
   }
 }
@@ -316,6 +322,10 @@ export const useNativeDialogBridge = () => {
         loadNameTypeTaggingPolicyState(projectFilePath, getAuthoritySettings),
       persistNameTypeTaggingPolicy: (payload) =>
         persistNameTypeTaggingPolicyChanges(projectFilePath, payload, policySaveDeps()),
+      getThingTypePolicyState: () =>
+        loadThingTypePolicyState(projectFilePath, getAuthoritySettings),
+      persistThingTypePolicy: (payload) =>
+        persistThingTypePolicyChanges(projectFilePath, payload, policySaveDeps()),
     };
     return () => {
       delete window.__leafWriterProject;
@@ -608,6 +618,33 @@ export const useNativeDialogBridge = () => {
                 customTypes: payload.customTypes,
                 artMinCodePoints: payload.artMinCodePoints,
               },
+              policySaveDepsRef.current(),
+            );
+          }
+          case 'getThingTypePolicyState': {
+            const dialogId = getStringArg(args, 'dialogId');
+            const session = dialogId ? getProjectMetadataSession(dialogId) : undefined;
+            if (!session) return null;
+            return loadThingTypePolicyState(
+              session.projectFilePath,
+              (bundle) => authoritySettingsCache.current ?? bundle.config.autoTaggingAuthority,
+            );
+          }
+          case 'persistThingTypePolicy': {
+            const dialogId = getStringArg(args, 'dialogId');
+            const session = dialogId ? getProjectMetadataSession(dialogId) : undefined;
+            if (!session) return { ok: false, error: 'Invalid metadata session.' };
+
+            const payload = (args ?? {}) as {
+              customTypes?: AutoTaggingAuthoritySettings['customThingTypes'];
+            };
+            if (!payload.customTypes) {
+              return { ok: false, error: 'Missing thing-type list.' };
+            }
+
+            return persistThingTypePolicyChanges(
+              session.projectFilePath,
+              { customTypes: payload.customTypes },
               policySaveDepsRef.current(),
             );
           }

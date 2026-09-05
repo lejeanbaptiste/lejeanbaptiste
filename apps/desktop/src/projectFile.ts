@@ -81,6 +81,15 @@ const normalizeAutoTaggingAuthority = (raw: unknown): AutoTaggingAuthoritySettin
         (entry.bucket === 'phase1' || entry.bucket === 'phase2' || entry.bucket === 'never'),
     );
   }
+  if (Array.isArray(value.customThingTypes)) {
+    out.customThingTypes = value.customThingTypes.filter(
+      (entry): entry is NonNullable<AutoTaggingAuthoritySettings['customThingTypes']>[number] =>
+        !!entry &&
+        typeof entry === 'object' &&
+        typeof entry.id === 'string' &&
+        typeof entry.label === 'string',
+    );
+  }
   if (typeof value.artMinCodePoints === 'number' && value.artMinCodePoints > 0) {
     out.artMinCodePoints = value.artMinCodePoints;
   }

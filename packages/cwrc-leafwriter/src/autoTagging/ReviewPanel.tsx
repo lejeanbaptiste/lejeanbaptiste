@@ -34,8 +34,22 @@ import {
   type PendingGroup,
 } from './reviewController';
 import { SourceBadges } from './SourceBadges';
+import type { CustomThingType } from './thingTypePolicy';
 import type { Suggestion } from './types';
 import { getValidationColor, getConfidenceLabel } from './llmValidationRank';
+
+/** Human label for a thing sub-type id, falling back to the raw id if renamed/deleted. */
+const thingTypeLabel = (id: string, customThingTypes?: CustomThingType[]): string =>
+  customThingTypes?.find((type) => type.id === id)?.label ?? id;
+
+/** Chip label for a suggestion, showing the thing sub-type when the tag is `rs`. */
+const suggestionTagLabel = (
+  suggestion: Suggestion,
+  customThingTypes?: CustomThingType[],
+): string =>
+  suggestion.tag === 'rs' && suggestion.attributes?.type
+    ? `<rs type="${thingTypeLabel(suggestion.attributes.type, customThingTypes)}">`
+    : `<${suggestion.tag}>`;
 
 export interface ReviewPanelProps {
   suggestions: Suggestion[];
@@ -67,6 +81,8 @@ export interface ReviewPanelProps {
   refreshing?: boolean;
   /** Norbert prerequisite stage; list is already stage-filtered and the category control stays locked. */
   mandatoryStage?: 'nobleTitle' | 'personWrapper';
+  /** User-defined thing sub-types, for human-readable `<rs type="...">` chip labels and filtering. */
+  customThingTypes?: CustomThingType[];
 }
 
 const statusColor: Record<Suggestion['status'], 'default' | 'success' | 'error' | 'warning'> = {
@@ -91,6 +107,7 @@ interface SuggestionRowProps {
   onReject?: () => void;
   onUndo?: () => void;
   onPreview?: () => void;
+  customThingTypes?: CustomThingType[];
 }
 
 const SuggestionRow = ({
@@ -101,6 +118,7 @@ const SuggestionRow = ({
   onReject,
   onUndo,
   onPreview,
+  customThingTypes,
 }: SuggestionRowProps) => {
   const aiValidation = suggestion.aiValidation;
   const showValidation = aiValidation !== undefined;
@@ -125,7 +143,7 @@ const SuggestionRow = ({
       }}
     >
       <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-        <Chip size="small" label={`<${suggestion.tag}>`} />
+        <Chip size="small" label={suggestionTagLabel(suggestion, customThingTypes)} />
         {suggestion.action !== 'add' && (
           <Chip size="small" variant="outlined" color="warning" label={suggestion.action} />
         )}
@@ -265,6 +283,7 @@ interface AlternativeGroupRowProps {
   onAccept: () => void;
   onReject: () => void;
   onPreview: (suggestion: Suggestion) => void;
+  customThingTypes?: CustomThingType[];
 }
 
 /**
@@ -281,6 +300,7 @@ const AlternativeGroupRow = ({
   onAccept,
   onReject,
   onPreview,
+  customThingTypes,
 }: AlternativeGroupRowProps) => {
   const first = group.suggestions[0]!;
 
@@ -334,7 +354,7 @@ const AlternativeGroupRow = ({
             />
             <Chip
               size="small"
-              label={`<${suggestion.tag}>`}
+              label={suggestionTagLabel(suggestion, customThingTypes)}
               color={isRecommended ? 'primary' : 'default'}
               variant={isRecommended ? 'filled' : 'outlined'}
             />
@@ -460,6 +480,7 @@ export const ReviewPanel = ({
   onRefresh,
   refreshing = false,
   mandatoryStage,
+  customThingTypes,
 }: ReviewPanelProps) => {
   const { t } = useTranslation('LW');
   const [, forceRender] = useReducer((n: number) => n + 1, 0);
@@ -482,7 +503,16 @@ export const ReviewPanel = ({
           suggestion.tag === 'name' && suggestion.attributes?.type === 'personWrapper',
       );
     }
-    return suggestions.filter((suggestion) => !tagFilter || suggestion.tag === tagFilter);
+    return suggestions.filter((suggestion) => {
+      if (!tagFilter) return true;
+      if (tagFilter.startsWith('rs::')) {
+        return suggestion.tag === 'rs' && suggestion.attributes?.type === tagFilter.slice(4);
+      }
+      if (tagFilter === 'rs') {
+        return suggestion.tag === 'rs' && !suggestion.attributes?.type;
+      }
+      return suggestion.tag === tagFilter;
+    });
   }, [suggestions, tagFilter, mandatoryStage]);
 
   const controller = useMemo(
@@ -502,10 +532,35 @@ export const ReviewPanel = ({
     forceRender();
   }, [aiValidationEnabled, curateRejectBelow, suggestions, controller]);
 
-  const tagOptions = useMemo(
-    () => [...new Set(suggestions.map((suggestion) => suggestion.tag))],
-    [suggestions],
-  );
+  const tagOptions = useMemo(() => {
+    const options: { value: string; label: string }[] = [];
+    const seen = new Set<string>();
+    let sawUntypedRs = false;
+    for (const suggestion of suggestions) {
+      if (suggestion.tag === 'rs') {
+        const subtype = suggestion.attributes?.type;
+        if (subtype) {
+          const value = `rs::${subtype}`;
+          if (!seen.has(value)) {
+            seen.add(value);
+            options.push({
+              value,
+              label: `<rs type="${thingTypeLabel(subtype, customThingTypes)}">`,
+            });
+          }
+        } else {
+          sawUntypedRs = true;
+        }
+        continue;
+      }
+      if (!seen.has(suggestion.tag)) {
+        seen.add(suggestion.tag);
+        options.push({ value: suggestion.tag, label: `<${suggestion.tag}>` });
+      }
+    }
+    if (sawUntypedRs) options.push({ value: 'rs', label: '<rs>' });
+    return options;
+  }, [suggestions, customThingTypes]);
   const snapshot = controller.snapshot();
 
   useEffect(() => {
@@ -698,9 +753,9 @@ export const ReviewPanel = ({
           )}
           {!mandatoryStage && <MenuItem value="">All tags</MenuItem>}
           {!mandatoryStage &&
-            tagOptions.map((tag) => (
-              <MenuItem key={tag} value={tag}>
-                {tag}
+            tagOptions.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
               </MenuItem>
             ))}
         </Select>
@@ -780,6 +835,7 @@ export const ReviewPanel = ({
                     onAccept={() => decidePending(index, 'accepted')}
                     onReject={() => decidePending(index, 'rejected')}
                     onPreview={(suggestion) => controller.preview(suggestion)}
+                    customThingTypes={customThingTypes}
                   />
                 ) : (
                   <SuggestionRow
@@ -793,6 +849,7 @@ export const ReviewPanel = ({
                     onAccept={() => decidePending(index, 'accepted')}
                     onReject={() => decidePending(index, 'rejected')}
                     onPreview={() => controller.preview(group.suggestions[0]!)}
+                    customThingTypes={customThingTypes}
                   />
                 )
               }
@@ -823,6 +880,7 @@ export const ReviewPanel = ({
                 onPreview={() => controller.preview(suggestion)}
                 onReject={() => changeDecision(suggestion, 'rejected')}
                 onUndo={() => undecideItem(suggestion)}
+                customThingTypes={customThingTypes}
               />
             ))}
           </DecisionGroup>
@@ -842,6 +900,7 @@ export const ReviewPanel = ({
                 onPreview={() => controller.preview(suggestion)}
                 onAccept={() => changeDecision(suggestion, 'accepted')}
                 onUndo={() => undecideItem(suggestion)}
+                customThingTypes={customThingTypes}
               />
             ))}
           </DecisionGroup>

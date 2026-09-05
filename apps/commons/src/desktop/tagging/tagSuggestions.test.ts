@@ -5,6 +5,7 @@ import {
   getEditorTagContext,
   pinParagraphInsertOption,
   sortTagSuggestions,
+  withCustomThingTypeOptions,
   withInsertModeFallbacks,
 } from './tagSuggestions';
 
@@ -39,6 +40,74 @@ describe('filterTagSuggestions', () => {
   test('ranks tag-name prefixes ahead of partial matches', () => {
     const filtered = filterTagSuggestions([tag('persName'), tag('name'), tag('placeName')], 'name');
     expect(filtered.map((item) => item.name)).toEqual(['name', 'persName', 'placeName']);
+  });
+
+  test('matches the "rs" tag when the query is the entity-kind label "thing"', () => {
+    const filtered = filterTagSuggestions([tag('persName'), tag('rs'), tag('placeName')], 'thing');
+    expect(filtered.map((item) => item.name)).toEqual(['rs']);
+  });
+
+  test('matches "title"/"bibl" when the query is the entity-kind label "work"', () => {
+    const filtered = filterTagSuggestions([tag('title'), tag('bibl'), tag('persName')], 'work');
+    expect(filtered.map((item) => item.name)).toEqual(['title', 'bibl']);
+  });
+
+  test('matches a synthetic thing-type entry by its own displayLabel, not the shared "rs" name', () => {
+    const plainRs = tag('rs');
+    const medicinalPlant: NodeDetail = {
+      ...tag('rs'),
+      displayLabel: 'Medicinal plant',
+      attributeOverrides: { type: 'medicinal_plant' },
+    };
+    const philosophicalConcept: NodeDetail = {
+      ...tag('rs'),
+      displayLabel: 'Philosophical concept',
+      attributeOverrides: { type: 'philosophical_concept' },
+    };
+    const tags = [plainRs, medicinalPlant, philosophicalConcept];
+
+    expect(filterTagSuggestions(tags, 'medicinal').map((item) => item.displayLabel)).toEqual([
+      'Medicinal plant',
+    ]);
+    // Typing the generic kind label still surfaces only the plain entry, not
+    // every custom-labeled one — each labeled entry is matched on its own label.
+    expect(filterTagSuggestions(tags, 'thing').map((item) => item.displayLabel ?? null)).toEqual([
+      null,
+    ]);
+  });
+});
+
+describe('withCustomThingTypeOptions', () => {
+  test('splices one synthetic entry per custom type when "rs" is a valid suggestion', () => {
+    const tags = [tag('persName'), tag('rs')];
+    const withTypes = withCustomThingTypeOptions(tags, [
+      { id: 'medicinal_plant', label: 'Medicinal plant' },
+      { id: 'philosophical_concept', label: 'Philosophical concept' },
+    ]);
+    expect(withTypes).toHaveLength(4);
+    const synthetic = withTypes.filter((item) => item.displayLabel);
+    expect(synthetic.map((item) => item.displayLabel)).toEqual([
+      'Medicinal plant',
+      'Philosophical concept',
+    ]);
+    expect(synthetic.every((item) => item.name === 'rs')).toBe(true);
+    expect(synthetic.map((item) => item.attributeOverrides)).toEqual([
+      { type: 'medicinal_plant' },
+      { type: 'philosophical_concept' },
+    ]);
+  });
+
+  test('does nothing when there are no custom types', () => {
+    const tags = [tag('persName'), tag('rs')];
+    expect(withCustomThingTypeOptions(tags, [])).toBe(tags);
+  });
+
+  test('does nothing when "rs" is not a valid suggestion at this location', () => {
+    const tags = [tag('persName'), tag('rs', true)];
+    const withTypes = withCustomThingTypeOptions(tags, [
+      { id: 'medicinal_plant', label: 'Medicinal plant' },
+    ]);
+    expect(withTypes).toBe(tags);
   });
 });
 

@@ -185,6 +185,23 @@ describe('runSync', () => {
     expect(getSyncCursor(repoB)).toBe(resultB.cursor);
   });
 
+  it('pushes and pulls `thing` entities too (central sync support for thing has shipped)', async () => {
+    const central = new FakeCentral();
+    const repoA = freshRepo();
+    const thing = repoA.createEntity({ id: 'thing-a', kind: 'thing' });
+    repoA.addName({ entityId: thing.id, text: '氣', isPrimary: true });
+
+    const result = await runSync({ repo: repoA, client: central });
+    expect(result.pushedApplied).toBe(1);
+    expect(listDirtyForSync(repoA)).toHaveLength(0);
+
+    const repoB = freshRepo();
+    const resultB = await runSync({ repo: repoB, client: central });
+    expect(resultB.pulledApplied).toBe(1);
+    expect(repoB.getEntity('thing-a')?.kind).toBe('thing');
+    expect(repoB.listNames('thing-a').some((n) => n.text === '氣')).toBe(true);
+  });
+
   it('propagates an edit from one device to another (fast-forward)', async () => {
     const central = new FakeCentral();
     const repoA = freshRepo();

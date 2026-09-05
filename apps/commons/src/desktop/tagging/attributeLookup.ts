@@ -1,6 +1,7 @@
 import { entityLookupDialogAtom } from '@cwrc/leafwriter';
 import { getDefaultStore } from 'jotai';
 import { RESET } from 'jotai/utils';
+import { entityStoreFromDesktop } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import type {
   EntityLink,
   NamedEntityType,
@@ -45,6 +46,19 @@ export const openEntityLookupForTag = (tagElement: Element, onApplied?: () => vo
         delete nextAttributes.ref;
         nextAttributes.key = String(response.key);
         commitTagAttributes(tagElement, nextAttributes);
+        // Capture the mention's own @type (a user-defined thing sub-type,
+        // e.g. "medicinal_plant") onto the newly minted/linked entity — the
+        // lookup dialog itself only knows the coarse "thing" kind, never the
+        // specific sub-type, so this is the one place both the tag's @type
+        // and the freshly-resolved entity id are in scope together.
+        if (tagName === 'rs' && nextAttributes.type) {
+          entityStoreFromDesktop()
+            ?.sqliteUpdateSubtype(String(response.key), nextAttributes.type)
+            .catch(() => {
+              // Non-fatal: the entity is already minted/linked at this point;
+              // losing the subtype capture shouldn't surface as a tagging error.
+            });
+        }
         onApplied?.();
       }
     },

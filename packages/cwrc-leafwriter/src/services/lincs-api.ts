@@ -99,7 +99,12 @@ export const getAuthoritySources = (
       if (entityType === 'place') return ['VIAF-Geographic'];
       if (entityType === 'organization') return ['VIAF-Corporate'];
       if (entityType === 'work') return ['VIAF-Bibliographic', 'VIAF-Expressions', 'VIAF-Works'];
-      if (entityType === 'thing') return ['VIAF-Expressions', 'VIAF-Works'];
+      // VIAF is a name authority (persons, corporate bodies, places, works) with no
+      // generic-concept file of its own — unlike GND-Subject/Getty-AAT, it has no
+      // fallback that fits an arbitrary `thing` (e.g. a philosophical concept), and
+      // VIAF-Works/Expressions previously used here just returns bibliographic
+      // work/expression records (author + title), which look nothing like the query.
+      if (entityType === 'thing') return [];
       return ['VIAF-Expressions'];
 
     case 'wikidata':
@@ -122,6 +127,7 @@ export const reconcile: SearchFunction = async ({ query, entityType, options }) 
   const { authorityId, isUserAuthenticated } = options as Options;
 
   const authoritiesSources = getAuthoritySources(authorityId, entityType);
+  if (authoritiesSources.length === 0) return [];
 
   const response = await fetch('https://lincs-api.lincsproject.ca/api/link/reconcile', {
     method: 'POST',

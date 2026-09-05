@@ -23,6 +23,7 @@ import {
   isEntityDatabase,
   parseEntities,
   serializeEntities,
+  type EntityKind,
 } from './entities';
 import {
   makeOrder,
@@ -65,21 +66,21 @@ export interface EntityFileApi {
   entitySqliteImportXml?: (request: { databasePath: string; xml: string }) => Promise<unknown>;
   entitySqliteCandidates?: (request: {
     databasePath: string;
-    kind: 'person' | 'place' | 'work' | 'office' | 'org';
+    kind: EntityKind;
   }) => Promise<unknown[] | null>;
   entitySqliteGet?: (input: { databasePath: string; entityId: string }) => Promise<unknown | null>;
   entitySqliteDatabaseId?: (databasePath: string) => Promise<string | null>;
   entitySqliteListIds?: (input: {
     databasePath: string;
-    kind?: 'person' | 'place' | 'work' | 'office' | 'org';
+    kind?: EntityKind;
   }) => Promise<string[] | null>;
   entitySqliteListPanelSummaries?: (input: {
     databasePath: string;
-    kind?: 'person' | 'place' | 'work' | 'office' | 'org';
+    kind?: EntityKind;
   }) => Promise<unknown[] | null>;
   entitySqliteSearch?: (input: {
     databasePath: string;
-    kind: 'person' | 'place' | 'work' | 'office' | 'org';
+    kind: EntityKind;
     query: string;
     limit?: number;
   }) => Promise<
@@ -109,6 +110,11 @@ export interface EntityFileApi {
     databasePath: string;
     entityId: string;
     description: string | null;
+  }) => Promise<void>;
+  entitySqliteUpdateSubtype?: (input: {
+    databasePath: string;
+    entityId: string;
+    subtype: string | null;
   }) => Promise<void>;
   entitySqliteGetNotes?: (input: {
     databasePath: string;
@@ -199,6 +205,31 @@ export interface EntityFileApi {
     entityId: string;
     authors: { name: string; ref?: string | null; key?: string | null }[];
   }) => Promise<void>;
+  entitySqliteCreateRelation?: (input: {
+    databasePath: string;
+    subjectEntityId: string;
+    objectEntityId: string;
+    relationType: string;
+    symmetric?: boolean;
+    reference?: string | null;
+  }) => Promise<number>;
+  entitySqliteListRelations?: (input: { databasePath: string; entityId: string }) => Promise<
+    {
+      id: number;
+      relationType: string;
+      isSubject: boolean;
+      symmetric: boolean;
+      reference: string | null;
+      otherEntityId: string | null;
+      otherEntityKind: EntityKind | null;
+      otherEntityName: string | null;
+    }[]
+  >;
+  entitySqliteUpdateRelationStatus?: (input: {
+    databasePath: string;
+    relationId: number;
+    status: 'active' | 'rejected' | 'withdrawn';
+  }) => Promise<boolean>;
   entitySqliteAttachAuthority?: (input: {
     databasePath: string;
     entityId: string;
@@ -320,7 +351,7 @@ export interface EntityFileApi {
   entitySqliteCreatePopulated?: (input: {
     databasePath: string;
     id: string;
-    kind: 'person' | 'place' | 'work' | 'office' | 'org';
+    kind: EntityKind;
     description?: string | null;
     names?: {
       text: string;
@@ -452,13 +483,13 @@ export interface EntityFileApi {
   }) => Promise<number | null>;
   entitySqliteFindByAuthority?: (input: {
     databasePath: string;
-    kind: 'person' | 'place' | 'work' | 'office' | 'org';
+    kind: EntityKind;
     type: string;
     value: string;
   }) => Promise<string[]>;
   entitySqliteFindByNameDates?: (input: {
     databasePath: string;
-    kind: 'person' | 'place' | 'work' | 'office' | 'org';
+    kind: EntityKind;
     name: string;
     startYear?: number | null;
     endYear?: number | null;
@@ -638,9 +669,7 @@ export class EntityStore {
     await this.api.notifyOwnWrite?.(this.entitiesPath);
   }
 
-  async sqliteCandidateRecords(
-    kind: 'person' | 'place' | 'work' | 'office' | 'org',
-  ): Promise<unknown[] | null> {
+  async sqliteCandidateRecords(kind: EntityKind): Promise<unknown[] | null> {
     if (!this.api.entitySqliteCandidates || !(await this.api.pathExists(this.sqlitePath)))
       return null;
     return this.api.entitySqliteCandidates({ databasePath: this.sqlitePath, kind });
@@ -661,9 +690,7 @@ export class EntityStore {
     return this.api.pathExists(this.sqlitePath);
   }
 
-  async sqliteEntityIds(
-    kind?: 'person' | 'place' | 'work' | 'office' | 'org',
-  ): Promise<string[] | null> {
+  async sqliteEntityIds(kind?: EntityKind): Promise<string[] | null> {
     if (!this.api.entitySqliteListIds) throw new Error('SQLite entity IDs are unavailable.');
     return this.api.entitySqliteListIds({
       databasePath: this.sqlitePath,
@@ -671,9 +698,7 @@ export class EntityStore {
     });
   }
 
-  async sqlitePanelSummaries(
-    kind?: 'person' | 'place' | 'work' | 'office' | 'org',
-  ): Promise<unknown[] | null> {
+  async sqlitePanelSummaries(kind?: EntityKind): Promise<unknown[] | null> {
     if (!this.api.entitySqliteListPanelSummaries)
       throw new Error('SQLite panel summaries are unavailable.');
     return this.api.entitySqliteListPanelSummaries({
@@ -716,6 +741,16 @@ export class EntityStore {
       databasePath: this.sqlitePath,
       entityId,
       description,
+    });
+  }
+
+  async sqliteUpdateSubtype(entityId: string, subtype: string | null): Promise<void> {
+    if (!this.api.entitySqliteUpdateSubtype)
+      throw new Error('SQLite subtype updates are unavailable.');
+    await this.api.entitySqliteUpdateSubtype({
+      databasePath: this.sqlitePath,
+      entityId,
+      subtype,
     });
   }
 
@@ -852,6 +887,51 @@ export class EntityStore {
       databasePath: this.sqlitePath,
       entityId,
       authors,
+    });
+  }
+
+  async sqliteCreateRelation(input: {
+    subjectEntityId: string;
+    objectEntityId: string;
+    relationType: string;
+    symmetric?: boolean;
+    reference?: string | null;
+  }): Promise<number> {
+    if (!this.api.entitySqliteCreateRelation)
+      throw new Error('SQLite relation creation is unavailable.');
+    return this.api.entitySqliteCreateRelation({
+      databasePath: this.sqlitePath,
+      ...input,
+    });
+  }
+
+  async sqliteListRelations(entityId: string): Promise<
+    {
+      id: number;
+      relationType: string;
+      isSubject: boolean;
+      symmetric: boolean;
+      reference: string | null;
+      otherEntityId: string | null;
+      otherEntityKind: EntityKind | null;
+      otherEntityName: string | null;
+    }[]
+  > {
+    if (!this.api.entitySqliteListRelations)
+      throw new Error('SQLite relation listing is unavailable.');
+    return this.api.entitySqliteListRelations({ databasePath: this.sqlitePath, entityId });
+  }
+
+  async sqliteUpdateRelationStatus(
+    relationId: number,
+    status: 'active' | 'rejected' | 'withdrawn',
+  ): Promise<boolean> {
+    if (!this.api.entitySqliteUpdateRelationStatus)
+      throw new Error('SQLite relation status update is unavailable.');
+    return this.api.entitySqliteUpdateRelationStatus({
+      databasePath: this.sqlitePath,
+      relationId,
+      status,
     });
   }
 
@@ -1063,7 +1143,7 @@ export class EntityStore {
 
   async sqliteCreatePopulated(input: {
     id: string;
-    kind: 'person' | 'place' | 'work' | 'office' | 'org';
+    kind: EntityKind;
     description?: string | null;
     names?: {
       text: string;
@@ -1268,7 +1348,7 @@ export class EntityStore {
   }
 
   async sqliteSearchNames(
-    kind: 'person' | 'place' | 'work' | 'office' | 'org',
+    kind: EntityKind,
     query: string,
     limit = 20,
   ): Promise<
@@ -1289,11 +1369,7 @@ export class EntityStore {
     });
   }
 
-  async sqliteFindAllByAuthority(
-    kind: 'person' | 'place' | 'work' | 'office' | 'org',
-    type: string,
-    value: string,
-  ): Promise<string[]> {
+  async sqliteFindAllByAuthority(kind: EntityKind, type: string, value: string): Promise<string[]> {
     if (!this.api.entitySqliteFindByAuthority) return [];
     return this.api.entitySqliteFindByAuthority({
       databasePath: this.sqlitePath,
@@ -1304,7 +1380,7 @@ export class EntityStore {
   }
 
   async sqliteFindByAuthority(
-    kind: 'person' | 'place' | 'work' | 'office' | 'org',
+    kind: EntityKind,
     type: string,
     value: string,
   ): Promise<string | null> {
@@ -1313,7 +1389,7 @@ export class EntityStore {
   }
 
   async sqliteFindByNameDates(
-    kind: 'person' | 'place' | 'work' | 'office' | 'org',
+    kind: EntityKind,
     name: string,
     startYear?: number | null,
     endYear?: number | null,
@@ -1570,6 +1646,18 @@ export function desktopEntityFileApi(): EntityFileApi | null {
       : undefined,
     entitySqliteUpdateDescription: rawApi.entitySqliteUpdateDescription
       ? (input) => rawApi.entitySqliteUpdateDescription!(input)
+      : undefined,
+    entitySqliteUpdateSubtype: rawApi.entitySqliteUpdateSubtype
+      ? (input) => rawApi.entitySqliteUpdateSubtype!(input)
+      : undefined,
+    entitySqliteCreateRelation: rawApi.entitySqliteCreateRelation
+      ? (input) => rawApi.entitySqliteCreateRelation!(input)
+      : undefined,
+    entitySqliteListRelations: rawApi.entitySqliteListRelations
+      ? (input) => rawApi.entitySqliteListRelations!(input)
+      : undefined,
+    entitySqliteUpdateRelationStatus: rawApi.entitySqliteUpdateRelationStatus
+      ? (input) => rawApi.entitySqliteUpdateRelationStatus!(input)
       : undefined,
     entitySqliteRemoveName: rawApi.entitySqliteRemoveName
       ? (input) => rawApi.entitySqliteRemoveName!(input)

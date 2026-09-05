@@ -69,6 +69,8 @@ export interface EntityDatabaseCandidateRecord {
   description?: string;
   startYear?: number;
   endYear?: number;
+  /** thing kind only: user-defined sub-category id from Project Settings. */
+  subtype?: string;
   nobleTitles: {
     fief?: string;
     roleName?: string;
@@ -114,12 +116,16 @@ export function candidatesFromEntityDatabaseRecords(
         primaryName: filteredSearchStrings[0]!,
         searchStrings: filteredSearchStrings,
         ...(record.kind === 'person' && record.names.length > 0 ? { names: record.names } : {}),
-        ...(record.description || record.startYear != null || record.endYear != null
+        ...(record.description ||
+        record.startYear != null ||
+        record.endYear != null ||
+        record.subtype
           ? {
               metadata: {
                 ...(record.description ? { description: record.description } : {}),
                 ...(record.startYear != null ? { startYear: record.startYear } : {}),
                 ...(record.endYear != null ? { endYear: record.endYear } : {}),
+                ...(record.subtype ? { subtype: record.subtype } : {}),
               },
             }
           : {}),

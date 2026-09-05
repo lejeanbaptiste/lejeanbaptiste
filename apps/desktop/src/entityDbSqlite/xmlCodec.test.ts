@@ -152,4 +152,48 @@ describe('entity XML codec', () => {
     ).toEqual({ target_refs: '#person-a #person-b' });
     repository.close();
   });
+
+  it('round-trips a "thing" entity and a relation through export/import', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createPopulatedEntity({
+      id: 'thing-qi',
+      kind: 'thing',
+      description: 'A foundational concept',
+      names: [{ text: '氣', isPrimary: true }],
+    });
+    repository.updateSubtype('thing-qi', 'philosophical_concept');
+    repository.createEntity({ id: 'person-zhuangzi', kind: 'person' });
+    repository.createRelation({
+      subjectEntityId: 'person-zhuangzi',
+      objectEntityId: 'thing-qi',
+      relationType: 'discussion',
+    });
+
+    const exported = exportEntitiesXml(repository, { databaseId: 'test-thing-db' });
+    expect(exported).toContain('<list type="things">');
+    expect(exported).toContain('xml:id="thing-qi"');
+    expect(exported).toContain('name="discussion"');
+    expect(exported).toContain('<note type="subtype">philosophical_concept</note>');
+    repository.close();
+
+    const reimported = new EntitySqliteRepository();
+    const report = importEntitiesXml(reimported, exported);
+
+    expect(report.unresolvedReferences).toEqual([]);
+    expect(reimported.getEntity('thing-qi')?.kind).toBe('thing');
+    expect(
+      reimported.db.prepare('SELECT 1 FROM things WHERE entity_id = ?').get('thing-qi'),
+    ).toEqual({ 1: 1 });
+    expect(reimported.getPanelSummary('thing-qi')?.subtype).toBe('philosophical_concept');
+    expect(
+      reimported.db
+        .prepare('SELECT relation_type, subject_entity_id, object_entity_id FROM entity_relations')
+        .get(),
+    ).toEqual({
+      relation_type: 'discussion',
+      subject_entity_id: 'person-zhuangzi',
+      object_entity_id: 'thing-qi',
+    });
+    reimported.close();
+  });
 });

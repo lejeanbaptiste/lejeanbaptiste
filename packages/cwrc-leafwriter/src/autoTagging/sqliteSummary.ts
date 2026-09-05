@@ -6,6 +6,7 @@ export interface SqlitePanelSummaryLike {
   id: string;
   kind: EntityKind;
   description: string | null;
+  subtype: string | null;
   names: {
     text: string;
     nameType: string | null;
@@ -43,6 +44,7 @@ export function entitySummaryFromSqlite(snapshot: SqlitePanelSummaryLike): Entit
     })),
     romanized: names.find((name) => name.language?.endsWith('-Latn'))?.text ?? null,
     description: snapshot.description,
+    subtype: snapshot.subtype,
     authorities: snapshot.authorities,
     familyName: snapshot.familyName,
     givenName: snapshot.givenName,

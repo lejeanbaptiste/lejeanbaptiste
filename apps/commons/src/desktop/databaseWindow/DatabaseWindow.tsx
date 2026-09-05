@@ -18,6 +18,7 @@ import { List as VirtualList } from 'react-window';
 import type { RowComponentProps } from 'react-window';
 import { foldForSearch } from '../../../../../packages/cwrc-leafwriter/src/utilities/romanize';
 import type { EntityKind } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import { readPersistedAuthoritySettings } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/authoritySettings';
 import type { EntitySummary } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
 import type { EntityStore } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import {
@@ -202,6 +203,7 @@ const KIND_LABEL: Record<EntityKind, string> = {
   org: 'Organization',
   work: 'Work',
   office: 'Office',
+  thing: 'Thing',
 };
 
 const findingKindLabel = (kind: HygieneFinding['kind']): string => {
@@ -352,6 +354,11 @@ export const DatabaseWindow = () => {
     setKindFilterState(kind);
     writeStoredKindFilter(kind);
   }, []);
+  const [subtypeFilter, setSubtypeFilter] = useState<string>('');
+  const thingTypeOptions = readPersistedAuthoritySettings()?.customThingTypes ?? [];
+  useEffect(() => {
+    if (kindFilter !== 'thing') setSubtypeFilter('');
+  }, [kindFilter]);
 
   const [mainPane, setMainPane] = useState<MainPane>('detail');
   const [rightTab, setRightTab] = useState('cleaning');
@@ -468,6 +475,9 @@ export const DatabaseWindow = () => {
 
   const filtered = useMemo(() => {
     let list = entities.filter((entity) => entity.kind === kindFilter);
+    if (kindFilter === 'thing' && subtypeFilter) {
+      list = list.filter((entity) => entity.subtype === subtypeFilter);
+    }
     const trimmed = search.trim();
     if (!trimmed) return list;
     const foldedQuery = foldForSearch(trimmed);
@@ -492,7 +502,7 @@ export const DatabaseWindow = () => {
       // invalid regex — show unfiltered kind list
     }
     return list;
-  }, [entities, kindFilter, search]);
+  }, [entities, kindFilter, subtypeFilter, search]);
 
   const selectedEntity = selectedId ? (entityById.get(selectedId) ?? null) : null;
   const currentFinding = findings[findingIndex] ?? null;
@@ -1304,6 +1314,20 @@ export const DatabaseWindow = () => {
           sx={{ width: 140 }}
           renderInput={(params) => <TextField {...params} label="Type" />}
         />
+        {kindFilter === 'thing' && thingTypeOptions.length > 0 && (
+          <Autocomplete
+            size="small"
+            options={thingTypeOptions}
+            value={thingTypeOptions.find((option) => option.id === subtypeFilter) ?? null}
+            onChange={(_e, option) => setSubtypeFilter(option?.id ?? '')}
+            getOptionLabel={(option) => option.label}
+            isOptionEqualToValue={(a, b) => a.id === b.id}
+            sx={{ width: 160 }}
+            renderInput={(params) => (
+              <TextField {...params} label={t('LWC.desktop.sidebar.database.subtype_filter')} />
+            )}
+          />
+        )}
         <TextField
           size="small"
           placeholder={t('LWC.desktop.sidebar.database.search_placeholder')}

@@ -9,8 +9,10 @@ import {
   type NameTypeTaggingBucket,
   type NameTypeTaggingPolicy,
 } from './nameTypeTaggingPolicy';
+import type { CustomThingType } from './thingTypePolicy';
 
 export type { CustomNameType, NameTypeTaggingBucket, NameTypeTaggingPolicy };
+export type { CustomThingType };
 export {
   DEFAULT_ART_MIN_CODEPOINTS,
   bucketForTypedName,
@@ -22,6 +24,7 @@ export {
   resolveNameTypeTaggingPolicy,
   validateCustomNameTypeId,
 } from './nameTypeTaggingPolicy';
+export { validateCustomThingTypeId } from './thingTypePolicy';
 
 /** Per-project authority tag-bomb settings (stored in jean-baptiste.project.json). */
 export interface AutoTaggingAuthoritySettings {
@@ -47,6 +50,8 @@ export interface AutoTaggingAuthoritySettings {
   nameTypeTaggingPolicy?: Record<string, NameTypeTaggingBucket>;
   /** Project-scoped custom name types with default buckets. */
   customNameTypes?: CustomNameType[];
+  /** Project-scoped custom `<rs>` sub-types (e.g. "philosophical concept"). */
+  customThingTypes?: CustomThingType[];
   /** Code-point threshold for length-gated `art` names (default 3). */
   artMinCodePoints?: number;
   /** @deprecated Use {@link dateFilter}. */
@@ -217,6 +222,7 @@ export function readPersistedAuthoritySettings(): AutoTaggingAuthoritySettings |
     nameTypeTaggingPolicy: raw.nameTypeTaggingPolicy as
       Record<string, NameTypeTaggingBucket> | undefined,
     customNameTypes: raw.customNameTypes as CustomNameType[] | undefined,
+    customThingTypes: raw.customThingTypes as CustomThingType[] | undefined,
     artMinCodePoints: raw.artMinCodePoints,
     yearFilterEnabled: raw.yearFilterEnabled,
     hideUndated: raw.hideUndated,

@@ -87,6 +87,8 @@ export interface EntitySummary {
   /** First Latin-script (…-Latn) name, e.g. the stored romanization. */
   romanized: string | null;
   description: string | null;
+  /** thing kind only: user-defined sub-category id from Project Settings. */
+  subtype: string | null;
   authorities: AuthorityId[];
   /** Person's family name (surname), stored separately from the display name. Persons only. */
   familyName: string | null;
@@ -179,6 +181,13 @@ const activeDescription = (item: Element): Element | null => {
   );
 };
 
+const activeSubtype = (item: Element): Element | null => {
+  const notes = activeNotesOfType(item, 'subtype');
+  return (
+    notes.find((note) => readEntityValueProvenance(note).origin === 'user') ?? notes[0] ?? null
+  );
+};
+
 const idnoElements = (item: Element): Element[] =>
   Array.from(item.children).filter((child) => child.localName === 'idno');
 
@@ -253,6 +262,7 @@ export function summarizeEntity(
     nameEntries,
     romanized: nameEntries.find((entry) => isLatnLang(entry.lang))?.text ?? null,
     description: activeDescription(item)?.textContent?.trim() || null,
+    subtype: kind === 'thing' ? activeSubtype(item)?.textContent?.trim() || null : null,
     authorities: idnoElements(item)
       .filter((el) => el.getAttribute('type') !== CENTRAL_IDNO_TYPE)
       .filter((el) => readEntityValueProvenance(el).status === 'active')

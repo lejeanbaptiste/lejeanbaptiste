@@ -36,8 +36,10 @@ import {
   getEditorTagContext,
   pinParagraphInsertOption,
   sortTagSuggestions,
+  withCustomThingTypeOptions,
   withInsertModeFallbacks,
 } from './tagSuggestions';
+import { readPersistedAuthoritySettings } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/authoritySettings';
 import { findParagraphAncestor } from './tagInsert';
 import { getProjectTagCounts, loadTagStats, updateTagStatsForFile } from './tagStats';
 import { getCaretScreenPosition } from './editorAnchor';
@@ -197,6 +199,10 @@ export const useTagCommandController = () => {
       const tags = await fetchTagSuggestions(target);
       const withFallbacks = withInsertModeFallbacks(tags, nextMode, ctx);
       const pinned = pinParagraphInsertOption(withFallbacks, nextMode, ctx);
+      const withThingTypes = withCustomThingTypeOptions(
+        pinned,
+        readPersistedAuthoritySettings()?.customThingTypes ?? [],
+      );
       const sortPreferred =
         nextMode === 'wrap'
           ? (readLastUsedTag() ?? undefined)
@@ -209,7 +215,7 @@ export const useTagCommandController = () => {
           : nextMode === 'insert' || nextMode === 'lineBreak'
             ? DEFAULT_INSERT_TAG
             : (readLastUsedTag() ?? undefined);
-      const sorted = sortTagSuggestions(pinned, tagCounts, sortPreferred);
+      const sorted = sortTagSuggestions(withThingTypes, tagCounts, sortPreferred);
       setSuggestions(sorted);
       setHighlightedIndex(
         nextMode === 'insert' || nextMode === 'lineBreak'

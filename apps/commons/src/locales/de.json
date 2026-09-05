@@ -466,7 +466,8 @@
             "place": "Ort",
             "organization": "Organisation",
             "work": "Werk",
-            "office": "Amt"
+            "office": "Amt",
+            "thing": "Ding"
           },
           "status_installed": "installiert",
           "save": "Speichern",

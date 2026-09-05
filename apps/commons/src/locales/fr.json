@@ -816,7 +816,8 @@
             "place": "Lieu",
             "organization": "Organisation",
             "work": "Œuvre",
-            "office": "Fonction"
+            "office": "Fonction",
+            "thing": "Chose"
           },
           "status_installed": "installé",
           "save": "Enregistrer",

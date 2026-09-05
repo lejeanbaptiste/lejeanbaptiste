@@ -965,7 +965,8 @@
             "place": "場所",
             "organization": "組織",
             "work": "作品",
-            "office": "役職"
+            "office": "役職",
+            "thing": "事物"
           },
           "status_installed": "インストール済み",
           "save": "保存",

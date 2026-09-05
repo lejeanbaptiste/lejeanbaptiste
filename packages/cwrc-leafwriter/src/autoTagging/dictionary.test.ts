@@ -37,6 +37,21 @@ describe('parseDictionaryTable', () => {
     expect(entries).toEqual([{ string: 'Yang, Xiong', tag: 'persName' }]);
   });
 
+  it('recognizes an optional subtype column for thing sub-types', () => {
+    const entries = parseDictionaryTable('string,tag,subtype\n氣,rs,philosophical_concept');
+    expect(entries).toEqual([{ string: '氣', tag: 'rs', subtype: 'philosophical_concept' }]);
+  });
+
+  it('also recognizes a "type" column as a subtype alias', () => {
+    const entries = parseDictionaryTable('string,tag,type\n氣,rs,philosophical_concept');
+    expect(entries).toEqual([{ string: '氣', tag: 'rs', subtype: 'philosophical_concept' }]);
+  });
+
+  it('leaves subtype unset for a headerless file (no ambiguity with a bare 2-column list)', () => {
+    const entries = parseDictionaryTable('氣,rs');
+    expect(entries).toEqual([{ string: '氣', tag: 'rs' }]);
+  });
+
   it('skips blank lines and incomplete rows', () => {
     expect(parseDictionaryTable('張衡,persName\n\n只有一列\n')).toHaveLength(1);
   });
@@ -139,6 +154,43 @@ describe('dictionaryTag', () => {
     // Rationale flags the ambiguity for the reviewer.
     expect(zhang[0]!.rationale).toContain('ambiguous');
     expect(zhang[0]!.rationale).toContain('<title>');
+  });
+
+  it('sets attributes.type from a subtype for an rs entry', () => {
+    const doc = parse(TEI);
+    const suggestions = dictionaryTag(
+      doc,
+      [{ string: '張衡', tag: 'rs', subtype: 'philosophical_concept' }],
+      'ignore',
+    );
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0]!.tag).toBe('rs');
+    expect(suggestions[0]!.attributes).toEqual({ type: 'philosophical_concept' });
+  });
+
+  it('keeps two same-string/same-tag rows with different subtypes distinct (no collapse)', () => {
+    const doc = parse(TEI);
+    const suggestions = dictionaryTag(
+      doc,
+      [
+        { string: '張衡', tag: 'rs', subtype: 'philosophical_concept' },
+        { string: '張衡', tag: 'rs', subtype: 'medicinal_plant' },
+      ],
+      'ignore',
+    );
+    const zhang = suggestions.filter((s) => s.anchor.surface === '張衡');
+    expect(zhang).toHaveLength(2);
+    expect(zhang.map((s) => s.attributes?.type).sort()).toEqual([
+      'medicinal_plant',
+      'philosophical_concept',
+    ]);
+  });
+
+  it('does not set attributes when no subtype is given, even for rs', () => {
+    const doc = parse(TEI);
+    const suggestions = dictionaryTag(doc, [{ string: '張衡', tag: 'rs' }], 'ignore');
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0]!.attributes).toBeUndefined();
   });
 
   it('drops both persName and title once the span is already inside persName', () => {

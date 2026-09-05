@@ -42,6 +42,10 @@ export interface NodeDetail {
   ns?: string;
   type: NodeType;
   value?: string | RegExp;
+  /** Extra attributes to stamp when this suggestion is applied (e.g. `{ type: 'medicinal_plant' }`), overriding the tag's default attributes. Set only on synthetic, non-schema-derived suggestions. */
+  attributeOverrides?: Record<string, string>;
+  /** Display label shown instead of `.name` — for a synthetic suggestion whose raw tag name isn't meaningful on its own (e.g. several thing sub-types all named `rs`). */
+  displayLabel?: string;
 }
 
 export type NodeType = 'attribute' | 'attributeValue' | 'tag' | 'text';

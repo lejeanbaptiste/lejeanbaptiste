@@ -968,7 +968,8 @@
             "place": "地點",
             "organization": "組織",
             "work": "作品",
-            "office": "職務"
+            "office": "職務",
+            "thing": "事物"
           },
           "status_installed": "已安裝",
           "save": "儲存",

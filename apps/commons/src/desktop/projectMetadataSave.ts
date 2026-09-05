@@ -258,3 +258,41 @@ export const persistNameTypeTaggingPolicyChanges = async (
   setAuthoritySettings(next);
   return { ok: true };
 };
+
+export const loadThingTypePolicyState = async (
+  projectFilePath: string,
+  getAuthoritySettings: (bundle: ProjectBundle) => AutoTaggingAuthoritySettings | undefined,
+) => {
+  const bundle = await resolveBundle(projectFilePath);
+  if (!bundle) return null;
+  const settings = getAuthoritySettings(bundle);
+  return { customTypes: settings?.customThingTypes ?? [] };
+};
+
+export const persistThingTypePolicyChanges = async (
+  projectFilePath: string,
+  payload: { customTypes: AutoTaggingAuthoritySettings['customThingTypes'] },
+  deps: Pick<
+    ProjectMetadataSaveDeps,
+    'electronAPI' | 'getAuthoritySettings' | 'setAuthoritySettings'
+  >,
+): Promise<{ ok: boolean; error?: string }> => {
+  const { electronAPI, getAuthoritySettings, setAuthoritySettings } = deps;
+  const bundle = await resolveBundle(projectFilePath);
+  if (!bundle) return { ok: false, error: 'Project not found.' };
+  if (!electronAPI.updateProjectFileConfig) {
+    return { ok: false, error: 'Could not update project settings.' };
+  }
+
+  const current = getAuthoritySettings(bundle) ?? {};
+  const next: AutoTaggingAuthoritySettings = {
+    ...current,
+    customThingTypes: payload.customTypes,
+  };
+  const updatedBundle = await electronAPI.updateProjectFileConfig(bundle.projectFilePath, {
+    autoTaggingAuthority: next,
+  });
+  window.__leafWriterProject?.applyProjectConfigBundle?.(updatedBundle);
+  setAuthoritySettings(next);
+  return { ok: true };
+};

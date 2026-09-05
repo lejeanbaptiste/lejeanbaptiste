@@ -1,4 +1,5 @@
 import type { NameTypePolicyIO } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/NameTypePolicyPanel';
+import type { ThingTypePolicyIO } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/ThingTypePolicyPanel';
 import type { ProjectMetadataDialogMode } from '../projectMetadataSession';
 import type { ProjectMetadataEditorIO } from './ProjectMetadataForm';
 
@@ -44,6 +45,27 @@ export const createNativeProjectMetadataIO = (
     },
   };
 
+  const thingTypePolicy: ThingTypePolicyIO = {
+    load: async () => {
+      const state = (await invoke('getThingTypePolicyState', { dialogId })) as {
+        customTypes: { id: string; label: string }[];
+      } | null;
+      if (!state) {
+        throw new Error('Could not load thing-type policy.');
+      }
+      return state;
+    },
+    persist: async (customTypes) => {
+      const result = (await invoke('persistThingTypePolicy', {
+        dialogId,
+        customTypes,
+      })) as { ok?: boolean; error?: string } | null;
+      if (!result?.ok) {
+        throw new Error(result?.error ?? 'Could not save thing-type policy.');
+      }
+    },
+  };
+
   return {
     loadState: async () => {
       const dialogState = (await invoke('getProjectMetadataState', { dialogId })) as Awaited<
@@ -64,6 +86,7 @@ export const createNativeProjectMetadataIO = (
       return result ?? { ok: false, error: 'Could not save project metadata.' };
     },
     nameTypePolicy,
+    thingTypePolicy,
     onCancel: options.onCancel,
     onSaved: options.onSaved,
   };
@@ -94,6 +117,19 @@ export const createEmbeddedProjectMetadataIO = (
         const result = await projectApi.persistNameTypeTaggingPolicy?.(next);
         if (!result?.ok) {
           throw new Error(result?.error ?? 'Could not save name-type policy.');
+        }
+      },
+    },
+    thingTypePolicy: {
+      load: async () => {
+        const state = await projectApi.getThingTypePolicyState?.();
+        if (!state) throw new Error('Could not load thing-type policy.');
+        return state;
+      },
+      persist: async (customTypes) => {
+        const result = await projectApi.persistThingTypePolicy?.({ customTypes });
+        if (!result?.ok) {
+          throw new Error(result?.error ?? 'Could not save thing-type policy.');
         }
       },
     },

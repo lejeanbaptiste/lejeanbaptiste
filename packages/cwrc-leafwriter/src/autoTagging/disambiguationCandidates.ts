@@ -61,7 +61,7 @@ import type { WikidataFetchFn } from './wikidataDates';
 import { fetchWikidataLifespan, prefixDescriptionWithLifespan } from './wikidataDates';
 import { fetchDilaPlaceDetail, type DilaFetchFn } from './dilaPlaceDetail';
 import { DilaPlaceDetailCache } from './dilaPlaceDetailCache';
-import { wikidataQidsMatchingKind } from './wikidataKindFilter';
+import { wikidataQidsExcludingKnownKinds, wikidataQidsMatchingKind } from './wikidataKindFilter';
 import { packIdsForEntityType, searchPackRows } from '../services/authority-pack-lookup';
 import { viafIdsOnCandidate, viafNativeHeadingForId, type ViafFetchFn } from './viafNativeHeadings';
 import { BDRC_SHOW_URL, extractBdrcId, normalizeBdrcId } from './bdrcIds';
@@ -153,6 +153,7 @@ export const TAG_TO_ENTITY_TYPE: Record<string, NamedEntityType> = {
   bibl: 'work',
   roleName: 'office',
   name: 'person',
+  rs: 'thing',
 };
 
 const AUTHORITY_MAP: Record<
@@ -870,7 +871,10 @@ async function filterWikidataByKind<T extends { uri: string; description?: strin
 
   const qids = [...new Set(withQid.map((row) => row.qid))];
   await cache.throttle();
-  const matching = await wikidataQidsMatchingKind(qids, kind);
+  const matching =
+    kind === 'thing'
+      ? await wikidataQidsExcludingKnownKinds(qids)
+      : await wikidataQidsMatchingKind(qids, kind);
   return withQid.filter((row) => matching.has(row.qid)).map((row) => row.match);
 }
 

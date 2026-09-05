@@ -95,7 +95,11 @@ import {
 import { crawlDocuments } from './crawl';
 import { dictionaryTag, dictionaryTagProjection, type DictionaryEntry } from './dictionary';
 import { compoundWrapperSuggestions, seedSuggestions, suggestionsFromSeedMatches } from './seed';
-import { runGroupAndClean, parseChildlessNobleTitles, type GroupAndCleanResult } from './groupAndClean';
+import {
+  runGroupAndClean,
+  parseChildlessNobleTitles,
+  type GroupAndCleanResult,
+} from './groupAndClean';
 import { buildNobleTitleVocabulary } from './nobleTitleSpanParser';
 import {
   autoResolveNobleTitles,
@@ -283,7 +287,10 @@ async function autoResolveNobleTitlesInDocument(
       // action — this must run automatically here so the feature doesn't
       // depend on the user remembering to invoke that toolbar action.
       const touched = new Set<Element>();
-      if (doc.documentElement && parseChildlessNobleTitles(doc.documentElement, vocabulary, touched) > 0) {
+      if (
+        doc.documentElement &&
+        parseChildlessNobleTitles(doc.documentElement, vocabulary, touched) > 0
+      ) {
         changedByParsing = true;
       }
     } catch {
@@ -691,8 +698,7 @@ export class AutoTaggingSession {
   ): Promise<DisambiguationCandidate[]> {
     if (!this.store) return [];
     const records = (await this.store.sqliteCandidateRecords('person')) as
-      | { id: string; nobleTitles?: { fief?: string | null; roleName?: string | null }[] }[]
-      | null;
+      { id: string; nobleTitles?: { fief?: string | null; roleName?: string | null }[] }[] | null;
     if (!records) return [];
     const index = buildTitleOnlyPersonIndex(records);
     const ids = index.get(titleOnlyMatchKey(fief, roleName)) ?? [];

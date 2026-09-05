@@ -26,7 +26,7 @@ export const CHANGED_NOTE_TYPE = 'ljb-changed';
 /** @deprecated Use LJB_AUTOTAG_RESP */
 export const LEAFWRITER_AUTOTAG_RESP = LJB_AUTOTAG_RESP;
 
-export type EntityKind = 'person' | 'place' | 'org' | 'work' | 'office';
+export type EntityKind = 'person' | 'place' | 'org' | 'work' | 'office' | 'thing';
 
 interface KindConfig {
   /** Containing TEI list element. */
@@ -56,6 +56,13 @@ export const ENTITY_KINDS: Record<EntityKind, KindConfig> = {
     name: 'orgName',
     idPrefix: 'office',
   },
+  thing: {
+    list: 'list',
+    listType: 'things',
+    item: 'item',
+    name: 'name',
+    idPrefix: 'thing',
+  },
 };
 
 /** Mention tag name → entity kind. */
@@ -66,6 +73,7 @@ export const TAG_TO_KIND: Record<string, EntityKind> = {
   title: 'work',
   bibl: 'work',
   roleName: 'office',
+  rs: 'thing',
 };
 
 const ID_WIDTH = 6;

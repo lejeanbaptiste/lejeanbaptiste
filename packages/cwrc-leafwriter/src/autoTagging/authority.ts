@@ -192,6 +192,7 @@ export function teiTagForCandidate(candidate: AuthorityCandidate): string {
     org: 'orgName',
     work: 'title',
     office: 'roleName',
+    thing: 'rs',
   };
   return map[candidate.kind];
 }

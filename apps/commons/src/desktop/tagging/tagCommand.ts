@@ -33,6 +33,20 @@ const restoreBookmark = (bookmark: RuntimeBookmark | null | undefined) => {
   writer.editor.currentBookmark = bookmark as never;
 };
 
+/**
+ * Default attributes to stamp on a freshly-inserted tag, keyed by tag name.
+ * `rs` is the schema's sole "Thing" entity mapping (packages/cwrc-leafwriter
+ * schema/mappings/tei.ts, `parentTag: 'rs'`) — nothing else in the schema
+ * uses it — so every `<rs>` insertion gets `@type="thing"` up front, rather
+ * than relying on the user to add it by hand in the Attributes panel.
+ */
+const DEFAULT_TAG_ATTRIBUTES: Record<string, Record<string, string>> = {
+  rs: { type: 'thing' },
+};
+
+const defaultAttributesForTag = (tagName: string): Record<string, string> =>
+  DEFAULT_TAG_ATTRIBUTES[tagName] ?? {};
+
 const isEntityTag = (element: Element | null): boolean =>
   Boolean(element?.getAttribute('_entity') === 'true');
 
@@ -127,6 +141,7 @@ export const applyWrapTag = (
   bookmark: RuntimeBookmark | null | undefined,
   action: StructureAction = 'add',
   inTransaction = false,
+  attributeOverrides?: Record<string, string>,
 ): ApplyTagResult => {
   const writer = getWriter();
   if (!writer?.editor || !writer.tagger) return { applied: false, error: 'Editor not ready' };
@@ -154,7 +169,7 @@ export const applyWrapTag = (
   const apply = () => {
     writer.tagger.addStructureTag({
       action,
-      attributes: {},
+      attributes: { ...defaultAttributesForTag(tagName), ...attributeOverrides },
       bookmark: bm as never,
       tagName,
     });
@@ -221,16 +236,24 @@ export const resolveInsertAction = async (
   return null;
 };
 
-const insertEmptyTagAtCaret = (tagName: string): ApplyTagResult => {
+const insertEmptyTagAtCaret = (
+  tagName: string,
+  attributeOverrides?: Record<string, string>,
+): ApplyTagResult => {
   const writer = getWriter();
   if (!writer?.editor || !writer.schemaManager)
     return { applied: false, error: 'Editor not ready' };
 
   const id = writer.getUniqueId('dom_');
   const editorEl = writer.schemaManager.isTagBlockLevel(tagName) ? 'div' : 'span';
+  const defaultAttrs = { ...defaultAttributesForTag(tagName), ...attributeOverrides };
+  const jsonAttrs = JSON.stringify(defaultAttrs).replace(/"/g, '&quot;');
+  const attrsHtml = Object.entries(defaultAttrs)
+    .map(([key, value]) => ` ${key}="${value}"`)
+    .join('');
   // U+FEFF keeps the empty element from collapsing so it stays clickable/editable.
   // eslint-disable-next-line no-irregular-whitespace
-  const content = `<${editorEl} id="${id}" _tag="${tagName}" _attributes="{}">﻿</${editorEl}>`;
+  const content = `<${editorEl} id="${id}" _tag="${tagName}"${attrsHtml} _attributes="${jsonAttrs}">﻿</${editorEl}>`;
 
   writer.editor.undoManager.transact(() => {
     writer.editor!.insertContent(content);
@@ -240,7 +263,10 @@ const insertEmptyTagAtCaret = (tagName: string): ApplyTagResult => {
   return { applied: true, tagName };
 };
 
-export const applyInsertTag = async (tagName: string): Promise<ApplyTagResult> => {
+export const applyInsertTag = async (
+  tagName: string,
+  attributeOverrides?: Record<string, string>,
+): Promise<ApplyTagResult> => {
   const writer = getWriter();
   const ctx = getEditorTagContext();
   if (!writer?.editor || !writer.tagger || !ctx)
@@ -270,7 +296,7 @@ export const applyInsertTag = async (tagName: string): Promise<ApplyTagResult> =
     const action = await resolveInsertAction(tagName, getEditorTagContext() ?? ctx);
 
     if (action === 'inside' || action === 'add') {
-      return insertEmptyTagAtCaret(tagName);
+      return insertEmptyTagAtCaret(tagName, attributeOverrides);
     }
 
     if (action === 'after') {
@@ -280,7 +306,7 @@ export const applyInsertTag = async (tagName: string): Promise<ApplyTagResult> =
       if (!tagId) return { applied: false, error: `Cannot insert <${tagName}> here.` };
       writer.tagger.addStructureTag({
         action: 'after',
-        attributes: {},
+        attributes: { ...defaultAttributesForTag(tagName), ...attributeOverrides },
         bookmark: { tagId } as never,
         tagName,
       });
@@ -321,7 +347,7 @@ export const applyInsertTag = async (tagName: string): Promise<ApplyTagResult> =
 
     writer.tagger.addStructureTag({
       action: 'add',
-      attributes: {},
+      attributes: { ...defaultAttributesForTag(tagName), ...attributeOverrides },
       bookmark: bm as never,
       tagName,
     });
@@ -338,7 +364,7 @@ export const applyInsertTag = async (tagName: string): Promise<ApplyTagResult> =
 
   writer.tagger.addStructureTag({
     action,
-    attributes: {},
+    attributes: { ...defaultAttributesForTag(tagName), ...attributeOverrides },
     bookmark: bm as never,
     tagName,
   });
@@ -361,8 +387,8 @@ export const applyTagFromPopup = async (
   }
 
   if (mode === 'insert' || mode === 'lineBreak') {
-    return applyInsertTag(tag.name);
+    return applyInsertTag(tag.name, tag.attributeOverrides);
   }
 
-  return applyWrapTag(tag.name, bookmark, 'add');
+  return applyWrapTag(tag.name, bookmark, 'add', false, tag.attributeOverrides);
 };

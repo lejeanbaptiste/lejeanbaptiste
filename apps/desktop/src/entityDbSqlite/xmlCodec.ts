@@ -19,6 +19,7 @@ const ENTITY_KINDS: Record<
   org: { list: 'listOrg', item: 'org', name: 'orgName' },
   office: { list: 'listOrg', item: 'org', name: 'orgName', type: 'offices' },
   work: { list: 'listBibl', item: 'bibl', name: 'title' },
+  thing: { list: 'list', item: 'item', name: 'name', type: 'things' },
 };
 
 export interface XmlImportReport {
@@ -129,6 +130,7 @@ const kindForList = (list: XmlElement): SqliteEntityKind | null => {
   if (name === 'listPlace') return 'place';
   if (name === 'listBibl') return 'work';
   if (name === 'listOrg') return list.getAttribute('type') === 'offices' ? 'office' : 'org';
+  if (name === 'list') return list.getAttribute('type') === 'things' ? 'thing' : null;
   return null;
 };
 
@@ -142,6 +144,7 @@ function insertSubtype(db: DatabaseSync, kind: SqliteEntityKind, id: string): vo
     work: 'works',
     office: 'offices',
     org: 'organizations',
+    thing: 'things',
   };
   const table = tableByKind[kind];
   db.prepare(`INSERT INTO ${table} (entity_id) VALUES (?)`).run(id);
@@ -470,6 +473,10 @@ export function importEntitiesXml(
               childText || null,
               id,
             );
+            continue;
+          }
+          if (childName === 'note' && child.getAttribute('type') === 'subtype') {
+            insertMetadata(db, id, 'subtype', childText, child, childNow);
             continue;
           }
           if (childName === 'birth' || childName === 'death') {

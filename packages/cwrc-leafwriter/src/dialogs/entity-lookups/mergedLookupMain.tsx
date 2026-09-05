@@ -59,6 +59,7 @@ const LOOKUP_TYPE_TO_TAG: Partial<Record<NamedEntityType, string>> = {
   work: 'title',
   citation: 'title',
   office: 'roleName',
+  thing: 'rs',
 };
 
 const yearsLabel = (candidate: DisambiguationCandidate): string | null => {

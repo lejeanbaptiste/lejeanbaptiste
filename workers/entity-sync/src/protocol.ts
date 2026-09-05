@@ -14,7 +14,7 @@
  * renames/merges.
  */
 
-export const ENTITY_KINDS = ['person', 'place', 'work', 'office', 'org'] as const;
+export const ENTITY_KINDS = ['person', 'place', 'work', 'office', 'org', 'thing'] as const;
 export type EntityKind = (typeof ENTITY_KINDS)[number];
 
 /** Server rejects a push carrying more than this many entities (client chunks). */

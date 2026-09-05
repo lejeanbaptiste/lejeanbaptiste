@@ -27,6 +27,10 @@ import {
   type NameTypePolicyIO,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/NameTypePolicyPanel';
 import {
+  ThingTypePolicyPanel,
+  type ThingTypePolicyIO,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/ThingTypePolicyPanel';
+import {
   persistAuthoritySettings,
   readPersistedAuthoritySettings,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/authoritySettings';
@@ -45,6 +49,7 @@ export interface ProjectMetadataEditorIO {
     payload: Omit<ProjectMetadataSavePayload, 'projectFilePath'>,
   ) => Promise<ProjectMetadataSaveResult>;
   nameTypePolicy: NameTypePolicyIO;
+  thingTypePolicy: ThingTypePolicyIO;
   onCancel?: () => void;
   onSaved?: () => void;
 }
@@ -506,6 +511,10 @@ export const ProjectMetadataForm = ({
               io={io.nameTypePolicy}
               sourceLanguage={(state.values[SOURCE_LANGUAGE_PATH] ?? '').trim() || null}
             />
+          </Box>
+
+          <Box sx={{ pt: 1 }}>
+            <ThingTypePolicyPanel io={io.thingTypePolicy} />
           </Box>
 
           {error && (

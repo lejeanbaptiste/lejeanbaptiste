@@ -64,7 +64,7 @@ Returns every change for the owner with `seq > since`, ordered by `seq`.
   "changes": [
     {
       "centralId": "person-8a1f…",
-      "kind": "person" | "place" | "work" | "office" | "org",
+      "kind": "person" | "place" | "work" | "office" | "org" | "thing",
       "revision": 3,
       "contentXml": "<person …>…</person>",   // "" when deleted
       "contentHash": "…",                      // "" when deleted

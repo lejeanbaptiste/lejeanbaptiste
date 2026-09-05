@@ -13,7 +13,7 @@ const { DatabaseSync } = nodeRequire('node:sqlite') as {
   DatabaseSync: typeof DatabaseSyncType;
 };
 
-export type SqliteEntityKind = 'person' | 'place' | 'work' | 'office' | 'org';
+export type SqliteEntityKind = 'person' | 'place' | 'work' | 'office' | 'org' | 'thing';
 export type SqliteValueOrigin = 'user' | 'authority' | 'xml';
 export type SqliteValueStatus = 'active' | 'rejected' | 'withdrawn';
 
@@ -59,6 +59,19 @@ export interface SqliteEntitySummary extends SqliteEntity {
   names: SqliteName[];
 }
 
+/** A typed relation to another entity, from the queried entity's point of view. */
+export interface SqliteEntityRelation {
+  id: number;
+  relationType: string;
+  /** True when the queried entity is the relation's subject, false when it's the object. */
+  isSubject: boolean;
+  symmetric: boolean;
+  reference: string | null;
+  otherEntityId: string | null;
+  otherEntityKind: SqliteEntityKind | null;
+  otherEntityName: string | null;
+}
+
 export interface SqliteEntityLookupResult {
   id: string;
   label: string;
@@ -73,6 +86,8 @@ export interface SqliteEntityCandidateRecord {
   description?: string;
   startYear?: number;
   endYear?: number;
+  /** thing kind only: user-defined sub-category id from Project Settings. */
+  subtype?: string;
   nobleTitles: {
     fief?: string;
     roleName?: string;
@@ -135,6 +150,8 @@ export interface SqliteEntityPanelSummary extends SqliteEntitySummary {
   } | null;
   /** work kind only: 'book' | 'chapter' | 'poem' | 'painting' | 'object'. */
   workType: string | null;
+  /** thing kind only: user-defined sub-category id from Project Settings (entity_metadata key='subtype'). */
+  subtype: string | null;
   /** Vernacular glosses (fr/en/…); not searched as names. */
   translations: SqliteTranslation[];
   nationalities: string[];
@@ -569,6 +586,7 @@ function assemblePanelSummary(
     translationRows: Record<string, unknown>[];
     descriptionRows: Record<string, unknown>[];
     classificationRows: Record<string, unknown>[];
+    subtype: string | null;
   },
   allRejections: SqliteConcordanceRejection[],
 ): SqliteEntityPanelSummary {
@@ -624,7 +642,9 @@ function assemblePanelSummary(
           ? 'title'
           : entity.kind === 'office'
             ? 'roleName'
-            : 'orgName';
+            : entity.kind === 'thing'
+              ? 'name'
+              : 'orgName';
   for (const name of bags.nameAssertionRows) {
     addAssertion({
       key: `entity_names:${name.id}`,
@@ -837,6 +857,7 @@ function assemblePanelSummary(
     endYear: entity.kind === 'work' ? (workDate?.endYear ?? null) : fallbackEndYear,
     workDate,
     workType: bags.work?.work_type ?? (entity.kind === 'work' ? 'book' : null),
+    subtype: entity.kind === 'thing' ? bags.subtype : null,
     classification,
     nationalities: Array.from(new Set(nationalities)),
     placesOfOrigin: Array.from(new Set(origins)),
@@ -1022,6 +1043,7 @@ export class EntitySqliteRepository {
         work: 'works',
         office: 'offices',
         org: 'organizations',
+        thing: 'things',
       };
       if (input.kind === 'work') {
         this.db
@@ -1062,6 +1084,7 @@ export class EntitySqliteRepository {
         work: 'works',
         office: 'offices',
         org: 'organizations',
+        thing: 'things',
       };
       if (input.kind === 'work') {
         this.db
@@ -1831,6 +1854,16 @@ export class EntitySqliteRepository {
              FROM office_classifications WHERE office_id = ? ORDER BY id`,
           )
           .all(id) as Record<string, unknown>[],
+        subtype:
+          (
+            this.db
+              .prepare(
+                `SELECT value FROM entity_metadata
+                 WHERE entity_id = ? AND key = 'subtype' AND status = 'active'
+                 ORDER BY id DESC LIMIT 1`,
+              )
+              .get(id) as { value: string } | undefined
+          )?.value ?? null,
       },
       allRejections ?? this.listConcordanceRejections(),
     );
@@ -1967,6 +2000,15 @@ export class EntitySqliteRepository {
         .all() as Record<string, unknown>[],
       'entity_id',
     );
+    const subtypeByEntity = new Map<string, string>();
+    for (const row of this.db
+      .prepare(
+        `SELECT entity_id, value FROM entity_metadata
+         WHERE key = 'subtype' AND status = 'active' ORDER BY id`,
+      )
+      .all() as { entity_id: string; value: string }[]) {
+      subtypeByEntity.set(row.entity_id, row.value);
+    }
     const classificationByOffice = groupRowsByKey(
       this.db
         .prepare(
@@ -2009,6 +2051,7 @@ export class EntitySqliteRepository {
           translationRows: translationsByEntity.get(id) ?? empty,
           descriptionRows: descriptionByEntity.get(id) ?? empty,
           classificationRows: classificationByOffice.get(id) ?? empty,
+          subtype: subtypeByEntity.get(id) ?? null,
         },
         rejections,
       );
@@ -2414,6 +2457,11 @@ export class EntitySqliteRepository {
       `SELECT place_name, role_name, posthumous_name, dynasty
        FROM person_titles WHERE person_id = ? AND status = 'active' ORDER BY id`,
     );
+    const subtype = this.db.prepare(
+      `SELECT value FROM entity_metadata
+       WHERE entity_id = ? AND key = 'subtype' AND status = 'active'
+       ORDER BY id DESC LIMIT 1`,
+    );
     return entities.map((entity) => {
       const id = String(entity.id);
       const entityNames = names.all(id) as Record<string, unknown>[];
@@ -2425,6 +2473,8 @@ export class EntitySqliteRepository {
         .map((date) => date.end_year)
         .filter((value): value is number => typeof value === 'number');
       const entityTitles = titles.all(id) as Record<string, unknown>[];
+      const subtypeRow =
+        entity.kind === 'thing' ? (subtype.get(id) as { value: string } | undefined) : undefined;
       return {
         id,
         kind: entity.kind as SqliteEntityKind,
@@ -2435,6 +2485,7 @@ export class EntitySqliteRepository {
         ...(entity.description ? { description: String(entity.description) } : {}),
         ...(startYears.length ? { startYear: Math.min(...startYears) } : {}),
         ...(endYears.length ? { endYear: Math.max(...endYears) } : {}),
+        ...(subtypeRow ? { subtype: subtypeRow.value } : {}),
         nobleTitles: entityTitles.map((title) => ({
           ...(title.place_name ? { fief: String(title.place_name) } : {}),
           ...(title.role_name ? { roleName: String(title.role_name) } : {}),
@@ -2917,6 +2968,141 @@ export class EntitySqliteRepository {
           .run(entityId, trimmed, now, now);
       }
     });
+  }
+
+  /** `thing` entities only — the user-defined sub-category id (entity_metadata key='subtype'). No dedicated column, unlike description. */
+  updateSubtype(entityId: string, subtype: string | null, now = nowIso()): void {
+    this.transaction(() => {
+      const trimmed = subtype?.trim() || null;
+      const existing = this.db
+        .prepare(
+          `SELECT id FROM entity_metadata
+           WHERE entity_id = ? AND key = 'subtype' AND origin = 'user'
+           ORDER BY id LIMIT 1`,
+        )
+        .get(entityId) as { id: number } | undefined;
+      if (!trimmed) {
+        if (existing) this.db.prepare('DELETE FROM entity_metadata WHERE id = ?').run(existing.id);
+        return;
+      }
+      if (existing) {
+        this.db
+          .prepare(
+            `UPDATE entity_metadata
+             SET value = ?, status = 'active', updated_at = ?
+             WHERE id = ?`,
+          )
+          .run(trimmed, now, existing.id);
+      } else {
+        this.db
+          .prepare(
+            `INSERT INTO entity_metadata
+               (entity_id, key, value, origin, source, status, created_at, updated_at)
+             VALUES (?, 'subtype', ?, 'user', NULL, 'active', ?, ?)`,
+          )
+          .run(entityId, trimmed, now, now);
+      }
+    });
+  }
+
+  /**
+   * A typed cross-entity relation, from `entityId`'s point of view — the
+   * "other" fields describe whichever side of `entity_relations` isn't
+   * `entityId`, so the same row renders sensibly whether `entityId` is the
+   * subject or the object (e.g. "influenced X" vs. "influenced by Y").
+   */
+  createRelation(input: {
+    subjectEntityId: string;
+    objectEntityId: string;
+    relationType: string;
+    symmetric?: boolean;
+    reference?: string | null;
+    origin?: SqliteValueOrigin;
+    source?: string | null;
+    now?: string;
+  }): number {
+    const now = input.now ?? nowIso();
+    return this.transaction(() => {
+      const result = this.db
+        .prepare(
+          `INSERT INTO entity_relations
+             (relation_type, subject_entity_id, object_entity_id, active, passive, symmetric, reference, origin, source, status, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+        )
+        .run(
+          input.relationType,
+          input.subjectEntityId,
+          input.objectEntityId,
+          `#${input.subjectEntityId}`,
+          `#${input.objectEntityId}`,
+          input.symmetric ? 1 : 0,
+          input.reference ?? null,
+          input.origin ?? 'user',
+          input.source ?? null,
+          now,
+          now,
+        );
+      this.bumpEntity(input.subjectEntityId, now);
+      this.bumpEntity(input.objectEntityId, now);
+      return Number(result.lastInsertRowid);
+    });
+  }
+
+  /** Active relations where `entityId` is either the subject or the object. */
+  listRelationsForEntity(entityId: string): SqliteEntityRelation[] {
+    const rows = this.db
+      .prepare(
+        `SELECT r.id AS id,
+                r.relation_type AS relation_type,
+                r.subject_entity_id AS subject_entity_id,
+                r.object_entity_id AS object_entity_id,
+                r.symmetric AS symmetric,
+                r.reference AS reference,
+                other.id AS other_id,
+                other.kind AS other_kind,
+                (
+                  SELECT n.text FROM entity_names n
+                  WHERE n.entity_id = other.id AND n.status = 'active'
+                  ORDER BY n.is_primary DESC, n.id LIMIT 1
+                ) AS other_name
+         FROM entity_relations r
+         JOIN entities other
+           ON other.id = (
+             CASE WHEN r.subject_entity_id = ? THEN r.object_entity_id ELSE r.subject_entity_id END
+           )
+         WHERE r.status = 'active'
+           AND (r.subject_entity_id = ? OR r.object_entity_id = ?)
+         ORDER BY r.id`,
+      )
+      .all(entityId, entityId, entityId) as {
+      id: number;
+      relation_type: string;
+      subject_entity_id: string;
+      object_entity_id: string | null;
+      symmetric: number;
+      reference: string | null;
+      other_id: string | null;
+      other_kind: SqliteEntityKind | null;
+      other_name: string | null;
+    }[];
+    return rows.map((row) => ({
+      id: row.id,
+      relationType: row.relation_type,
+      isSubject: row.subject_entity_id === entityId,
+      symmetric: row.symmetric === 1,
+      reference: row.reference,
+      otherEntityId: row.other_id,
+      otherEntityKind: row.other_kind,
+      otherEntityName: row.other_name,
+    }));
+  }
+
+  /** Soft-remove a relation (status = 'withdrawn'); the row is kept for provenance. */
+  updateRelationStatus(relationId: number, status: SqliteValueStatus, now = nowIso()): boolean {
+    const result = this.db
+      .prepare(`UPDATE entity_relations SET status = ?, updated_at = ? WHERE id = ?`)
+      .run(status, now, relationId);
+    return Number(result.changes) > 0;
   }
 
   getEntityNotes(entityId: string): SqliteEntityNote[] {

@@ -117,20 +117,30 @@ export function suggestionsFromSeedMatches(matches: SeedMatch[]): Suggestion[] {
           nobleTitle.roleName ? `<roleName>${xmlEscape(nobleTitle.roleName)}</roleName>` : '',
         ].join('')
       : undefined;
+    // A `thing` candidate's project-defined sub-type (e.g. "medicinal_plant")
+    // becomes the mention's @type. The tag is already `rs` from indexing
+    // (teiTagForCandidate), so unlike the wrapper/nobleTitle branches above,
+    // this must NOT set `tag` — only add the attribute.
+    const thingSubtype = match.candidates.find(
+      (candidate) => candidate.kind === 'thing' && candidate.metadata?.subtype,
+    )?.metadata?.subtype;
+    const overrides: Partial<Suggestion> = wrapperComponents
+      ? {
+          tag: 'name',
+          attributes: { type: 'personWrapper', cert: 'unknown' },
+          innerXml: wrapperInnerXml({ ...rawWrapper!, components: wrapperComponents }),
+        }
+      : nobleTitleXml
+        ? {
+            tag: 'nobleTitle',
+            innerXml: nobleTitleXml,
+          }
+        : thingSubtype
+          ? { attributes: { type: thingSubtype } }
+          : {};
     return {
       ...match.suggestion,
-      ...(wrapperComponents
-        ? {
-            tag: 'name',
-            attributes: { type: 'personWrapper', cert: 'unknown' },
-            innerXml: wrapperInnerXml({ ...rawWrapper!, components: wrapperComponents }),
-          }
-        : nobleTitleXml
-          ? {
-              tag: 'nobleTitle',
-              innerXml: nobleTitleXml,
-            }
-          : {}),
+      ...overrides,
       source: 'authority' as const,
       sourceDetail: dedupeSourceLabels(match.candidates.map((c) => c.source)).join('+'),
       rationale: rationaleForCandidates(match.candidates),

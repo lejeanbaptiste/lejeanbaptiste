@@ -8,7 +8,7 @@
 
 import type { DatabaseSync } from 'node:sqlite';
 
-export const ENTITY_DB_SCHEMA_VERSION = 10;
+export const ENTITY_DB_SCHEMA_VERSION = 11;
 
 const migration1 = `
 CREATE TABLE IF NOT EXISTS entities (
@@ -513,7 +513,43 @@ WHERE status = 'active'
   );
 `;
 
-const migrations: Record<number, string> = {
+/**
+ * Widen `entities.kind`'s CHECK constraint to add `'thing'`. SQLite cannot
+ * `ALTER ... CHECK` in place, so this rebuilds the table under the same name
+ * (the standard SQLite "12-step" procedure, abbreviated for a constraint-only
+ * change): copy rows into `entities_new`, drop `entities`, rename. `ALTER
+ * TABLE ... RENAME TO` auto-rewrites every other table's `REFERENCES
+ * entities(id)` clause to point at the renamed table, so `people`, `works`,
+ * `entity_relations`, etc. all keep working with zero changes of their own.
+ */
+const migration11 = `
+CREATE TABLE entities_new (
+  id TEXT PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('person', 'place', 'work', 'office', 'org', 'thing')),
+  description TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  revision INTEGER NOT NULL DEFAULT 0 CHECK (revision >= 0),
+  deleted_at TEXT
+);
+
+INSERT INTO entities_new (id, kind, description, created_at, updated_at, revision, deleted_at)
+SELECT id, kind, description, created_at, updated_at, revision, deleted_at FROM entities;
+
+DROP TABLE entities;
+
+ALTER TABLE entities_new RENAME TO entities;
+
+CREATE INDEX IF NOT EXISTS entities_kind_idx ON entities(kind);
+CREATE INDEX IF NOT EXISTS entities_updated_idx ON entities(updated_at);
+
+CREATE TABLE IF NOT EXISTS things (
+  entity_id TEXT PRIMARY KEY REFERENCES entities(id) ON DELETE RESTRICT
+);
+`;
+
+/** Exported for tests that need to seed a database at a specific pre-migration schema version. */
+export const migrations: Record<number, string> = {
   1: migration1,
   2: migration2,
   3: migration3,
@@ -524,7 +560,16 @@ const migrations: Record<number, string> = {
   8: migration8,
   9: migration9,
   10: migration10,
+  11: migration11,
 };
+
+/**
+ * Migrations that rebuild a table referenced by other tables' foreign keys
+ * (rather than only adding/updating rows) must run with FK enforcement off —
+ * `PRAGMA foreign_keys` is a documented no-op inside an open transaction, so
+ * it has to be toggled here, outside the migration's own BEGIN/COMMIT.
+ */
+const FOREIGN_KEY_REBUILD_VERSIONS = new Set([11]);
 
 export function applyEntityDbMigrations(db: DatabaseSync): void {
   db.exec('PRAGMA foreign_keys = ON;');
@@ -539,14 +584,26 @@ export function applyEntityDbMigrations(db: DatabaseSync): void {
   for (let version = current + 1; version <= ENTITY_DB_SCHEMA_VERSION; version += 1) {
     const sql = migrations[version];
     if (!sql) throw new Error(`Missing entity database migration ${version}.`);
+    const isRebuild = FOREIGN_KEY_REBUILD_VERSIONS.has(version);
+    if (isRebuild) db.exec('PRAGMA foreign_keys = OFF;');
     db.exec('BEGIN IMMEDIATE;');
     try {
       db.exec(sql);
+      if (isRebuild) {
+        const violations = db.prepare('PRAGMA foreign_key_check;').all();
+        if (violations.length > 0) {
+          throw new Error(
+            `Migration ${version} left dangling foreign keys: ${JSON.stringify(violations)}`,
+          );
+        }
+      }
       db.exec(`PRAGMA user_version = ${version};`);
       db.exec('COMMIT;');
     } catch (error) {
       db.exec('ROLLBACK;');
       throw error;
+    } finally {
+      if (isRebuild) db.exec('PRAGMA foreign_keys = ON;');
     }
   }
 }

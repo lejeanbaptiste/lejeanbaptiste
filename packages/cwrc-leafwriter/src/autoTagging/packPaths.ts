@@ -53,23 +53,27 @@ export type AuthorityPackId =
   | 'pedb-places'
   | 'pedb-orgs'
   | 'pedb-works'
+  | 'pedb-things'
   /** Central entity database (CEDB) — read live from the central entities.xml. */
   | 'cedb-persons'
   | 'cedb-places'
   | 'cedb-orgs'
   | 'cedb-works'
+  | 'cedb-things'
   /** This project's already-tagged mentions (disambiguated and not), crawled live. */
   | 'project-persons'
   | 'project-places'
   | 'project-orgs'
   | 'project-offices'
   | 'project-works'
+  | 'project-things'
   /** User-imported CSV/TSV/xlsx/ODS list(s), parsed live in the tag-bomb panel. */
   | 'list-persons'
   | 'list-places'
   | 'list-orgs'
   | 'list-offices'
-  | 'list-works';
+  | 'list-works'
+  | 'list-things';
 
 /** Dynasty-scoped Wikidata NDJSON packs (installed separately; selected via `wikidata-persons`). */
 export const WIKIDATA_PERSON_CHILD_PACK_IDS = [
@@ -425,6 +429,14 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     origin: 'pedb',
   },
   {
+    id: 'pedb-things',
+    label: 'PEDB things',
+    source: 'pedb',
+    relativePath: '',
+    defaultTag: 'rs',
+    origin: 'pedb',
+  },
+  {
     id: 'cedb-persons',
     label: 'CEDB persons',
     source: 'cedb',
@@ -454,6 +466,14 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     source: 'cedb',
     relativePath: '',
     defaultTag: 'title',
+    origin: 'cedb',
+  },
+  {
+    id: 'cedb-things',
+    label: 'CEDB things',
+    source: 'cedb',
+    relativePath: '',
+    defaultTag: 'rs',
     origin: 'cedb',
   },
   {
@@ -497,6 +517,14 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     origin: 'project',
   },
   {
+    id: 'project-things',
+    label: 'Project tags: things',
+    source: 'project',
+    relativePath: '',
+    defaultTag: 'rs',
+    origin: 'project',
+  },
+  {
     id: 'list-persons',
     label: 'Imported list: persons',
     source: 'list',
@@ -534,6 +562,14 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     source: 'list',
     relativePath: '',
     defaultTag: 'title',
+    origin: 'list',
+  },
+  {
+    id: 'list-things',
+    label: 'Imported list: things',
+    source: 'list',
+    relativePath: '',
+    defaultTag: 'rs',
     origin: 'list',
   },
 ];
@@ -624,20 +660,24 @@ export const UI_AUTHORITY_PACK_IDS: AuthorityPackId[] = [
   'pedb-places',
   'pedb-orgs',
   'pedb-works',
+  'pedb-things',
   'cedb-persons',
   'cedb-places',
   'cedb-orgs',
   'cedb-works',
+  'cedb-things',
   'project-persons',
   'project-places',
   'project-orgs',
   'project-offices',
   'project-works',
+  'project-things',
   'list-persons',
   'list-places',
   'list-orgs',
   'list-offices',
   'list-works',
+  'list-things',
 ];
 
 /** Expand virtual selections (e.g. `wikidata-persons` → all installed dynasty packs). */
@@ -690,6 +730,7 @@ export const AUTHORITY_TAG_TYPE_GROUP_ORDER = [
   'orgName',
   'roleName',
   'title',
+  'rs',
 ] as const;
 
 export const AUTHORITY_TAG_TYPE_GROUP_LABELS: Record<
@@ -701,6 +742,7 @@ export const AUTHORITY_TAG_TYPE_GROUP_LABELS: Record<
   orgName: 'Organizations',
   roleName: 'Offices / roles',
   title: 'Works',
+  rs: 'Things',
 };
 
 export interface AuthorityPackTypeGroup {
@@ -792,20 +834,24 @@ export const AUTHORITY_PACK_SHORT_LABELS: Partial<Record<AuthorityPackId, string
   'pedb-places': 'Places',
   'pedb-orgs': 'Organizations',
   'pedb-works': 'Works',
+  'pedb-things': 'Things',
   'cedb-persons': 'Persons',
   'cedb-places': 'Places',
   'cedb-orgs': 'Organizations',
   'cedb-works': 'Works',
+  'cedb-things': 'Things',
   'project-persons': 'Persons',
   'project-places': 'Places',
   'project-orgs': 'Organizations',
   'project-offices': 'Offices',
   'project-works': 'Works',
+  'project-things': 'Things',
   'list-persons': 'Persons',
   'list-places': 'Places',
   'list-orgs': 'Organizations',
   'list-offices': 'Offices',
   'list-works': 'Works',
+  'list-things': 'Things',
 };
 
 export interface AuthorityPackSourceGroup {

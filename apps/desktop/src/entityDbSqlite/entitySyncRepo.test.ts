@@ -189,4 +189,40 @@ describe('applyRemoteEntity', () => {
     expect(repo.getEntity('person-9')!.deletedAt).not.toBeNull();
     expect(projectRevision).toBe(repo.getEntity('person-9')!.revision);
   });
+
+  it('creates a remote `office` entity as office, not org (shared listOrg wrapper)', () => {
+    const source = freshRepo();
+    const office = source.createEntity({ id: 'office-9', kind: 'office' });
+    source.addName({ entityId: office.id, text: 'Grand Secretary', isPrimary: true });
+    const xml = exportLocalEntityXml(source, 'office-9')!;
+
+    const repo = freshRepo();
+    applyRemoteEntity(repo, {
+      centralId: 'office-9',
+      kind: 'office',
+      contentXml: xml,
+      deleted: false,
+    });
+
+    expect(repo.getEntity('office-9')?.kind).toBe('office');
+    expect(repo.listNames('office-9').some((n) => n.text === 'Grand Secretary')).toBe(true);
+  });
+
+  it('creates a remote `thing` entity as thing (shared bare-list wrapper)', () => {
+    const source = freshRepo();
+    const thing = source.createEntity({ id: 'thing-9', kind: 'thing' });
+    source.addName({ entityId: thing.id, text: '氣', isPrimary: true });
+    const xml = exportLocalEntityXml(source, 'thing-9')!;
+
+    const repo = freshRepo();
+    applyRemoteEntity(repo, {
+      centralId: 'thing-9',
+      kind: 'thing',
+      contentXml: xml,
+      deleted: false,
+    });
+
+    expect(repo.getEntity('thing-9')?.kind).toBe('thing');
+    expect(repo.listNames('thing-9').some((n) => n.text === '氣')).toBe(true);
+  });
 });

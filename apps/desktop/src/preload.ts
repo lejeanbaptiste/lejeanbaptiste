@@ -590,6 +590,9 @@ export interface ElectronAPI {
   entitySqliteUpdateDescription: (
     request: import('./entityDbSqlite/readService').EntitySqliteUpdateDescriptionRequest,
   ) => Promise<void>;
+  entitySqliteUpdateSubtype: (
+    request: import('./entityDbSqlite/readService').EntitySqliteUpdateSubtypeRequest,
+  ) => Promise<void>;
   entitySqliteGetNotes: (
     request: import('./entityDbSqlite/readService').EntitySqliteNotesRequest,
   ) => Promise<import('./entityDbSqlite/repository').SqliteEntityNote[]>;
@@ -677,6 +680,15 @@ export interface ElectronAPI {
   entitySqliteMerge: (
     request: import('./entityDbSqlite/readService').EntitySqliteMergeRequest,
   ) => Promise<import('./entityDbSqlite/repository').SqliteMergeResult>;
+  entitySqliteCreateRelation: (
+    request: import('./entityDbSqlite/readService').EntitySqliteCreateRelationRequest,
+  ) => Promise<number>;
+  entitySqliteListRelations: (
+    request: import('./entityDbSqlite/readService').EntitySqliteListRelationsRequest,
+  ) => Promise<import('./entityDbSqlite/repository').SqliteEntityRelation[]>;
+  entitySqliteUpdateRelationStatus: (
+    request: import('./entityDbSqlite/readService').EntitySqliteUpdateRelationStatusRequest,
+  ) => Promise<boolean>;
   entitySqliteCreatePopulated: (
     request: import('./entityDbSqlite/readService').EntitySqliteCreatePopulatedRequest,
   ) => Promise<unknown>;
@@ -1148,6 +1160,7 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('entitySqlite:tombstoneNames', request),
   entitySqliteUpdateDescription: (request) =>
     ipcRenderer.invoke('entitySqlite:updateDescription', request),
+  entitySqliteUpdateSubtype: (request) => ipcRenderer.invoke('entitySqlite:updateSubtype', request),
   entitySqliteGetNotes: (request) => ipcRenderer.invoke('entitySqlite:getNotes', request),
   entitySqliteSetNote: (request) => ipcRenderer.invoke('entitySqlite:setNote', request),
   entitySqliteRemoveName: (request) => ipcRenderer.invoke('entitySqlite:removeName', request),
@@ -1196,6 +1209,11 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('entitySqlite:backfillDecisionTargets', request),
   entitySqliteSoftDelete: (request) => ipcRenderer.invoke('entitySqlite:softDelete', request),
   entitySqliteMerge: (request) => ipcRenderer.invoke('entitySqlite:merge', request),
+  entitySqliteCreateRelation: (request) =>
+    ipcRenderer.invoke('entitySqlite:createRelation', request),
+  entitySqliteListRelations: (request) => ipcRenderer.invoke('entitySqlite:listRelations', request),
+  entitySqliteUpdateRelationStatus: (request) =>
+    ipcRenderer.invoke('entitySqlite:updateRelationStatus', request),
   entitySqliteCreatePopulated: (request) =>
     ipcRenderer.invoke('entitySqlite:createPopulated', request),
   entitySqliteApplyAuthorityBackfillPatch: (request) =>

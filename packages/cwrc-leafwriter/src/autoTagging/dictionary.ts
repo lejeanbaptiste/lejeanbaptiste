@@ -22,20 +22,24 @@ const tibetanEdgesOk = (text: string, start: number, end: number, pattern: strin
 
 /**
  * One row of an imported table. Tag-stage only: a string and the tag to wrap
- * it in. NO ids/attributes — all identity work is deferred to disambiguation
- * (Phase 4b), so extra columns (entity ids, etc.) in an imported file are
- * ignored here and kept clean out of the document.
+ * it in. NO ids — all identity work is deferred to disambiguation (Phase 4b),
+ * so most extra columns (entity ids, etc.) in an imported file are ignored
+ * here and kept clean out of the document. `subtype` is the one exception:
+ * for `tag: 'rs'` rows it becomes the mention's `@type` (a project-defined
+ * thing sub-type id, e.g. "medicinal_plant") — everything else about the
+ * mention is still deferred to disambiguation.
  */
 export interface DictionaryEntry {
   string: string;
   tag: string;
+  subtype?: string;
 }
 
 /**
- * Parse a CSV/TSV table into {string, tag} entries. A header row naming the
- * columns is recognized; without one, the first two columns are string, tag.
- * Any other columns (ids, metadata) are ignored at this stage. Handles
- * double-quoted fields (with "" escapes).
+ * Parse a CSV/TSV table into {string, tag, subtype?} entries. A header row
+ * naming the columns is recognized; without one, the first two columns are
+ * string, tag. Any other columns besides an optional `subtype`/`type` are
+ * ignored at this stage. Handles double-quoted fields (with "" escapes).
  */
 export function parseDictionaryTable(content: string, delimiter?: ',' | '\t'): DictionaryEntry[] {
   const rows = content
@@ -46,20 +50,29 @@ export function parseDictionaryTable(content: string, delimiter?: ',' | '\t'): D
 }
 
 /**
- * Turn a grid of cells (from CSV, xlsx, or ods) into {string, tag} entries.
- * A header naming `string`/`tag` columns is honored; otherwise the first two
- * columns are used. Extra columns are ignored — the tag stage inserts no ids.
+ * Turn a grid of cells (from CSV, xlsx, or ods) into {string, tag, subtype?}
+ * entries. A header naming `string`/`tag` columns is honored; otherwise the
+ * first two columns are used and no `subtype` column is recognized (keeps a
+ * headerless 2-column file behaved exactly as before). An optional `subtype`
+ * (or `type`) header column carries a thing sub-type id through for `tag:
+ * 'rs'` rows. Other extra columns are ignored — the tag stage inserts no ids.
  */
 export function entriesFromRows(rows: string[][]): DictionaryEntry[] {
   if (rows.length === 0) return [];
 
   let stringCol = 0;
   let tagCol = 1;
+  let subtypeCol = -1;
   let dataRows = rows;
   const header = rows[0]!.map((c) => c.trim().toLowerCase());
   if (header.includes('string') && header.includes('tag')) {
     stringCol = header.indexOf('string');
     tagCol = header.indexOf('tag');
+    subtypeCol = header.includes('subtype')
+      ? header.indexOf('subtype')
+      : header.includes('type')
+        ? header.indexOf('type')
+        : -1;
     dataRows = rows.slice(1);
   }
 
@@ -68,7 +81,8 @@ export function entriesFromRows(rows: string[][]): DictionaryEntry[] {
     const string = row[stringCol]?.trim();
     const tag = row[tagCol]?.trim();
     if (!string || !tag) continue;
-    entries.push({ string, tag });
+    const subtype = subtypeCol >= 0 ? row[subtypeCol]?.trim() || undefined : undefined;
+    entries.push({ string, tag, ...(subtype ? { subtype } : {}) });
   }
   return entries;
 }
@@ -104,11 +118,16 @@ function splitRow(line: string, delimiter: string): string[] {
 /** Default minimum surface length: single characters match far too broadly. */
 export const DEFAULT_MIN_MATCH_LENGTH = 2;
 
+interface TagWithSubtype {
+  tag: string;
+  subtype?: string;
+}
+
 const buildTagsByString = (
   entries: DictionaryEntry[],
   minLength: number,
-): Map<string, string[]> => {
-  const tagsByString = new Map<string, string[]>();
+): Map<string, TagWithSubtype[]> => {
+  const tagsByString = new Map<string, TagWithSubtype[]>();
   for (const entry of entries) {
     // Normalize the pattern the same way the document search text is normalized
     // (NFC everywhere; for Tibetan also fold the non-breaking tsheg and drop a
@@ -116,9 +135,17 @@ const buildTagsByString = (
     // running-text form "བཀྲ་ཤིས". Length-gate the normalized form.
     const pattern = normalizeMatchPattern(entry.string);
     if ([...pattern].length < minLength) continue;
+    // Composite dedupe key (tag + subtype) — two rows sharing a string+tag but
+    // different thing sub-types must both survive, not collapse into one.
+    const key = `${entry.tag}\t${entry.subtype ?? ''}`;
     const tags = tagsByString.get(pattern);
-    if (!tags) tagsByString.set(pattern, [entry.tag]);
-    else if (!tags.includes(entry.tag)) tags.push(entry.tag);
+    if (!tags) {
+      tagsByString.set(pattern, [
+        { tag: entry.tag, ...(entry.subtype ? { subtype: entry.subtype } : {}) },
+      ]);
+    } else if (!tags.some((t) => `${t.tag}\t${t.subtype ?? ''}` === key)) {
+      tags.push({ tag: entry.tag, ...(entry.subtype ? { subtype: entry.subtype } : {}) });
+    }
   }
   return tagsByString;
 };
@@ -163,13 +190,14 @@ export function dictionaryTag(
 
     for (const match of matcher.scan(search.text)) {
       if (!tibetanEdgesOk(search.text, match.start, match.end, match.pattern)) continue;
-      const tags = tagsByString.get(match.pattern)!.filter((tag) => !alreadyTagged(tag));
+      const tags = tagsByString.get(match.pattern)!.filter((entry) => !alreadyTagged(entry.tag));
       if (tags.length === 0) continue;
 
       const rawStart = search.map[match.start]!;
       const rawEnd = search.map[match.end - 1]! + 1;
       const anchor = createAnchor('', doc, node, rawStart, rawEnd, policy, index);
-      for (const tag of tags) {
+      const tagNames = tags.map((t) => t.tag);
+      for (const { tag, subtype } of tags) {
         suggestions.push({
           id: `dict_${counter++}`,
           source: 'dictionary',
@@ -177,8 +205,9 @@ export function dictionaryTag(
           action: 'add',
           tag,
           anchor: { ...anchor },
-          rationale: suggestionRationale(match.pattern, sourceDetail, tag, tags),
+          rationale: suggestionRationale(match.pattern, sourceDetail, tag, tagNames),
           status: 'pending',
+          ...(subtype ? { attributes: { type: subtype } } : {}),
         });
       }
     }
@@ -219,7 +248,7 @@ export function dictionaryTagProjection(
 
     const tags = tagsByString
       .get(match.pattern)!
-      .filter((tag) => !isWrappedByEntityTag(startNode, tag));
+      .filter((entry) => !isWrappedByEntityTag(startNode, entry.tag));
     if (tags.length === 0) continue;
 
     const anchor = createAnchorFromProjection(
@@ -232,7 +261,8 @@ export function dictionaryTagProjection(
       docIndex,
     );
 
-    for (const tag of tags) {
+    const tagNames = tags.map((t) => t.tag);
+    for (const { tag, subtype } of tags) {
       suggestions.push({
         id: `dict_${counter++}`,
         source: 'dictionary',
@@ -240,8 +270,9 @@ export function dictionaryTagProjection(
         action: 'add',
         tag,
         anchor: { ...anchor },
-        rationale: suggestionRationale(match.pattern, sourceDetail, tag, tags),
+        rationale: suggestionRationale(match.pattern, sourceDetail, tag, tagNames),
         status: 'pending',
+        ...(subtype ? { attributes: { type: subtype } } : {}),
       });
     }
   }

@@ -354,4 +354,89 @@ describe('ReviewPanel', () => {
       expect([...applied[0]!.rejected].sort()).toEqual(['noble-1', 'noble-2']);
     });
   });
+
+  describe('thing sub-type chip labels and filtering', () => {
+    const customThingTypes = [{ id: 'philosophical_concept', label: 'Philosophical concept' }];
+
+    it('renders the human label for an <rs type="..."> suggestion', () => {
+      const { suggestions } = setup();
+      const withThing = [
+        {
+          ...suggestions[0]!,
+          id: 'thing-1',
+          tag: 'rs',
+          attributes: { type: 'philosophical_concept' },
+          status: 'pending' as const,
+        },
+      ];
+
+      render(
+        <ReviewPanel
+          suggestions={withThing}
+          onApply={() => undefined}
+          customThingTypes={customThingTypes}
+        />,
+      );
+
+      expect(screen.getByText('<rs type="Philosophical concept">')).toBeTruthy();
+    });
+
+    it('falls back to the raw sub-type id when it has no matching custom type', () => {
+      const { suggestions } = setup();
+      const withThing = [
+        {
+          ...suggestions[0]!,
+          id: 'thing-1',
+          tag: 'rs',
+          attributes: { type: 'medicinal_plant' },
+          status: 'pending' as const,
+        },
+      ];
+
+      render(
+        <ReviewPanel
+          suggestions={withThing}
+          onApply={() => undefined}
+          customThingTypes={customThingTypes}
+        />,
+      );
+
+      expect(screen.getByText('<rs type="medicinal_plant">')).toBeTruthy();
+    });
+
+    it('offers a per-subtype filter option and narrows the list to it', () => {
+      const { suggestions } = setup();
+      const mixed = [
+        {
+          ...suggestions[0]!,
+          id: 'thing-1',
+          tag: 'rs',
+          attributes: { type: 'philosophical_concept' },
+          status: 'pending' as const,
+        },
+        {
+          ...suggestions[1]!,
+          id: 'thing-2',
+          tag: 'rs',
+          status: 'pending' as const,
+        },
+      ];
+
+      render(
+        <ReviewPanel
+          suggestions={mixed}
+          onApply={() => undefined}
+          customThingTypes={customThingTypes}
+        />,
+      );
+
+      expect(screen.getAllByRole('listitem')).toHaveLength(2);
+
+      fireEvent.mouseDown(screen.getByRole('combobox'));
+      fireEvent.click(screen.getByRole('option', { name: '<rs type="Philosophical concept">' }));
+
+      expect(screen.getAllByRole('listitem')).toHaveLength(1);
+      expect(screen.getByTestId('review-item-thing-1')).toBeTruthy();
+    });
+  });
 });

@@ -5,9 +5,13 @@
 
 import type { EntityKind } from './entities';
 
-/** P31 roots and exclusions per LJB entity kind. */
+/**
+ * P31 roots and exclusions per LJB entity kind. `thing` deliberately has no
+ * entry here — it has no clean Wikidata root set (a philosophical concept,
+ * say), so it's matched by exclusion instead; see `wikidataQidsExcludingKnownKinds`.
+ */
 export const WIKIDATA_KIND_RULES: Record<
-  EntityKind,
+  Exclude<EntityKind, 'thing'>,
   { instanceOf: string[]; excludeInstanceOf: string[] }
 > = {
   person: {
@@ -101,7 +105,7 @@ function qidFromSparqlUri(uri: string): string | null {
 }
 
 /** Build SPARQL that returns Q-ids matching a kind (P31/P279* against configured roots). */
-export function buildKindFilterSparql(qids: string[], kind: EntityKind): string {
+export function buildKindFilterSparql(qids: string[], kind: Exclude<EntityKind, 'thing'>): string {
   const rules = WIKIDATA_KIND_RULES[kind];
   const itemValues = qids.map((q) => `wd:${q}`).join(' ');
   const rootValues = rules.instanceOf.map((q) => `wd:${q}`).join(' ');
@@ -121,6 +125,35 @@ SELECT DISTINCT ?item WHERE {
 `.trim();
 }
 
+/**
+ * Build SPARQL that returns Q-ids matching NONE of the other kinds' P31/P279*
+ * roots — the `thing` filter. A `thing` (e.g. a philosophical concept) has no
+ * clean positive root set of its own, so it's identified by ruling out
+ * person/place/org/work instead. `office` is skipped: its root set is already
+ * empty, so it would contribute nothing to the exclusion.
+ */
+export function buildExclusionFilterSparql(qids: string[]): string {
+  const itemValues = qids.map((q) => `wd:${q}`).join(' ');
+  const excludeRoots = [
+    ...new Set(
+      (['person', 'place', 'org', 'work'] as const).flatMap(
+        (kind) => WIKIDATA_KIND_RULES[kind].instanceOf,
+      ),
+    ),
+  ];
+  const excludeValues = excludeRoots.map((q) => `wd:${q}`).join(' ');
+
+  return `
+SELECT DISTINCT ?item WHERE {
+  VALUES ?item { ${itemValues} }
+  FILTER NOT EXISTS {
+    VALUES ?root { ${excludeValues} }
+    ?item wdt:P31/wdt:P279* ?root .
+  }
+}
+`.trim();
+}
+
 export function parseKindFilterSparqlResponse(data: SparqlResponse): Set<string> {
   const matched = new Set<string>();
   for (const binding of data.results?.bindings ?? []) {
@@ -132,12 +165,7 @@ export function parseKindFilterSparqlResponse(data: SparqlResponse): Set<string>
   return matched;
 }
 
-async function queryKindBatch(
-  qids: string[],
-  kind: EntityKind,
-  fetchImpl: WikidataFetchFn,
-): Promise<Set<string>> {
-  const query = buildKindFilterSparql(qids, kind);
+async function runSparqlQuery(query: string, fetchImpl: WikidataFetchFn): Promise<Set<string>> {
   const url = `${SPARQL_ENDPOINT}?format=json&query=${encodeURIComponent(query)}`;
   const response = await fetchImpl(url, {
     headers: {
@@ -152,42 +180,63 @@ async function queryKindBatch(
   return parseKindFilterSparqlResponse(data);
 }
 
-/**
- * Return the subset of Q-ids whose Wikidata type matches the requested entity kind.
- * Uses Wikidata Query Service with subclass closure (P31/P279*).
- */
-export async function wikidataQidsMatchingKind(
+/** Shared batching/caching driver for both the allowlist and exclusion filters. */
+async function batchedKindQuery(
   qids: string[],
-  kind: EntityKind,
-  fetchImpl: WikidataFetchFn = fetch,
+  cacheKind: EntityKind,
+  buildQuery: (batch: string[]) => string,
+  fetchImpl: WikidataFetchFn,
 ): Promise<Set<string>> {
   const unique = [...new Set(qids.map((q) => q.toUpperCase()))];
   const matched = new Set<string>();
 
   for (const qid of unique) {
-    if (kindMatchCache.get(cacheKey(kind, qid)) === true) matched.add(qid);
+    if (kindMatchCache.get(cacheKey(cacheKind, qid)) === true) matched.add(qid);
   }
 
-  const pending = unique.filter((qid) => !kindMatchCache.has(cacheKey(kind, qid)));
+  const pending = unique.filter((qid) => !kindMatchCache.has(cacheKey(cacheKind, qid)));
   if (pending.length === 0) return matched;
 
   for (let i = 0; i < pending.length; i += SPARQL_BATCH_SIZE) {
     const batch = pending.slice(i, i + SPARQL_BATCH_SIZE);
     let batchMatched: Set<string>;
     try {
-      batchMatched = await queryKindBatch(batch, kind, fetchImpl);
+      batchMatched = await runSparqlQuery(buildQuery(batch), fetchImpl);
     } catch {
       for (const qid of batch) {
-        kindMatchCache.set(cacheKey(kind, qid), false);
+        kindMatchCache.set(cacheKey(cacheKind, qid), false);
       }
       continue;
     }
     for (const qid of batch) {
       const ok = batchMatched.has(qid);
-      kindMatchCache.set(cacheKey(kind, qid), ok);
+      kindMatchCache.set(cacheKey(cacheKind, qid), ok);
       if (ok) matched.add(qid);
     }
   }
 
   return matched;
+}
+
+/**
+ * Return the subset of Q-ids whose Wikidata type matches the requested entity kind.
+ * Uses Wikidata Query Service with subclass closure (P31/P279*).
+ */
+export async function wikidataQidsMatchingKind(
+  qids: string[],
+  kind: Exclude<EntityKind, 'thing'>,
+  fetchImpl: WikidataFetchFn = fetch,
+): Promise<Set<string>> {
+  return batchedKindQuery(qids, kind, (batch) => buildKindFilterSparql(batch, kind), fetchImpl);
+}
+
+/**
+ * Return the subset of Q-ids whose Wikidata type matches NONE of the other
+ * kinds' roots — the `thing` filter (see `buildExclusionFilterSparql`).
+ */
+export async function wikidataQidsExcludingKnownKinds(
+  qids: string[],
+  fetchImpl: WikidataFetchFn = fetch,
+): Promise<Set<string>> {
+  return batchedKindQuery(qids, 'thing', buildExclusionFilterSparql, fetchImpl);
 }

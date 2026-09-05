@@ -275,6 +275,9 @@ import {
   listEntitySqliteAuthorityDuplicates,
   markEntitySqliteDuplicateIntentional,
   mergeEntitySqlite,
+  createEntitySqliteRelation,
+  listEntitySqliteRelations,
+  updateEntitySqliteRelationStatus,
   rejectEntitySqliteAssertion,
   restoreEntitySqliteAssertion,
   rejectEntitySqliteConcordance,
@@ -298,6 +301,7 @@ import {
   softDeleteEntitySqlite,
   tombstoneEntitySqliteNames,
   updateEntitySqliteDescription,
+  updateEntitySqliteSubtype,
   getEntitySqliteNotes,
   setEntitySqliteNote,
   updateEntitySqliteNames,
@@ -1856,6 +1860,38 @@ const registerIpcHandlers = () => {
     },
   );
   ipcMain.handle(
+    'entitySqlite:createRelation',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteCreateRelationRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return createEntitySqliteRelation(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:listRelations',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteListRelationsRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      return listEntitySqliteRelations(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:updateRelationStatus',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteUpdateRelationStatusRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return updateEntitySqliteRelationStatus(request);
+    },
+  );
+  ipcMain.handle(
     'entitySqlite:createPopulated',
     async (
       _event,
@@ -2085,6 +2121,17 @@ const registerIpcHandlers = () => {
       await assertRendererReadPath(request.databasePath);
       await assertRendererWritePath(request.databasePath);
       return updateEntitySqliteDescription(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:updateSubtype',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteUpdateSubtypeRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return updateEntitySqliteSubtype(request);
     },
   );
   ipcMain.handle(
