@@ -11,7 +11,7 @@ export const runEditorBoot = <T>(label: string, task: BootTask<T>): Promise<T> =
   const run = chain.then(async () => {
     if (
       process.env.NODE_ENV !== 'production' ||
-      window.localStorage?.getItem('LJB_DEBUG') === '1'
+      window.localStorage?.getItem('GROGNARD_DEBUG') === '1'
     ) {
       console.info(`[editor-boot] start ${label}`);
     }
@@ -20,7 +20,7 @@ export const runEditorBoot = <T>(label: string, task: BootTask<T>): Promise<T> =
     } finally {
       if (
         process.env.NODE_ENV !== 'production' ||
-        window.localStorage?.getItem('LJB_DEBUG') === '1'
+        window.localStorage?.getItem('GROGNARD_DEBUG') === '1'
       ) {
         console.info(`[editor-boot] end ${label}`);
       }

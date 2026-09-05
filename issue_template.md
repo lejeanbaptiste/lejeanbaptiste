@@ -36,4 +36,4 @@
 
 <!--- Please attach any relevant files (XML documents, screenshots, etc.) or specify the document template you were using. -->
 
-- LINCS/Leaf user name if submitting an issue for the LINCS/Leaf research space, or your GitHub username if using Le Jean-Baptiste.
+- LINCS/Leaf user name if submitting an issue for the LINCS/Leaf research space, or your GitHub username if using Grognard.

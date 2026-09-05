@@ -1,7 +1,7 @@
 import type { EntityStore } from './entityStore';
 
 const CHECKPOINT_FILE = 'central-sync-checkpoint.json';
-const CENTRAL_MAPPING_TYPE = 'ljb-central';
+const CENTRAL_MAPPING_TYPE = 'grognard-central';
 
 export interface SyncPairCheckpoint {
   centralId: string;
@@ -60,7 +60,7 @@ function normalizedEntityXml(item: Element): string {
     for (const child of Array.from(element.children)) {
       if (child.localName === 'idno' && child.getAttribute('type') === CENTRAL_MAPPING_TYPE) {
         child.remove();
-      } else if (child.localName === 'note' && child.getAttribute('type') === 'ljb-changed') {
+      } else if (child.localName === 'note' && child.getAttribute('type') === 'grognard-changed') {
         child.remove();
       }
     }
@@ -83,7 +83,7 @@ export function entityContentHash(item: Element): string {
 }
 
 async function readCheckpoint(store: EntityStore): Promise<SynchronizedMirrorCheckpoint> {
-  const raw = await store.readProjectLjbFile(CHECKPOINT_FILE);
+  const raw = await store.readProjectGrognardFile(CHECKPOINT_FILE);
   if (!raw) return emptyCheckpoint();
   try {
     const parsed = JSON.parse(raw) as SynchronizedMirrorCheckpoint;
@@ -100,7 +100,7 @@ async function writeCheckpoint(
   store: EntityStore,
   checkpoint: SynchronizedMirrorCheckpoint,
 ): Promise<void> {
-  await store.writeProjectLjbFile(CHECKPOINT_FILE, `${JSON.stringify(checkpoint, null, 2)}\n`);
+  await store.writeProjectGrognardFile(CHECKPOINT_FILE, `${JSON.stringify(checkpoint, null, 2)}\n`);
 }
 
 /**

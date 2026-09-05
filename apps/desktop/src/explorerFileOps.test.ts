@@ -7,7 +7,7 @@ describe('project enumerators exclude infrastructure', () => {
   let root = '';
 
   beforeAll(async () => {
-    root = await fs.mkdtemp(path.join(os.tmpdir(), 'ljb-proj-'));
+    root = await fs.mkdtemp(path.join(os.tmpdir(), 'grognard-proj-'));
     await fs.writeFile(path.join(root, 'chapter1.xml'), '<TEI/>');
     await fs.writeFile(path.join(root, 'notes.xml'), '<TEI/>');
     await fs.writeFile(path.join(root, 'entities.xml'), '<TEI/>');

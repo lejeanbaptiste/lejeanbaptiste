@@ -1,6 +1,6 @@
 # Wikidata tag packs — action plan
 
-**Status (2026-08-02):** **Shipped for Chinese persons** — LJB Chinese lifecycle uses `wikidata-persons-{pre-ming,ming,qing}`. Song/Yuan people are in **pre-ming** (date/P2348 membership), not empty `P27` song/yuan packs. Places/orgs/works also built. Parent: [authority-packs-planning.md](authority-packs-planning.md).
+**Status (2026-08-02):** **Shipped for Chinese persons** — Grognard Chinese lifecycle uses `wikidata-persons-{pre-ming,ming,qing}`. Song/Yuan people are in **pre-ming** (date/P2348 membership), not empty `P27` song/yuan packs. Places/orgs/works also built. Parent: [authority-packs-planning.md](authority-packs-planning.md).
 
 ## 1. Goal
 
@@ -113,9 +113,9 @@ The existing `AuthorityCandidate` normalizer can consume these at compile time i
 
 ## 4. What to query — by entity kind
 
-Map to LJB / LEAF types ([`entities.ts`](../packages/cwrc-leafwriter/src/autoTagging/entities.ts)):
+Map to Grognard / LEAF types ([`entities.ts`](../packages/cwrc-leafwriter/src/autoTagging/entities.ts)):
 
-| LJB kind | TEI tag                  | Wikidata strategy                                                                           |
+| Grognard kind | TEI tag                  | Wikidata strategy                                                                           |
 | -------- | ------------------------ | ------------------------------------------------------------------------------------------- |
 | `person` | `persName`               | `P31` → `human (Q5)`                                                                        |
 | `place`  | `placeName` / `geogName` | `P31` → geographic types (see below)                                                        |
@@ -140,7 +140,7 @@ Wikidata models pre-modern Chinese persons with **dynasty as `country of citizen
 
 - Humans with only English labels (belongs in `wikidata-person-en`, not zh packs)
 - `P31` = `fictional human character` unless a pack explicitly wants them
-- Strings of length ≤ 1 (LJB `DEFAULT_MIN_MATCH_LENGTH = 2`)
+- Strings of length ≤ 1 (Grognard `DEFAULT_MIN_MATCH_LENGTH = 2`)
 
 **Period assignment for persons:**
 
@@ -217,7 +217,7 @@ Wikidata distinguishes:
 
 - [`dynasties.json`](../../authority%20extraction/wikidata/dynasties.json) — 23 period presets (Qin→PRC): Wikidata Q-id, CE year range, 漢字/English labels, DILA/CBDB aliases
 - [`kind-queries.json`](../../authority%20extraction/wikidata/kind-queries.json) — `P31` allowlists for person / place / org / work (+ exclusions)
-- [`languages.json`](../../authority%20extraction/wikidata/languages.json) — pack languages ↔ LJB `zh-Hant` / `zh-Hans` / `ja` / … ↔ Wikidata label tags
+- [`languages.json`](../../authority%20extraction/wikidata/languages.json) — pack languages ↔ Grognard `zh-Hant` / `zh-Hans` / `ja` / … ↔ Wikidata label tags
 - [`validate.mjs`](../../authority%20extraction/wikidata/validate.mjs) — run from extraction repo: `npm run validate`
 - [`README.md`](../../authority%20extraction/wikidata/README.md) — how to edit and use the tables
 
@@ -311,7 +311,7 @@ Run parallel prototypes for: `zh-hans`, places (`P31` geographic + `zh-hant` lab
 
 ---
 
-### Phase W4 — Compile into LJB `AuthorityCandidate` (2–3 days)
+### Phase W4 — Compile into Grognard `AuthorityCandidate` (2–3 days)
 
 **Tool:** `compile-pack.ts` → existing NDJSON consumed by Phase A2 loader ([authority-databases-phases.md](authority-databases-phases.md)).
 
@@ -342,7 +342,7 @@ Run parallel prototypes for: `zh-hans`, places (`P31` geographic + `zh-hant` lab
 | **Update cadence**       | Monthly rebuild off weekly dump; manifest `wikidataDumpDate`                                 |
 | **User override**        | Advanced: point at custom pack URL                                                           |
 
-**Exit:** LJB desktop can download `wikidata-person-zh-hant-tang`, verify sha256, compile if needed, run tag bomb.
+**Exit:** Grognard desktop can download `wikidata-person-zh-hant-tang`, verify sha256, compile if needed, run tag bomb.
 
 ---
 
@@ -368,8 +368,8 @@ Ship small, validate, expand.
 | `wikidata-person-zh-hant-ming` / `-qing`                 | tens of k    | P0                                                                         |
 | `wikidata-person-zh-hans` (all periods, metadata filter) | 100k+        | P1 — modern/simple                                                         |
 | `wikidata-work-zh-hant`                                  | 5k–20k       | P1 — **title** tag for classical Chinese corpora                           |
-| `wikidata-place-zh-hant`                                 | 254k         | P2 — noisy; compare CHGIS; **opt-in** in LJB                               |
-| `wikidata-place-ja`                                      | 514k         | P2 — noisy; compare NDL; **opt-in** in LJB (`wikidata-places-ja`)          |
+| `wikidata-place-zh-hant`                                 | 254k         | P2 — noisy; compare CHGIS; **opt-in** in Grognard                               |
+| `wikidata-place-ja`                                      | 514k         | P2 — noisy; compare NDL; **opt-in** in Grognard (`wikidata-places-ja`)          |
 | `wikidata-org-zh-hant`                                   | 5k–15k       | P2                                                                         |
 | `wikidata-person-ja`                                     | 50k+         | P3 — **supplement** to NDL persons (not replacement)                       |
 | `wikidata-work-ja`                                       | varies       | P2 — **title**; NDL works batch is small (~900)                            |
@@ -463,4 +463,4 @@ Parallel: CBDB compile (Phase A2) remains higher priority for Chinese biography 
 - [WikiProject East Asia / CBDB import](https://www.wikidata.org/wiki/Wikidata:WikiProject_East_Asia/China_Biographical_Database_import) — P27 dynasty modeling
 - [WikiProject Chinese Culture and Heritage](https://www.wikidata.org/wiki/Wikidata:WikiProject_Chinese_Culture_and_Heritage) — person/place data models
 - [WDumper](https://wdumps.toolforge.org/) — optional alternative for RDF slices
-- LJB: [authority-packs-planning.md](authority-packs-planning.md), [`authority.ts`](../packages/cwrc-leafwriter/src/autoTagging/authority.ts), [`lincs-api.ts`](../packages/cwrc-leafwriter/src/services/lincs-api.ts) (Wikidata reconcile)
+- Grognard: [authority-packs-planning.md](authority-packs-planning.md), [`authority.ts`](../packages/cwrc-leafwriter/src/autoTagging/authority.ts), [`lincs-api.ts`](../packages/cwrc-leafwriter/src/services/lincs-api.ts) (Wikidata reconcile)

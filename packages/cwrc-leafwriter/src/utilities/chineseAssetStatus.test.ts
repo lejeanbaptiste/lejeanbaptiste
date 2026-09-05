@@ -25,7 +25,7 @@ describe('checkChineseProjectAssets', () => {
   const originalApi = window.electronAPI;
 
   beforeEach(() => {
-    window.localStorage.removeItem('ljb.assets.openccScript.v1');
+    window.localStorage.removeItem('grognard.assets.openccScript.v1');
   });
 
   afterEach(() => {

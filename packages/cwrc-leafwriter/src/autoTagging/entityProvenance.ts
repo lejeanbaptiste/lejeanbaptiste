@@ -39,7 +39,7 @@ export function readEntityValueProvenance(element: Element): EntityValueProvenan
   if (
     element.localName === 'idno' ||
     element.getAttribute('type') === 'authority-cache' ||
-    element.getAttribute('resp') === '#ljb-autotag' ||
+    element.getAttribute('resp') === '#grognard-autotag' ||
     element.getAttribute('resp') === '#leafwriter-autotag'
   ) {
     return { origin: 'authority', source, status };

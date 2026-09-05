@@ -114,7 +114,7 @@ class PlaceDialog implements SchemaDialog {
     this.updateTagAs(lemma, uri);
 
     this.dialog.attributesWidget?.setAttribute('key', key ?? lemma);
-    // Internal-only links (ljb-entity:) are keyed via @key, not @ref.
+    // Internal-only links (grognard-entity:) are keyed via @key, not @ref.
     if (/^https?:/i.test(uri)) this.dialog.attributesWidget?.setAttribute('ref', uri);
   }
 

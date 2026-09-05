@@ -17,7 +17,7 @@
  *
  * Then, from `workers/entity-sync/` (where wrangler.toml lives), per file and
  * spread over days if you hit the write cap:
- *   wrangler d1 import ljb-entity-sync --remote --file=<abs>/seed-001.sql
+ *   wrangler d1 import grognard-entity-sync --remote --file=<abs>/seed-001.sql
  *
  * (`d1 import` batches and retries; `d1 execute --file` can choke on the size.)
  *
@@ -49,7 +49,7 @@ const parseArgs = (argv: string[]): Args => {
   }
   const defaultDb = path.join(
     os.homedir(),
-    'Library/Application Support/Le Jean-Baptiste/entity-database/entities.sqlite',
+    'Library/Application Support/Grognard/entity-database/entities.sqlite',
   );
   const chunkRaw = get('--chunk');
   return {
@@ -88,7 +88,7 @@ const main = (): void => {
     fileIndex += 1;
     const filePath = path.join(args.out, `seed-${String(fileIndex).padStart(3, '0')}.sql`);
     handle = fs.openSync(filePath, 'w');
-    fs.writeSync(handle, `-- ljb-entity-sync seed, file ${fileIndex}\n`);
+    fs.writeSync(handle, `-- grognard-entity-sync seed, file ${fileIndex}\n`);
     if (fileIndex === 1) {
       fs.writeSync(
         handle,
@@ -141,7 +141,7 @@ const main = (): void => {
   console.log('  cd workers/entity-sync');
   for (let i = 1; i <= fileIndex; i += 1) {
     console.log(
-      `  npx wrangler d1 import ljb-entity-sync --remote --file=${path.join(
+      `  npx wrangler d1 import grognard-entity-sync --remote --file=${path.join(
         args.out,
         `seed-${String(i).padStart(3, '0')}.sql`,
       )}`,

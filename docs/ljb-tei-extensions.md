@@ -1,10 +1,10 @@
-# LJB TEI extensions for historical Chinese texts
+# Grognard TEI extensions for historical Chinese texts
 
 **Status:** Implemented in the generated TEI schemas (2026-07).
 
-LJB adds a small number of elements and conventions to TEI for information
+Grognard adds a small number of elements and conventions to TEI for information
 that is important to historical Chinese tagging but is not fully represented
-by the stock TEI content models. These are LJB extensions, not replacements
+by the stock TEI content models. These are Grognard extensions, not replacements
 for TEI semantics.
 
 ## Calendar structure inside `date`
@@ -16,7 +16,7 @@ calendar component. Those components are therefore retained as children of
 `date`:
 
 ```xml
-<date resp="#ljb-sanmiao">
+<date resp="#grognard-sanmiao">
   <dyn>魏</dyn><ruler>明帝</ruler><era>太和</era><year>十八年</year><month>二月</month>
 </date>
 ```
@@ -88,7 +88,7 @@ into one title bucket.
 
 ## Office entities
 
-Disambiguated offices are a fifth LJB entity kind, while remaining within TEI
+Disambiguated offices are a fifth Grognard entity kind, while remaining within TEI
 vocabulary. They serialize as `org[@type='office']` in a dedicated
 `listOrg[@type='offices']`:
 
@@ -117,7 +117,7 @@ their source, inference rule, certainty, and source row ids.
   <relation name="parentOf"
     active="#office-parent" passive="#office-child"
     resp="#norbert" ana="office-concatenation" cert="low"
-    corresp="urn:ljb:authority:norbert:1 urn:ljb:authority:norbert:2"/>
+    corresp="urn:grognard:authority:norbert:1 urn:grognard:authority:norbert:2"/>
 </listRelation>
 ```
 
@@ -133,5 +133,5 @@ The desktop schema merge adds `nobleTitle` and `name[@type='personWrapper']`
 to TEI phrase content and permits their component elements. The generated
 schema remains a flattened project-local schema; the pristine upstream TEI
 schema is preserved separately so the extension can be regenerated when the
-TEI catalog or LJB extension changes. The merge version is bumped whenever
+TEI catalog or Grognard extension changes. The merge version is bumped whenever
 these generated definitions change.

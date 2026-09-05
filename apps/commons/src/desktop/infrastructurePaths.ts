@@ -1,12 +1,12 @@
 /**
- * Hidden project infrastructure lives under `/.ljb/` (decision log, authority
- * cache, etc.) and `/.ljb-time-machine/` (project snapshots). The visible
+ * Hidden project infrastructure lives under `/.grognard/` (decision log, authority
+ * cache, etc.) and `/.grognard-time-machine/` (project snapshots). The visible
  * `entities.xml` at project root (project mode) is also excluded from corpus
  * scans. Whole-project operations must skip all of these.
  */
 
-export const INFRASTRUCTURE_DIR = '.ljb';
-export const TIME_MACHINE_DIR = '.ljb-time-machine';
+export const INFRASTRUCTURE_DIR = '.grognard';
+export const TIME_MACHINE_DIR = '.grognard-time-machine';
 export const ENTITIES_FILE_NAME = 'entities.xml';
 
 /** Directory names that walkers should never descend into. */

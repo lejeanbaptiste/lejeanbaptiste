@@ -1,6 +1,6 @@
 # Corpus extraction — planning
 
-**Status (2026-08-29):** **Wikisource MVP in progress in LJB** — Brave/Chromium extension + built-in **File → Import from Wikisource…** (native messaging, Wikidata header, zh wikitext map). Other corpora (CBETA, CTEXT, …) remain future; see [wikisource-import.md](wikisource-import.md).
+**Status (2026-08-29):** **Wikisource MVP in progress in Grognard** — Brave/Chromium extension + built-in **File → Import from Wikisource…** (native messaging, Wikidata header, zh wikitext map). Other corpora (CBETA, CTEXT, …) remain future; see [wikisource-import.md](wikisource-import.md).
 
 ## Problem statement
 
@@ -43,7 +43,7 @@ flowchart TB
     NORM[Normalizer]
     TEI[TEI emitter]
   end
-  subgraph ljb ["leaf-writer / FairCopy"]
+  subgraph grognard ["leaf-writer / FairCopy"]
     IMP[import-tei]
     TAG[Auto-tagging]
   end

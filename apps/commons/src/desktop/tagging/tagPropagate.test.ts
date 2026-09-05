@@ -34,8 +34,8 @@ describe('countPropagatableMatches', () => {
       <div id="tinymce-body" class="mce-content-body">
         <teiheader id="hdr" _tag="teiHeader">
           <appinfo _tag="appInfo">
-            <application _tag="application" ident="le-jean-baptiste">
-              <label _tag="label">Le Jean-Baptiste</label>
+            <application _tag="application" ident="grognard">
+              <label _tag="label">Grognard</label>
             </application>
           </appinfo>
         </teiheader>

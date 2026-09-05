@@ -1,12 +1,12 @@
 // Counts progress toward the "Flag of Commitment" ladder: issues, pull
-// requests, and commits the player has contributed to the LJB repositories.
+// requests, and commits the player has contributed to the Grognard repositories.
 // Uses the same GitHub token already cached for leaderboard publication
 // (see AchievementsDialog.tsx's submitToLeaderboard) - no separate auth flow.
 
 export const FLAG_OF_COMMITMENT_REPOS = [
-  'lejeanbaptiste/authoritypacks',
-  'lejeanbaptiste/lejeanbaptiste',
-  'lejeanbaptiste/plugins',
+  'grognard/authoritypacks',
+  'grognard/grognard',
+  'grognard/plugins',
 ] as const;
 
 const GITHUB_API = 'https://api.github.com';
@@ -48,7 +48,7 @@ const fetchGithubUsername = async (token: string): Promise<string | null> => {
   return body.login ?? null;
 };
 
-/** Sum of issues authored + PRs authored + commits authored across the LJB
+/** Sum of issues authored + PRs authored + commits authored across the Grognard
  * repos. Returns null (rather than 0) on any failure - a network hiccup or
  * an unlinked GitHub account should never reset earned progress. */
 export const fetchFlagOfCommitmentCount = async (token: string): Promise<number | null> => {

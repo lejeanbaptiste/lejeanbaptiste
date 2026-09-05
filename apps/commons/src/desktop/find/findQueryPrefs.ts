@@ -1,4 +1,4 @@
-export const FIND_QUERY_STORAGE_KEY = 'ljb:findQuery';
+export const FIND_QUERY_STORAGE_KEY = 'grognard:findQuery';
 
 export const readStoredFindQuery = (): string => {
   try {

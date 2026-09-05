@@ -96,8 +96,8 @@ export const AutoTaggingReviewPane = () => {
   useEffect(() => {
     const syncNorbertState = () => setNorbertEnabled(isPluginEnabled('norbert'));
     syncNorbertState();
-    window.addEventListener('ljbPluginRegistryChanged', syncNorbertState);
-    return () => window.removeEventListener('ljbPluginRegistryChanged', syncNorbertState);
+    window.addEventListener('grognardPluginRegistryChanged', syncNorbertState);
+    return () => window.removeEventListener('grognardPluginRegistryChanged', syncNorbertState);
   }, []);
 
   const mandatoryStage = useMemo<'nobleTitle' | 'personWrapper' | undefined>(() => {

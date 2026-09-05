@@ -52,7 +52,7 @@ export interface PluginRegisterContext {
     menuItems?: PluginToolbarMenuItem[];
   }) => void;
   registerTagCommandItem: (item: Omit<PluginTagCommandItem, 'id'> & { id: string }) => void;
-  /** Load UI modules bundled with LJB (webpack). Used by plugins that delegate UI to the host. */
+  /** Load UI modules bundled with Grognard (webpack). Used by plugins that delegate UI to the host. */
   loadHostModule: (moduleId: string) => Promise<import('./hostModules').PluginHostModule>;
   /** Split a Chinese person name into family + given (e.g. Norbert surname table). */
   registerPersonNameSegmenter: (

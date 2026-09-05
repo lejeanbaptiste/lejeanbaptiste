@@ -1,5 +1,5 @@
 /**
- * Launch the branded dev .app bundle (Dock / Cmd+Tab show "Le Jean-Baptiste").
+ * Launch the branded dev .app bundle (Dock / Cmd+Tab show "Grognard").
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
@@ -8,11 +8,11 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const desktopRoot = path.join(__dirname, '..');
-const executable = path.join(desktopRoot, '.dev/Le Jean-Baptiste.app/Contents/MacOS/Electron');
+const executable = path.join(desktopRoot, '.dev/Grognard.app/Contents/MacOS/Electron');
 
 if (!existsSync(executable)) {
   console.error(
-    '[le-jean-baptiste] Branded dev app not found. Run: npm run brand-electron -w le-jean-baptiste-desktop',
+    '[grognard] Branded dev app not found. Run: npm run brand-electron -w grognard-desktop',
   );
   process.exit(1);
 }
@@ -29,7 +29,7 @@ const child = spawn(executable, process.argv.slice(2).length ? process.argv.slic
     // Without this, Python may load a stale copy from Application Support.
     const pluginsPackages = path.resolve(desktopRoot, '../../../plugins/packages');
     if (existsSync(pluginsPackages)) {
-      env.LJB_PLUGINS_ROOT = pluginsPackages;
+      env.GROGNARD_PLUGINS_ROOT = pluginsPackages;
     }
     return env;
   })(),

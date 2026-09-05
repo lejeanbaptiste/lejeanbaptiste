@@ -27,7 +27,7 @@ const refsIn = (html: string): HTMLElement[] => {
 };
 
 describe('substituteDatePlaceholders', () => {
-  test('replaces {{date:N}} with an atomic ljb-date field', () => {
+  test('replaces {{date:N}} with an atomic grognard-date field', () => {
     const dates = new Map<number, DateGlossInput>([
       [
         0,

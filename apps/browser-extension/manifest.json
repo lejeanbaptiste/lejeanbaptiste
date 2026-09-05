@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "LJB corpus import",
+  "name": "Grognard corpus import",
   "version": "0.3.0",
-  "description": "Send the current Wikisource, Kanripo, or BDRC page to Le Jean-Baptiste for TEI import.",
+  "description": "Send the current Wikisource, Kanripo, or BDRC page to Grognard for TEI import.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApMcCj4Ti3bjkjTqdWvQXeOiQgIHJHH7NCAT+wNldo/OHFdPDRZZZ3bGYsTTvs2OWHLgM7lssIxXqAHB8o7wxYlrvSyJLAC4CMmMojNVpFT9q7LDn/at5TkFMvim5eOjVBTOkh5CdtQ7PHZnuJhGJ9xRn6bBDZNeStnzEcm23S4YwJQssGGo4XkfUUNYgEtHOG7rKS3r5QnzNoiqJdgcEj/08rnucXG9X6mX5RvoT8JdovGtH/9uTdlY/BjoG3M5i5fpV60GE5Y+eaAuKs9GfVKXBRcLzXElg1A7zIuHWvTcl6UnoC8QiGkqnD92qAatQ43CTpjze0aC5/DfIFWqU3QIDAQAB",
   "permissions": ["activeTab", "storage", "nativeMessaging"],
   "host_permissions": [
@@ -19,7 +19,7 @@
     "128": "icons/icon-128.png"
   },
   "action": {
-    "default_title": "Import to LJB",
+    "default_title": "Import to Grognard",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon-16.png",

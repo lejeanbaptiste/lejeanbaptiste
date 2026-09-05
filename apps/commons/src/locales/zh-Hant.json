@@ -458,7 +458,7 @@
           "dont_save_button": "不要儲存",
           "import_diagnostics_title": "匯入診斷",
           "import_xml_continue_button": "匯入",
-          "import_xml_warning_detail": "Foreign entity keys (@key) will be moved to a backup token on @ana (ljb-former-key:…) so they do not point at this project's entity catalogue. Compatible header fields stay in the file; project edition metadata is merged in; the project's schema is attached. Element remapping between different schemas is not done yet.",
+          "import_xml_warning_detail": "Foreign entity keys (@key) will be moved to a backup token on @ana (grognard-former-key:…) so they do not point at this project's entity catalogue. Compatible header fields stay in the file; project edition metadata is merged in; the project's schema is attached. Element remapping between different schemas is not done yet.",
           "import_xml_warning_message": "{{documentCount}} 個 XML 檔案將匯入此專案。",
           "import_xml_warning_title": "匯入 XML 文件",
           "imported_documents_with_problems": "已匯入 {{documentCount}} 份文件，其中有 {{problemCount}} 個問題檔案。",
@@ -654,7 +654,7 @@
       },
       "entity_database_changed": {
         "title": "實體資料庫已變更",
-        "message": "entities.xml was modified outside Le Jean-Baptiste. Reload before writing entity changes?",
+        "message": "entities.xml was modified outside Grognard. Reload before writing entity changes?",
         "reload": "重新載入資料庫",
         "keep": "保留目前副本"
       },
@@ -684,7 +684,7 @@
         "folder_label": "資料庫資料夾",
         "folder_placeholder": "Using the built-in default…",
         "choose": "Choose a cloud-synced folder…",
-        "note": "選填。空白資料夾即可——Le Jean-Baptiste 會設定資料庫。如果您已有來自其他機器的資料庫，請選取該資料夾以使用它。",
+        "note": "選填。空白資料夾即可——Grognard 會設定資料庫。如果您已有來自其他機器的資料庫，請選取該資料夾以使用它。",
         "done": "完成"
       },
       "explorer": {
@@ -991,16 +991,16 @@
       },
       "entity_db_setup": {
         "cancel": "取消",
-        "create_db_failed_message": "Le Jean-Baptiste could not set up the entity database in this folder.",
+        "create_db_failed_message": "Grognard could not set up the entity database in this folder.",
         "create_db_failed_title": "Could not create entity database",
         "create_here": "在此建立",
         "create_here_title": "Create a database in this folder?",
-        "folder_is_project_message": "This folder is already a Le Jean-Baptiste project. Choose a different folder for your entity database — you can keep it as the parent of your projects, just not a project folder itself.",
+        "folder_is_project_message": "This folder is already a Grognard project. Choose a different folder for your entity database — you can keep it as the parent of your projects, just not a project folder itself.",
         "folder_is_project_title": "該資料夾是專案",
         "ok": "確定",
-        "parent_has_db_detail": "If you meant that shared database, choose the parent instead. Otherwise Le Jean-Baptiste can create a new empty database in:",
+        "parent_has_db_detail": "If you meant that shared database, choose the parent instead. Otherwise Grognard can create a new empty database in:",
         "parent_has_db_intro": "The parent folder already has an entity database:",
-        "save_folder_failed_session": "The folder was set for this session, but saving it failed and it may not persist. Try again, or check that Le Jean-Baptiste can write to its app data folder.",
+        "save_folder_failed_session": "The folder was set for this session, but saving it failed and it may not persist. Try again, or check that Grognard can write to its app data folder.",
         "save_folder_failed_title": "Could not save entity database folder",
         "save_parent_folder_failed": "Saving the parent folder failed.",
         "use_parent_folder": "使用上層資料夾"

@@ -627,7 +627,7 @@
         "always_on_help": "Ignorer la case à cocher IA à chaque lancement (p. ex. dans Désambiguïser) et toujours utiliser la curation IA lorsqu'elle est configurée."
       },
       "github": {
-        "description": "Connectez votre compte GitHub pour publier vos statistiques de classement. LJB utilisera aussi cette connexion pour les statistiques d’issues, de pull requests et de commits.",
+        "description": "Connectez votre compte GitHub pour publier vos statistiques de classement. Grognard utilisera aussi cette connexion pour les statistiques d’issues, de pull requests et de commits.",
         "connect": "Connecter GitHub",
         "reconnect": "Reconnecter GitHub",
         "connecting": "Connexion…",
@@ -637,7 +637,7 @@
         "disconnected": "GitHub déconnecté.",
         "connect_failed": "Impossible de se connecter à GitHub.",
         "disconnect_failed": "Impossible de se déconnecter de GitHub.",
-        "browser_code": "GitHub s’est ouvert dans votre navigateur. Saisissez le code {{code}} pour autoriser LJB."
+        "browser_code": "GitHub s’est ouvert dans votre navigateur. Saisissez le code {{code}} pour autoriser Grognard."
       },
       "map_tiles": {
         "title": "Tuiles cartographiques hors ligne (facultatif)",
@@ -670,7 +670,7 @@
         "match_across_line_breaks_description": "Trouve des correspondances dans Tag Bomb à travers les balises vides <lb>, <pb>, etc. Conserve les repères dans les balises appliquées. Désactivé par défaut.",
         "match_across_line_breaks_enable": "Activer pour ce projet",
         "asset_packs_note": "Les packs d’autorités hors ligne et les tuiles cartographiques se trouvent maintenant dans l’onglet Packs de ressources.",
-        "bdrc_closed_note": "Le BDRC (BUDA) est un catalogue fermé et interdit le moissonnage de son site. Le Jean-Baptiste n’interroge pas library.bdrc.io. L’accès passe par les identifiants Wikidata (propriété P2477) déjà présents dans les packs tibétains ; les liens ouvrent tout de même la page officielle BUDA.",
+        "bdrc_closed_note": "Le BDRC (BUDA) est un catalogue fermé et interdit le moissonnage de son site. Grognard n’interroge pas library.bdrc.io. L’accès passe par les identifiants Wikidata (propriété P2477) déjà présents dans les packs tibétains ; les liens ouvrent tout de même la page officielle BUDA.",
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>Voulez-vous vraiment supprimer l'autorité </0><1>{{name}}</1><2> ?</2>",
           "Authority deleted successfully": "Autorité supprimée avec succès",
@@ -798,13 +798,13 @@
         "map_tiles": "Tuiles cartographiques hors ligne"
       },
       "privacy": {
-        "description": "Ce que Le Jean-Baptiste conserve localement et ce qu’il n’envoie que si vous choisissez d’utiliser une fonction en réseau.",
-        "summary": "Le Jean-Baptiste fonctionne principalement en local dans l’usage normal de l’application de bureau. Vos fichiers, bases de données et paramètres restent sur votre machine, sauf si vous utilisez une fonction qui contacte explicitement un autre service.",
+        "description": "Ce que Grognard conserve localement et ce qu’il n’envoie que si vous choisissez d’utiliser une fonction en réseau.",
+        "summary": "Grognard fonctionne principalement en local dans l’usage normal de l’application de bureau. Vos fichiers, bases de données et paramètres restent sur votre machine, sauf si vous utilisez une fonction qui contacte explicitement un autre service.",
         "local_first": "L’édition normale, les bases d’entités locales, les packs hors ligne et la plupart des paramètres restent sur votre ordinateur.",
         "documents_title": "Métadonnées des documents",
         "documents_body": "Le nom d’utilisateur saisi dans les Paramètres peut être écrit dans vos documents comme métadonnée de projet ou de document. Ce nom voyage avec le fichier parce qu’il fait partie du document lui-même, et non parce que l’application le téléverse automatiquement quelque part.",
         "leaderboard_title": "Envoi au classement",
-        "leaderboard_body": "Si vous choisissez d’envoyer votre fiche de service au classement, Le Jean-Baptiste transmet votre jeton d’identité GitHub pour vérification, votre nom affiché et votre contexte de grade, les totaux de vos indicateurs d’accomplissement et votre image d’avatar facultative au service de classement.",
+        "leaderboard_body": "Si vous choisissez d’envoyer votre fiche de service au classement, Grognard transmet votre jeton d’identité GitHub pour vérification, votre nom affiché et votre contexte de grade, les totaux de vos indicateurs d’accomplissement et votre image d’avatar facultative au service de classement.",
         "telemetry_title": "Rapports d’erreur et de plantage",
         "telemetry_body": "Le code de l’éditeur prend en charge des rapports optionnels d’erreurs et de plantages via Sentry si une version les active. Cela dépend donc de la configuration de la version, et non de l’édition normale.",
         "web_title": "Mesure d’audience dans la version web",
@@ -973,13 +973,13 @@
         "not_saved": "Non vérifié",
         "java_ok": "Java prêt ({{version}})",
         "java_missing": "Java 17+ requis pour LanguageTool. Téléchargez-le ci-dessous, ou installez Temurin / Homebrew openjdk@17, puis actualisez.",
-        "java_managed": "Géré par LJB",
+        "java_managed": "Géré par Grognard",
         "java_download": "Télécharger Java pour LanguageTool",
         "java_downloading": "Téléchargement de Java…",
         "java_install_ok": "Java installé.",
         "java_install_failed": "Échec de l'installation de Java.",
         "java_refresh": "Actualiser",
-        "not_installed": "LanguageTool n'est pas encore installé dans LJB.",
+        "not_installed": "LanguageTool n'est pas encore installé dans Grognard.",
         "installed_version": "LanguageTool {{version}} installé",
         "install": "Télécharger et installer",
         "reinstall": "Réinstaller",
@@ -989,7 +989,7 @@
         "install_failed": "Échec de l'installation de LanguageTool.",
         "removed": "LanguageTool géré retiré.",
         "remove_failed": "Impossible de retirer LanguageTool.",
-        "use_managed": "Utiliser le serveur local géré par LJB",
+        "use_managed": "Utiliser le serveur local géré par Grognard",
         "use_ngrams": "Utiliser les modèles n-grammes anglais (si téléchargés)",
         "ngrams_download": "Télécharger les n-grammes anglais",
         "ngrams_installed": "N-grammes anglais prêts",

@@ -6,10 +6,10 @@ import { flattenRelaxNgGrammar } from './relaxNgFlatten';
 import { ensureSchemaDir } from './schemaSetupHelpers';
 import type { ProjectBundle } from './projectFile';
 
-export const SANMIAO_PATCH_FILENAME = 'ljb-sanmiao-dates.rng';
+export const SANMIAO_PATCH_FILENAME = 'grognard-sanmiao-dates.rng';
 /** Bump when the generated RNG changes so existing merged schemas get regenerated. */
 export const SANMIAO_MERGE_VERSION = 15;
-const MERGE_VERSION_MARKER = `ljb-sanmiao-merge v${SANMIAO_MERGE_VERSION}`;
+const MERGE_VERSION_MARKER = `grognard-sanmiao-merge v${SANMIAO_MERGE_VERSION}`;
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const TEI_CATALOG_IDS = new Set(['teiAll', 'teiLite', 'teiSimplePrint', 'jTei']);
 
@@ -41,8 +41,8 @@ export const isTeiRelaxNgSchema = (rngContent: string): boolean =>
   (/TEI Edition:\s*P5/i.test(rngContent) || /http:\/\/www\.tei-c\.org\/ns\/1\.0/.test(rngContent));
 
 export const isSanmiaoMergedWrapper = (rngContent: string): boolean =>
-  /ljb-sanmiao-dates\.rng/.test(rngContent) ||
-  /Le Jean-Baptiste: TEI \+ sanmiao East Asian date extension/i.test(rngContent) ||
+  /grognard-sanmiao-dates\.rng/.test(rngContent) ||
+  /Grognard: TEI \+ sanmiao East Asian date extension/i.test(rngContent) ||
   /ljb\.sanmiao\.date\.parts/.test(rngContent);
 
 export const isFlatRelaxNgGrammar = (rngContent: string): boolean =>
@@ -91,20 +91,20 @@ const buildDateOverrideDefine = (baseRng: string): string => {
             <ref name="model.gLike"/>
             <ref name="model.phrase"/>
             <ref name="model.global"/>
-            <ref name="ljb.sanmiao.date.parts"/>
+            <ref name="grognard.sanmiao.date.parts"/>
           </choice>
         </zeroOrMore>
 ${attRefLines}
-      <ref name="ljb.sanmiao.att.resolution"/>
+      <ref name="grognard.sanmiao.att.resolution"/>
       </element>
     </define>`;
 };
 
-/** Add LJB's inline grouping elements to TEI's phrase content model. */
-const buildLjbInlineModelOverride = (): string => `
+/** Add Grognard's inline grouping elements to TEI's phrase content model. */
+const buildGrognardInlineModelOverride = (): string => `
     <define name="model.phrase" combine="choice">
-      <ref name="ljb.nobleTitle"/>
-      <ref name="ljb.personWrapper"/>
+      <ref name="grognard.nobleTitle"/>
+      <ref name="grognard.personWrapper"/>
     </define>`;
 
 /**
@@ -118,7 +118,7 @@ const buildKanripoGOverrideDefine = (): string => `
         <choice>
           <group>
             <attribute name="type"><value>kanripo</value></attribute>
-            <ref name="ljb.kanripo.graphic"/>
+            <ref name="grognard.kanripo.graphic"/>
             <ref name="att.global.attributes"/>
             <empty/>
           </group>
@@ -147,18 +147,18 @@ export const buildSanmiaoWrapperRng = (
          ns="${TEI_NS}"
          datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes"
          xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">
-  <a:documentation>Le Jean-Baptiste: TEI + sanmiao East Asian date extension (${MERGE_VERSION_MARKER})</a:documentation>
+  <a:documentation>Grognard: TEI + sanmiao East Asian date extension (${MERGE_VERSION_MARKER})</a:documentation>
   <include href="${teiCoreFileName}">
 ${buildDateOverrideDefine(baseRng)}
 ${buildKanripoGOverrideDefine()}
-${buildLjbInlineModelOverride()}
+${buildGrognardInlineModelOverride()}
   </include>
 ${generateSanmiaoHelperDefines()}
 </grammar>
 `;
 
 const textElementDefine = (name: string): string => `
-  <define name="ljb.sanmiao.${name}">
+  <define name="grognard.sanmiao.${name}">
     <element name="${name}">
       <zeroOrMore>
         <choice>
@@ -177,11 +177,11 @@ const textElementDefine = (name: string): string => `
 export const generateSanmiaoHelperDefines = (): string => {
   const partDefines = SANMIAO_DATE_PARTS.map((name) => textElementDefine(name)).join('\n');
   const partRefs = SANMIAO_DATE_PARTS.map(
-    (name) => `          <ref name="ljb.sanmiao.${name}"/>`,
+    (name) => `          <ref name="grognard.sanmiao.${name}"/>`,
   ).join('\n');
 
   return `${partDefines}
-  <define name="ljb.kanripo.graphic">
+  <define name="grognard.kanripo.graphic">
     <element name="graphic">
       <a:documentation>Kanripo gaiji PNG referenced from g[@type=kanripo].</a:documentation>
       <ref name="att.global.attributes"/>
@@ -190,9 +190,9 @@ export const generateSanmiaoHelperDefines = (): string => {
       <empty/>
     </element>
   </define>
-  <define name="ljb.dynasty">
+  <define name="grognard.dynasty">
     <element name="dynasty">
-      <a:documentation>Dynasty naming a noble title's period. Not a TEI element: an LJB extension, like nobleTitle's other inline children.</a:documentation>
+      <a:documentation>Dynasty naming a noble title's period. Not a TEI element: an Grognard extension, like nobleTitle's other inline children.</a:documentation>
       <zeroOrMore>
         <choice>
           <text/>
@@ -202,13 +202,13 @@ export const generateSanmiaoHelperDefines = (): string => {
       <ref name="att.global.attributes"/>
     </element>
   </define>
-  <define name="ljb.nobleTitle">
+  <define name="grognard.nobleTitle">
     <element name="nobleTitle">
       <oneOrMore>
         <choice>
           <text/>
           <ref name="model.global"/>
-          <ref name="ljb.dynasty"/>
+          <ref name="grognard.dynasty"/>
           <ref name="placeName"/>
           <ref name="roleName"/>
           <ref name="persName"/>
@@ -220,7 +220,7 @@ export const generateSanmiaoHelperDefines = (): string => {
       <optional><attribute name="dynasty"><text/></attribute></optional>
     </element>
   </define>
-  <define name="ljb.personWrapper">
+  <define name="grognard.personWrapper">
     <element name="name">
       <attribute name="type"><value>personWrapper</value></attribute>
       <optional><attribute name="key"><text/></attribute></optional>
@@ -232,13 +232,13 @@ export const generateSanmiaoHelperDefines = (): string => {
           <ref name="persName"/>
           <ref name="roleName"/>
           <ref name="placeName"/>
-          <ref name="ljb.nobleTitle"/>
+          <ref name="grognard.nobleTitle"/>
           <ref name="nationality"/>
         </choice>
       </oneOrMore>
     </element>
   </define>
-  <define name="ljb.sanmiao.rel">
+  <define name="grognard.sanmiao.rel">
     <element name="rel">
       <optional>
         <attribute name="dir">
@@ -258,13 +258,13 @@ export const generateSanmiaoHelperDefines = (): string => {
       </zeroOrMore>
     </element>
   </define>
-  <define name="ljb.sanmiao.date.parts">
+  <define name="grognard.sanmiao.date.parts">
     <choice>
 ${partRefs}
-          <ref name="ljb.sanmiao.rel"/>
+          <ref name="grognard.sanmiao.rel"/>
     </choice>
   </define>
-  <define name="ljb.sanmiao.att.resolution">
+  <define name="grognard.sanmiao.att.resolution">
     <optional><attribute name="dyn_id"><data type="integer"/></attribute></optional>
     <optional><attribute name="ruler_id"><data type="integer"/></attribute></optional>
     <optional><attribute name="era_id"><data type="integer"/></attribute></optional>

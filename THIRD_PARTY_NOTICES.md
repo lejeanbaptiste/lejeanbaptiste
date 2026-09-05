@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-Leaf Writer and the Le Jean-Baptiste desktop shell include third-party software that keeps its own upstream license terms. This file is a practical pointer to the major runtime dependencies we bundle or rely on directly.
+Leaf Writer and the Grognard desktop shell include third-party software that keeps its own upstream license terms. This file is a practical pointer to the major runtime dependencies we bundle or rely on directly.
 
 When shipping releases, keep this document in sync with the actual dependency set in `package.json` and the generated lockfile. Transitive dependencies are covered by their own upstream licenses through the npm dependency tree.
 

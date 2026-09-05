@@ -191,7 +191,7 @@ export const saveProjectMetadataChanges = async (
   }
 
   window.dispatchEvent(
-    new CustomEvent('ljb-project-config-saved', {
+    new CustomEvent('grognard-project-config-saved', {
       detail: { projectFilePath: bundle.projectFilePath, syncToCentral: payload.syncToCentral },
     }),
   );

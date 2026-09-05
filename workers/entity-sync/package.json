@@ -1,7 +1,7 @@
 {
-  "name": "ljb-entity-sync-worker",
+  "name": "grognard-entity-sync-worker",
   "version": "0.1.0",
-  "description": "Cross-device entity sync backend for Le Jean-Baptiste: a Cloudflare Worker over D1. Server-authoritative revisions, single-owner GitHub-token auth, pull/push endpoints.",
+  "description": "Cross-device entity sync backend for Grognard: a Cloudflare Worker over D1. Server-authoritative revisions, single-owner GitHub-token auth, pull/push endpoints.",
   "private": true,
   "type": "module",
   "scripts": {

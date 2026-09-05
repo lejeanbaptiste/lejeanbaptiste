@@ -1,14 +1,14 @@
-const LJB_PREFIX = 'ljb://';
+const GROGNARD_PREFIX = 'grognard://';
 // Keep in sync with apps/commons/src/desktop/localFileUrl.ts: the path must live in
 // pathname segments, not the host, or Chromium's special-scheme host/IDNA parsing
 // rejects the URL for any path containing "/" or " ".
-const LJB_HOST = 'local/';
+const GROGNARD_HOST = 'local/';
 
-export const isLocalFileUrl = (url: string): boolean => url.startsWith(LJB_PREFIX);
+export const isLocalFileUrl = (url: string): boolean => url.startsWith(GROGNARD_PREFIX);
 
 const toLocalFileUrl = (absolutePath: string): string => {
   const segments = absolutePath.split(/[\\/]+/).filter(Boolean);
-  return `${LJB_PREFIX}${LJB_HOST}${segments.map(encodeURIComponent).join('/')}`;
+  return `${GROGNARD_PREFIX}${GROGNARD_HOST}${segments.map(encodeURIComponent).join('/')}`;
 };
 
 export { toLocalFileUrl };
@@ -16,7 +16,7 @@ export { toLocalFileUrl };
 export const fromLocalFileUrl = (url: string): string | null => {
   if (!isLocalFileUrl(url)) return null;
   try {
-    const rest = url.slice(LJB_PREFIX.length + LJB_HOST.length);
+    const rest = url.slice(GROGNARD_PREFIX.length + GROGNARD_HOST.length);
     if (!rest) return null;
     const segments = rest.split('/').map(decodeURIComponent);
     const isWindowsDrive = /^[A-Za-z]:$/.test(segments[0]);
@@ -31,13 +31,13 @@ const isUsableResourceUrl = (url: string): boolean => {
   if (isLocalFileUrl(url)) return fromLocalFileUrl(url) !== null;
   if (/^https?:\/\//i.test(url)) return true;
   if (url.startsWith('blob:')) return true;
-  // Skip paths built by mistakenly treating ljb URLs as relative file paths.
-  if (url.includes('ljb:')) return false;
+  // Skip paths built by mistakenly treating grognard URLs as relative file paths.
+  if (url.includes('grognard:')) return false;
   if (/%2F/i.test(url)) return false;
   return true;
 };
 
-/** Join a document-relative asset path to the open XML file and return an ljb:// URL. */
+/** Join a document-relative asset path to the open XML file and return an grognard:// URL. */
 export const resolveDocumentAssetUrl = (
   url: string,
   documentFilePath: string | null | undefined,
@@ -211,7 +211,7 @@ export async function localSchemaToBlobUrl(
   return blobUrl;
 }
 
-/** Load text from a remote URL or a desktop ljb:// project file. */
+/** Load text from a remote URL or a desktop grognard:// project file. */
 export async function fetchResourceText(url: string): Promise<string | null> {
   const localPath = fromLocalFileUrl(url);
   if (localPath) {

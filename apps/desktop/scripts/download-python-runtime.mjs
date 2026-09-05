@@ -40,8 +40,8 @@ const TARGETS = {
 // Python/sanmiao build into the arm64 installer. This bit the Linux arm64
 // build the same way (fixed by passing an explicit --arm64 electron-builder
 // flag); CI sets these for the platform/arch it's actually packaging for.
-const platform = process.env.LJB_PYTHON_PLATFORM || process.platform;
-const arch = process.env.LJB_PYTHON_ARCH || process.arch;
+const platform = process.env.GROGNARD_PYTHON_PLATFORM || process.platform;
+const arch = process.env.GROGNARD_PYTHON_ARCH || process.arch;
 
 // kanripo depends on PyGithub, whose `pyjwt[crypto]` extra pulls in
 // cryptography, and cryptography does not publish a wheel for every target we

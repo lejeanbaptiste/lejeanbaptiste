@@ -39,7 +39,7 @@ const rejectReason = (title) => {
 };
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type !== 'ljb-page-info') return;
+  if (message?.type !== 'grognard-page-info') return;
   const parsed = parseTitle(location.href);
   if (!parsed) {
     sendResponse({ ok: false, reason: 'Open a Wikisource page first.' });

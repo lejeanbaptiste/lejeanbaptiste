@@ -45,7 +45,7 @@ import { SQLITE_SAVE_REQUIRES_IMPORT_FLAG_MESSAGE } from './sqliteRequired';
 
 /**
  * Persistence for the entity authority file and per-project hidden infra
- * (`.ljb/` decision log, authority cache, etc.). Kept behind a narrow file API
+ * (`.grognard/` decision log, authority cache, etc.). Kept behind a narrow file API
  * so it is testable without Electron.
  */
 export interface EntityFileApi {
@@ -501,7 +501,7 @@ export interface EntityFileApi {
   }) => Promise<boolean>;
 }
 
-export const LJB_DIR = '.ljb';
+export const GROGNARD_DIR = '.grognard';
 export const ENTITIES_FILE = 'entities.xml';
 export const DECISIONS_FILE = 'entity-decisions.jsonl';
 export const AUTHORITY_CACHE_DIR = 'authority-cache';
@@ -511,8 +511,8 @@ export const DILA_PLACE_DETAIL_CACHE_DIR = 'dila-place-detail-cache';
 export const DISAMBIGUATION_PENDING_FILE = 'disambiguation-pending.json';
 export const WRAPPER_FACTS_FILE = 'wrapper-facts.jsonl';
 
-/** @deprecated Use LJB_DIR */
-export const INFRA_DIR = LJB_DIR;
+/** @deprecated Use GROGNARD_DIR */
+export const INFRA_DIR = GROGNARD_DIR;
 
 export { resolveEntityStorePaths, type EntityStoreMode, type EntityStorePaths };
 
@@ -521,7 +521,7 @@ export class EntityStore {
   readonly entitiesPath: string;
   /** SQLite read authority paired with the legacy XML interchange file. */
   readonly sqlitePath: string;
-  readonly projectLjbDir: string;
+  readonly projectGrognardDir: string;
   readonly projectRoot: string;
   readonly centralFolder: string | null;
   readonly decisionsPath: string;
@@ -539,16 +539,16 @@ export class EntityStore {
     this.mode = paths.mode;
     this.entitiesPath = paths.entitiesPath;
     this.sqlitePath = this.entitiesPath.replace(/entities\.xml$/i, 'entities.sqlite');
-    this.projectLjbDir = paths.projectLjbDir;
+    this.projectGrognardDir = paths.projectGrognardDir;
     this.projectRoot = paths.projectRoot;
     this.centralFolder = paths.centralFolder;
-    this.decisionsPath = joinPath(paths.projectLjbDir, DECISIONS_FILE);
-    this.authorityCacheDir = joinPath(paths.projectLjbDir, AUTHORITY_CACHE_DIR);
-    this.aiCacheDir = joinPath(paths.projectLjbDir, AI_CACHE_DIR);
-    this.aiDisambiguationCacheDir = joinPath(paths.projectLjbDir, AI_DISAMBIGUATION_CACHE_DIR);
-    this.dilaPlaceDetailCacheDir = joinPath(paths.projectLjbDir, DILA_PLACE_DETAIL_CACHE_DIR);
-    this.disambiguationPendingPath = joinPath(paths.projectLjbDir, DISAMBIGUATION_PENDING_FILE);
-    this.wrapperFactsPath = joinPath(paths.projectLjbDir, WRAPPER_FACTS_FILE);
+    this.decisionsPath = joinPath(paths.projectGrognardDir, DECISIONS_FILE);
+    this.authorityCacheDir = joinPath(paths.projectGrognardDir, AUTHORITY_CACHE_DIR);
+    this.aiCacheDir = joinPath(paths.projectGrognardDir, AI_CACHE_DIR);
+    this.aiDisambiguationCacheDir = joinPath(paths.projectGrognardDir, AI_DISAMBIGUATION_CACHE_DIR);
+    this.dilaPlaceDetailCacheDir = joinPath(paths.projectGrognardDir, DILA_PLACE_DETAIL_CACHE_DIR);
+    this.disambiguationPendingPath = joinPath(paths.projectGrognardDir, DISAMBIGUATION_PENDING_FILE);
+    this.wrapperFactsPath = joinPath(paths.projectGrognardDir, WRAPPER_FACTS_FILE);
   }
 
   static fromPaths(api: EntityFileApi, paths: EntityStorePaths): EntityStore {
@@ -1459,12 +1459,12 @@ export class EntityStore {
 
   /** Order ids this project checkout has already applied. */
   async readAppliedOrderIds(): Promise<Set<string>> {
-    return readAppliedOrderIds(this.api, this.projectLjbDir);
+    return readAppliedOrderIds(this.api, this.projectGrognardDir);
   }
 
   /** Persist the applied-order-id set for this project checkout. */
   async writeAppliedOrderIds(applied: Set<string>): Promise<void> {
-    await writeAppliedOrderIds(this.api, this.projectLjbDir, applied);
+    await writeAppliedOrderIds(this.api, this.projectGrognardDir, applied);
   }
 
   /**
@@ -1523,7 +1523,7 @@ export class EntityStore {
   /** Append decision records to the JSONL log, creating it if needed. */
   async appendDecisions(records: DecisionRecord[]): Promise<void> {
     if (records.length === 0) return;
-    await this.api.ensureDirectory(this.projectLjbDir);
+    await this.api.ensureDirectory(this.projectGrognardDir);
     const existing = (await this.api.pathExists(this.decisionsPath))
       ? await this.api.readFile(this.decisionsPath)
       : '';
@@ -1536,7 +1536,7 @@ export class EntityStore {
    */
   async appendWrapperFacts(records: WrapperFactRecord[]): Promise<void> {
     if (records.length === 0) return;
-    await this.api.ensureDirectory(this.projectLjbDir);
+    await this.api.ensureDirectory(this.projectGrognardDir);
     const existing = (await this.api.pathExists(this.wrapperFactsPath))
       ? await this.api.readFile(this.wrapperFactsPath)
       : '';
@@ -1555,23 +1555,23 @@ export class EntityStore {
   }
 
   async writeDisambiguationPending(content: string): Promise<void> {
-    await this.api.ensureDirectory(this.projectLjbDir);
+    await this.api.ensureDirectory(this.projectGrognardDir);
     await this.api.writeFile(this.disambiguationPendingPath, content);
   }
 
-  projectLjbFilePath(relativeName: string): string {
-    return joinPath(this.projectLjbDir, relativeName);
+  projectGrognardFilePath(relativeName: string): string {
+    return joinPath(this.projectGrognardDir, relativeName);
   }
 
-  async readProjectLjbFile(relativeName: string): Promise<string | null> {
-    const path = this.projectLjbFilePath(relativeName);
+  async readProjectGrognardFile(relativeName: string): Promise<string | null> {
+    const path = this.projectGrognardFilePath(relativeName);
     if (!(await this.api.pathExists(path))) return null;
     return this.api.readFile(path);
   }
 
-  async writeProjectLjbFile(relativeName: string, content: string): Promise<void> {
-    await this.api.ensureDirectory(this.projectLjbDir);
-    const path = this.projectLjbFilePath(relativeName);
+  async writeProjectGrognardFile(relativeName: string, content: string): Promise<void> {
+    await this.api.ensureDirectory(this.projectGrognardDir);
+    const path = this.projectGrognardFilePath(relativeName);
     await this.api.armOwnWrite?.(path);
     await this.api.writeFile(path, content);
     await this.api.notifyOwnWrite?.(path);

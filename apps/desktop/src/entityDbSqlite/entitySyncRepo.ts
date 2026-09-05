@@ -301,7 +301,7 @@ export const applyRemoteEntity = (
   const wrapped =
     `<?xml version="1.0" encoding="UTF-8"?>` +
     `<TEI xmlns="${TEI_NS}"><teiHeader><fileDesc><publicationStmt>` +
-    `<idno type="ljb-entity-database">ljb-entity-sync</idno>` +
+    `<idno type="grognard-entity-database">grognard-entity-sync</idno>` +
     `</publicationStmt></fileDesc></teiHeader>` +
     `<standOff>${openTag}${change.contentXml}</${wrapper.tag}></standOff></TEI>`;
 

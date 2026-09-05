@@ -27,8 +27,8 @@ export const useLspProjectBridge = () => {
       }
     };
 
-    window.addEventListener('ljbCommonsUiChanged', syncFromBridge);
-    return () => window.removeEventListener('ljbCommonsUiChanged', syncFromBridge);
+    window.addEventListener('grognardCommonsUiChanged', syncFromBridge);
+    return () => window.removeEventListener('grognardCommonsUiChanged', syncFromBridge);
   }, []);
 
   useEffect(() => {

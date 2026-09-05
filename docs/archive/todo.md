@@ -39,7 +39,7 @@
 - [ ] Rerun all crawls, on another machine.
 - [ ] Transliterations assigned to entities to aid navigating the database
 - [ ] Modify Wiki crawls to gather Romaji as well
-- [ ] VIAF↔Wikidata concordance — **wired in LJB**; still need pack build/publish (`npm run wikidata:viaf-concordance` after re-extract — see [authority extraction README](../authority%20extraction/README.md))
+- [ ] VIAF↔Wikidata concordance — **wired in Grognard**; still need pack build/publish (`npm run wikidata:viaf-concordance` after re-extract — see [authority extraction README](../authority%20extraction/README.md))
 
 **Documentation**
 

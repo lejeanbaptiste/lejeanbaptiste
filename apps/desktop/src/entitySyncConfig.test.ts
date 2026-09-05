@@ -16,7 +16,7 @@ import {
 } from './entitySyncConfig';
 
 beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'ljb-sync-config-'));
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'grognard-sync-config-'));
 });
 
 afterEach(async () => {
@@ -56,10 +56,10 @@ describe('entitySyncConfig', () => {
   it('trims the endpoint and drops a trailing slash', async () => {
     const saved = await writeSyncConfig({
       enabled: true,
-      endpoint: '  https://ljb-entity-sync.example.workers.dev/  ',
+      endpoint: '  https://grognard-entity-sync.example.workers.dev/  ',
     });
-    expect(saved.endpoint).toBe('https://ljb-entity-sync.example.workers.dev');
-    expect((await readSyncConfig()).endpoint).toBe('https://ljb-entity-sync.example.workers.dev');
+    expect(saved.endpoint).toBe('https://grognard-entity-sync.example.workers.dev');
+    expect((await readSyncConfig()).endpoint).toBe('https://grognard-entity-sync.example.workers.dev');
   });
 
   it('clamps the interval into range', async () => {

@@ -66,7 +66,7 @@ const SERVICES: {
     source: 'norbert',
     id: 'norbert',
     name: 'Norbert',
-    url: 'urn:ljb:authority:norbert',
+    url: 'urn:grognard:authority:norbert',
     packs: { person: 'norbert-persons', office: 'norbert-offices' },
   },
   {
@@ -80,7 +80,7 @@ const SERVICES: {
     source: 'chgis',
     id: 'chgis',
     name: 'CHGIS',
-    url: 'urn:ljb:authority:chgis',
+    url: 'urn:grognard:authority:chgis',
     packs: { place: 'chgis-places' },
   },
   {
@@ -211,7 +211,7 @@ export function packResultUri(source: PackSource, entityType: NamedEntityType, i
   switch (source) {
     case 'cbdb':
       return entityType === 'office'
-        ? `urn:ljb:authority:cbdb:office:${id}`
+        ? `urn:grognard:authority:cbdb:office:${id}`
         : entityType === 'place'
           ? `https://cbdb.fas.harvard.edu/cbdbapi/place.php?id=${id}`
           : `https://cbdb.fas.harvard.edu/cbdbapi/person.php?id=${id}`;
@@ -222,13 +222,13 @@ export function packResultUri(source: PackSource, entityType: NamedEntityType, i
     // CHGIS has no per-record public lookup page (unlike CBDB/DILA) — a
     // stable synthetic urn, like norbert's, is enough for id/de-dup purposes.
     case 'chgis':
-      return `urn:ljb:authority:chgis:${entityType}:${id}`;
+      return `urn:grognard:authority:chgis:${entityType}:${id}`;
     case 'ndl':
       // Assumes name authorities (ndlna); refine if a pack ships ndlsh ids.
       return `https://id.ndl.go.jp/auth/ndlna/${id}`;
     case 'norbert':
       // Packs store typed ids (`office-4135`); URN keeps kind + bare numeric.
-      return `urn:ljb:authority:norbert:${entityType}:${bareNorbertAuthorityValue(id)}`;
+      return `urn:grognard:authority:norbert:${entityType}:${bareNorbertAuthorityValue(id)}`;
     case 'bdrc':
       return `https://library.bdrc.io/show/bdr:${id.replace(/^bdr:/i, '')}`;
   }

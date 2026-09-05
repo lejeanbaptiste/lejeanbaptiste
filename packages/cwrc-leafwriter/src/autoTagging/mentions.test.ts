@@ -121,10 +121,10 @@ describe('entity apply', () => {
       'application/xml',
     );
     const element = document.documentElement.firstElementChild as Element;
-    assignEntity({ element, entityId: 'person-000001', resp: '#ljb-autotag' });
+    assignEntity({ element, entityId: 'person-000001', resp: '#grognard-autotag' });
     expect(element.getAttribute('key')).toBe('person-000001');
     expect(element.getAttribute('cert')).toBeNull();
-    expect(element.getAttribute('resp')).toBe('#ljb-autotag');
+    expect(element.getAttribute('resp')).toBe('#grognard-autotag');
   });
 
   it('marks unresolved without removing the tag', () => {

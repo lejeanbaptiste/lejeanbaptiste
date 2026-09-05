@@ -5,7 +5,7 @@ export type EntityStoreMode = 'central' | 'project';
 export interface EntityStorePaths {
   mode: EntityStoreMode;
   entitiesPath: string;
-  projectLjbDir: string;
+  projectGrognardDir: string;
   projectRoot: string;
   centralFolder: string | null;
 }
@@ -20,13 +20,13 @@ export interface EntityStoreResolveInput {
 export function resolveEntityStorePaths(input: EntityStoreResolveInput): EntityStorePaths {
   const mode: EntityStoreMode = input.entityStore === 'central' ? 'central' : 'project';
   const projectRoot = input.projectRoot.replace(/[/\\]+$/, '');
-  const projectLjbDir = joinPath(projectRoot, '.ljb');
+  const projectGrognardDir = joinPath(projectRoot, '.grognard');
 
   if (mode === 'project') {
     return {
       mode,
       entitiesPath: joinPath(projectRoot, 'entities.xml'),
-      projectLjbDir,
+      projectGrognardDir,
       projectRoot,
       centralFolder: null,
     };
@@ -40,7 +40,7 @@ export function resolveEntityStorePaths(input: EntityStoreResolveInput): EntityS
   return {
     mode,
     entitiesPath: joinPath(centralFolder, 'entities.xml'),
-    projectLjbDir,
+    projectGrognardDir,
     projectRoot,
     centralFolder,
   };

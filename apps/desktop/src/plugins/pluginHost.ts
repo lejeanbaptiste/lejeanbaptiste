@@ -136,7 +136,7 @@ function isValidManifest(raw: unknown): raw is PluginManifest {
     typeof m.version === 'string' &&
     typeof m.description === 'string' &&
     typeof m.license === 'string' &&
-    !!m.ljb?.minVersion &&
+    !!m.grognard?.minVersion &&
     !!m.entry?.kind
   );
 }
@@ -198,7 +198,7 @@ export async function getPluginHostSnapshot(): Promise<PluginHostSnapshot> {
           version: '0.0.0',
           description: error ?? 'Invalid manifest',
           license: '',
-          ljb: { minVersion: '0.0.0' },
+          grognard: { minVersion: '0.0.0' },
           entry: { kind: 'javascript', module: '' },
         },
         manifestError: error,
@@ -327,7 +327,7 @@ export async function installPluginFromDirectory(sourceDir: string): Promise<Plu
 function devPluginPackageRoots(): string[] {
   if (app.isPackaged) return [];
   const candidates = [
-    process.env.LJB_PLUGINS_ROOT,
+    process.env.GROGNARD_PLUGINS_ROOT,
     path.resolve(process.cwd(), '../plugins/packages'),
     path.resolve(process.cwd(), '../../plugins/packages'),
     path.resolve(app.getAppPath(), '../../../plugins/packages'),
@@ -438,7 +438,7 @@ function resolveLocalAuthorityPack(
   manifestPath?: string,
 ): { relativePath: string; personsFile: string; manifestFile?: string } | null {
   const candidates = [
-    process.env.LJB_AUTHORITYPACKS_ROOT,
+    process.env.GROGNARD_AUTHORITYPACKS_ROOT,
     path.resolve(process.cwd(), '../authoritypacks'),
     path.resolve(process.cwd(), '../../authoritypacks'),
     path.resolve(app.getAppPath(), '../../../authoritypacks'),

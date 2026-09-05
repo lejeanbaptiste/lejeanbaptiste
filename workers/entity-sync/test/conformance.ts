@@ -317,7 +317,7 @@ export const conformanceScenarios: ConformanceScenario[] = [
     run: async (c) => {
       const res = await c.request('GET', '/', { token: null });
       assert.equal(res.status, 200);
-      matches(res.body, { ok: true, service: 'ljb-entity-sync' });
+      matches(res.body, { ok: true, service: 'grognard-entity-sync' });
     },
   },
 ];

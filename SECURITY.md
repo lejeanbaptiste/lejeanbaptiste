@@ -22,7 +22,7 @@ verifies both automatically on install. To check manually:
 ### Linux packages
 
 The apt repository is signed; apt verifies every download against the
-archive key (`le-jean-baptiste-archive-key.asc`, attached to each release),
+archive key (`grognard-archive-key.asc`, attached to each release),
 which is the CI signing subkey of the release key listed below. The
 standalone `.deb` and `.flatpak` files are covered by the checksums and
 attestations below.
@@ -33,7 +33,7 @@ Every release asset, including `SHA256SUMS`, carries a GitHub build
 provenance attestation binding it to the exact commit and workflow run that
 produced it. Verify with the [GitHub CLI](https://cli.github.com/):
 
-    gh attestation verify <file> --repo lejeanbaptiste/lejeanbaptiste
+    gh attestation verify <file> --repo grognard/grognard
 
 ### Checksums
 
@@ -49,7 +49,7 @@ Signed MSIX packages distributed through the Microsoft Store are planned.
 
 ## Signing keys
 
-Le Jean-Baptiste releases are covered by the same release-signing key as
+Grognard releases are covered by the same release-signing key as
 marinaMoji, published in the marinaMoji repository
 (`marinaMoji-release-public-key.asc`).
 

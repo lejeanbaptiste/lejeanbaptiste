@@ -12,7 +12,7 @@ import {
   type DateWesternDisplayMode,
 } from './dateGloss';
 
-const STORAGE_KEY = 'ljb.scholarlyConventions.v1';
+const STORAGE_KEY = 'grognard.scholarlyConventions.v1';
 
 export const SCHOLARLY_CONVENTIONS_CHANGED_EVENT = 'desktop:scholarly-conventions-changed';
 

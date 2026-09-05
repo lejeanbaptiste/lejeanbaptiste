@@ -91,12 +91,12 @@ describe('auto-tagging smoke test (real corpus)', () => {
     // 6. Flush decisions to the JSONL log and read them back.
     const written = await session.flushDecisions();
     expect(written).toBe(suggestions.length);
-    const logBody = fakeFs.files.get('/proj/.ljb/entity-decisions.jsonl')!;
+    const logBody = fakeFs.files.get('/proj/.grognard/entity-decisions.jsonl')!;
     const records = parseLog(logBody);
     expect(records).toHaveLength(suggestions.length);
 
     expect(store.entitiesPath).toBe('/proj/entities.xml');
-    expect(store.decisionsPath).toBe('/proj/.ljb/entity-decisions.jsonl');
+    expect(store.decisionsPath).toBe('/proj/.grognard/entity-decisions.jsonl');
 
     // Readable trace.
     const applied = result.applied;
@@ -112,7 +112,7 @@ describe('auto-tagging smoke test (real corpus)', () => {
         `  accepted / applied:${accepted.length} / ${applied}`,
         `  already-tagged:    ${alreadyTagged}`,
         `  entity minted:     ${id} (${samplePerson.string})`,
-        `  decisions logged:  ${records.length} → /proj/.ljb/entity-decisions.jsonl`,
+        `  decisions logged:  ${records.length} → /proj/.grognard/entity-decisions.jsonl`,
         `  entity file:       /proj/entities.xml (${entitiesDoc.getElementsByTagName('person').length} person)`,
         '────────────────────────────────────────────────────────',
       ].join('\n'),

@@ -9,8 +9,8 @@ function parseArgs(argv) {
   const options = {
     suite: 'stable',
     component: 'main',
-    origin: 'Le Jean-Baptiste',
-    label: 'Le Jean-Baptiste',
+    origin: 'Grognard',
+    label: 'Grognard',
     codename: 'stable',
   };
 
@@ -98,7 +98,7 @@ async function main() {
   const inputDir = path.resolve(options.input);
   const outputDir = path.resolve(options.output);
   const repoDir = outputDir;
-  const poolDir = path.join(repoDir, 'pool', 'main', 'l', 'le-jean-baptiste-desktop');
+  const poolDir = path.join(repoDir, 'pool', 'main', 'l', 'grognard-desktop');
   const distDir = path.join(repoDir, 'dists', options.suite);
   const releaseDir = path.join(distDir, options.component);
 

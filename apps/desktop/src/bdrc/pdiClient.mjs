@@ -20,7 +20,7 @@ import { readCache, writeCache } from './bdrcCache.mjs';
 
 const DEFAULT_BASE_URL = 'https://purl.bdrc.io';
 const BDR = 'http://purl.bdrc.io/resource/';
-const USER_AGENT = 'LeJeanBaptiste-BDRC-import/0.1 (+https://lejeanbaptiste.org)';
+const USER_AGENT = 'Grognard-BDRC-import/0.1 (+https://grognard.org)';
 const IMPORTER_VERSION = '0.1.0';
 const ATTRIBUTION =
   'Digitised text courtesy of the Buddhist Digital Resource Center (BDRC), https://library.bdrc.io';

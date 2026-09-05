@@ -21,16 +21,16 @@ That newer phase already produced its own, independent identity store: `autoTagg
   <teiHeader>
     <fileDesc>
       <publicationStmt>
-        <idno type="ljb-entity-database">‹uuid fingerprint›</idno>
+        <idno type="grognard-entity-database">‹uuid fingerprint›</idno>
       </publicationStmt>
     </fileDesc>
   </teiHeader>
   <standOff>
     <listPerson>
-      <person xml:id="person-000001" resp="#ljb-autotag">
+      <person xml:id="person-000001" resp="#grognard-autotag">
         <persName>王安石</persName>
         <idno type="wikidata">Q182524</idno>
-        <note type="authority-cache" source="wikidata" resp="le-jean-baptiste" when="...">
+        <note type="authority-cache" source="wikidata" resp="grognard" when="...">
           { …raw fetched payload, JSON string… }
         </note>
       </person>
@@ -46,18 +46,18 @@ That newer phase already produced its own, independent identity store: `autoTagg
 - Ids are **minted sequentially per kind** (`person-000001`, …), never derived from names — collision-safe (`nextEntityId`).
 - Zero or more `<idno type="…">` authority links per entity (VIAF, Wikidata, DILA, CBDB, CHGIS, GeoNames — `AuthorityId.type` is free text, not an enum).
 - One optional `<note type="authority-cache">` per addition, holding the **raw** fetched authority payload as a JSON string, tagged with source + timestamp. This is opaque per-source — no normalized schema (see §4).
-- A document-level fingerprint `<idno type="ljb-entity-database">` (UUID) so a project can detect it's pointing at a different `entities.xml` than the one its tags were resolved against (`entityDatabaseCheck.ts`).
+- A document-level fingerprint `<idno type="grognard-entity-database">` (UUID) so a project can detect it's pointing at a different `entities.xml` than the one its tags were resolved against (`entityDatabaseCheck.ts`).
 
 ### 2.2 Storage: central vs. project mode
 
 `EntityStoreMode` is `'central' | 'project'` (`entityStoreResolve.ts`):
 
 - **project mode** (default): `‹projectRoot›/entities.xml`, one database per project.
-- **central mode**: `‹centralFolder›/entities.xml`, shared across every project that opts in — this is the LJB-user-wide database the DILA-card discussion assumed.
+- **central mode**: `‹centralFolder›/entities.xml`, shared across every project that opts in — this is the Grognard-user-wide database the DILA-card discussion assumed.
 
 Both are already implemented and switchable per project (`__ljbLspProject.entityStore` / `.entityDbFolder`). Nothing new needed here for a viewer — it reads whichever `entities.xml` is active.
 
-Alongside the entity file, `EntityStore` also owns a project-local `.ljb/` folder: a decision log (`entity-decisions.jsonl`, append-only audit trail of disambiguation choices), an authority-response cache directory, an AI-suggestion cache directory, and a pending-disambiguation-queue file. These are infra, not viewer-facing, but the decision log is a natural source for "why was this resolved to this id" provenance in a viewer (§5).
+Alongside the entity file, `EntityStore` also owns a project-local `.grognard/` folder: a decision log (`entity-decisions.jsonl`, append-only audit trail of disambiguation choices), an authority-response cache directory, an AI-suggestion cache directory, and a pending-disambiguation-queue file. These are infra, not viewer-facing, but the decision log is a natural source for "why was this resolved to this id" provenance in a viewer (§5).
 
 ### 2.3 What writes to it today
 

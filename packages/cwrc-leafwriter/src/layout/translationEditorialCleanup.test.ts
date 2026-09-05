@@ -61,7 +61,7 @@ describe('applyEditorialCleanupToRoot', () => {
     root.appendChild(document.createTextNode('See 440-483 and "Cui". '));
 
     const ref = document.createElement('ref');
-    ref.setAttribute('type', 'ljb-entity');
+    ref.setAttribute('type', 'grognard-entity');
     ref.setAttribute('key', 'person-1');
     ref.textContent = 'Cui Zusi 崔祖思 (440-483)'; // intentional ASCII hyphen — leave alone
     root.appendChild(ref);

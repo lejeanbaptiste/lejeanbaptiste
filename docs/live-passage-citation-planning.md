@@ -11,9 +11,9 @@ From Word (and later LibreOffice), insert a **live field** that pulls:
 - bibliography / work citation,
 - page cue (nearest `<pb>` when present),
 
-and **Sync with LJB** refreshes the visible text when the project edits punctuation, translation, or metadata — like Zotero citation refresh, richer than a one-shot CBeta-style copy.
+and **Sync with Grognard** refreshes the visible text when the project edits punctuation, translation, or metadata — like Zotero citation refresh, richer than a one-shot CBeta-style copy.
 
-LJB remains the source of truth. Word/LO only store **pointers** (content-control / reference-mark tags), not a second copy of the edition.
+Grognard remains the source of truth. Word/LO only store **pointers** (content-control / reference-mark tags), not a second copy of the edition.
 
 ## What already exists
 
@@ -61,18 +61,18 @@ Mirror entities:
 
 1. Content-control `tag` JSON, e.g. `{ kind: 'passage', passageId, include: ['source','translation','bibl','page'], lang?, layout? }`.
 2. In-memory cache of `PassageSummary`; display renderer (blockquote source + translation; bibl/page in body or footnote).
-3. Extend `ljbApi.ts` with `fetchPassage` / `searchPassages`.
+3. Extend `grognardApi.ts` with `fetchPassage` / `searchPassages`.
 4. Extend Sync to refresh passage fields; missing units → `[Passage not found]` (same spirit as `[Entity not found]`).
 
 **Do not** write TEI from Word. Footnotes: start with bibl as a second control or plain footnote text from the payload; true Word footnote API can come later.
 
 ## LibreOffice
 
-Same payload; render with **reference marks** (Zotero LO naming pattern already referenced in LJB `documentExport.ts`). Thin second client, shared LJB API.
+Same payload; render with **reference marks** (Zotero LO naming pattern already referenced in Grognard `documentExport.ts`). Thin second client, shared Grognard API.
 
 ## Phasing (when built)
 
-1. LJB: `GET passages/:id` + search over open project files / companions.
+1. Grognard: `GET passages/:id` + search over open project files / companions.
 2. Word: insert + Sync for passage fields (reuse unlock/edit/relock).
 3. Footnote / citation-style polish.
 4. LibreOffice mirror.
@@ -83,14 +83,14 @@ Same payload; render with **reference marks** (Zotero LO naming pattern already 
 - Embedding translation into the source TEI for Word
 - Stamping Word field ids into TEI
 - Sentence-level auto-align
-- Dual facing-page UI inside LJB (card reader is enough for authoring)
+- Dual facing-page UI inside Grognard (card reader is enough for authoring)
 
 ## Open questions
 
 1. **Bibl source:** project edition metadata vs per-file `teiHeader` vs both with override.
 2. **Page:** nearest preceding `pb/@n` in source vs edition page mapping tables.
 3. **Id drift:** split paragraphs / reindex — fields break until Sync flags missing (acceptable if documented).
-4. **Offline:** Sync fails cleanly when LJB is closed (same as entities).
+4. **Offline:** Sync fails cleanly when Grognard is closed (same as entities).
 
 ## Pointer for implementers
 

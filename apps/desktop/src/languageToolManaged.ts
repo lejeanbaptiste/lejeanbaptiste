@@ -60,7 +60,7 @@ export interface LanguageToolInstallStatus {
   port: number;
   ngrams: { en: boolean };
   java: LanguageToolJavaStatus;
-  /** LJB can download Temurin JRE on macOS / Windows when Java is missing or too old. */
+  /** Grognard can download Temurin JRE on macOS / Windows when Java is missing or too old. */
   javaInstallOffered: boolean;
   managedJavaInstalled: boolean;
   server: 'stopped' | 'starting' | 'running' | 'failed';

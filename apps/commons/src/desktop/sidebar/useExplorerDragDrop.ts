@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ExplorerTarget, isExplorerItemProtected } from './useExplorerContextMenu';
 
-const DRAG_MIME = 'application/x-ljb-explorer-path';
+const DRAG_MIME = 'application/x-grognard-explorer-path';
 
 type ExplorerDragProps = React.HTMLAttributes<HTMLDivElement> & {
   draggable: boolean;

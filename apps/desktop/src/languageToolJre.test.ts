@@ -1,6 +1,6 @@
 jest.mock('electron', () => ({
   app: {
-    getPath: () => '/tmp/ljb-java-test',
+    getPath: () => '/tmp/grognard-java-test',
   },
 }));
 
@@ -31,7 +31,7 @@ describe('languageTool JRE helpers', () => {
   });
 
   test('resolveJavaBinaryInTree finds macOS and flat bin layouts', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ljb-jre-'));
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'grognard-jre-'));
     const javaName = process.platform === 'win32' ? 'java.exe' : 'java';
 
     const macTree = path.join(root, 'mac');
@@ -47,8 +47,8 @@ describe('languageTool JRE helpers', () => {
     expect(resolveJavaBinaryInTree(flatTree)).toBe(flatJava);
   });
 
-  test('isManagedJavaPath recognizes userData ljb-java paths', () => {
-    expect(isManagedJavaPath('/tmp/ljb-java-test/ljb-java/runtime/Contents/Home/bin/java')).toBe(
+  test('isManagedJavaPath recognizes userData grognard-java paths', () => {
+    expect(isManagedJavaPath('/tmp/grognard-java-test/grognard-java/runtime/Contents/Home/bin/java')).toBe(
       true,
     );
     expect(isManagedJavaPath('/usr/bin/java')).toBe(false);

@@ -12,16 +12,16 @@ export type MedalMetric =
   | 'flagOfCommitment'
   | 'special';
 
-// Served at runtime by the desktop app's ljb-asset:// protocol handler,
+// Served at runtime by the desktop app's grognard-asset:// protocol handler,
 // same as the uniform/backdrop art - see gameAssets.ts. Duplicated here
 // rather than imported (main-process-only module, can't be imported from
 // renderer code) - same convention UniformAvatar.tsx already follows for
 // GAME_ASSET_PREFIX.
-const GAME_ASSET_PREFIX = 'ljb-asset://';
+const GAME_ASSET_PREFIX = 'grognard-asset://';
 
 // Metrics whose dedicated medal-disc artwork hasn't been drawn yet - reuse
 // the neutral campaign placeholder so these never render a broken
-// ljb-asset URL. Remove an entry here once its real art lands.
+// grognard-asset URL. Remove an entry here once its real art lands.
 const METRICS_WITHOUT_ART = new Set<MedalMetric>(['published', 'wetWork', 'flagOfCommitment']);
 
 /** Opaque key for the pre-rendered medal-disc art - see

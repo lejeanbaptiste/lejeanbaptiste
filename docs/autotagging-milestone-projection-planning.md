@@ -10,7 +10,7 @@ today’s matcher on plain TEI, wire in only when mature (project setting, defau
 off).
 
 **Related:** [cbeta-import-planning.md](cbeta-import-planning.md) (§ auto-tagger
-requirement), [Auto-tagging.md](Auto-tagging.md), [sanmiao-ljb-integration.md](sanmiao-ljb-integration.md)
+requirement), [Auto-tagging.md](Auto-tagging.md), [sanmiao-grognard-integration.md](sanmiao-grognard-integration.md)
 
 ---
 

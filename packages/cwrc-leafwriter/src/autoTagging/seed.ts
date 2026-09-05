@@ -11,7 +11,7 @@ import {
   appendAuthorityIdnos,
   ENTITY_KINDS,
   findEntity,
-  LJB_AUTOTAG_RESP,
+  GROGNARD_AUTOTAG_RESP,
 } from './entities';
 import { isLatinSurface } from './disambiguationMatch';
 import { normalizeMatchPattern } from './normalize';
@@ -561,7 +561,7 @@ function resolveEntity(
         ? { cache: { source: candidate.source, data: candidate.metadata } }
         : {}),
     },
-    LJB_AUTOTAG_RESP,
+    GROGNARD_AUTOTAG_RESP,
   );
   minted.set(memo, id);
   return { id, created: true };

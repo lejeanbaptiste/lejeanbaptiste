@@ -162,7 +162,7 @@ export const fetchWikisourceParallel = async (
 
   const response = await fetchImpl(apiUrl, {
     headers: {
-      'User-Agent': 'LJB/0.1 (Kanripo parallel fetch; +https://github.com/leJeanBaptiste)',
+      'User-Agent': 'Grognard/0.1 (Kanripo parallel fetch; +https://github.com/leJeanBaptiste)',
     },
   });
   if (!response.ok) {
@@ -199,7 +199,7 @@ export const fetchGenericUrlParallel = async (
   const parsed = assertFetchableHttpUrl(url);
   const response = await fetchImpl(parsed.toString(), {
     headers: {
-      'User-Agent': 'LJB/0.1 (Kanripo parallel fetch; +https://github.com/leJeanBaptiste)',
+      'User-Agent': 'Grognard/0.1 (Kanripo parallel fetch; +https://github.com/leJeanBaptiste)',
     },
     redirect: 'follow',
   });

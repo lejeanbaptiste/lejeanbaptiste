@@ -1,7 +1,7 @@
 /**
  * Detect noble-title headwords so backfill does not treat them as 姓名.
  * Pack compile already keeps title can_name out of typed primary persName;
- * LJB must not surname-segment those display surfaces.
+ * Grognard must not surname-segment those display surfaces.
  */
 
 export interface NobleTitleParts {

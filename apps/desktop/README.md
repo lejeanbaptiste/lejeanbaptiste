@@ -1,4 +1,4 @@
-# Le Jean-Baptiste (Desktop)
+# Grognard (Desktop)
 
 Electron desktop shell for LEAF-Writer Commons.
 
@@ -19,14 +19,14 @@ Or in two terminals:
 
 ```bash
 npm run dev -w leafwriter-commons
-npm run dev -w le-jean-baptiste-desktop
+npm run dev -w grognard-desktop
 ```
 
 The Electron window opens at `http://localhost:3000/project`.
 
 **First launch can take ~30 seconds** while webpack compiles; the desktop shell waits for the dev server and `js/app.js` before opening the window. If you still see an error, wait until the terminal shows `Compiled successfully`, then reload the window (Cmd+R).
 
-Optional: set `LJB_OPEN_DEVTOOLS=1` to open Chromium DevTools in development.
+Optional: set `GROGNARD_OPEN_DEVTOOLS=1` to open Chromium DevTools in development.
 
 The View menu's Reload / Force Reload / Toggle Developer Tools items only appear in development builds (`app.isPackaged === false`); they're stripped from packaged production builds.
 
@@ -39,7 +39,7 @@ npm run build:desktop
 ```
 
 This builds Commons, compiles the Electron main/preload scripts, and packages a `.pkg` installer into `apps/desktop/release/`.
-For a local-only rebuild without touching GitHub release publishing, run `npm run package:mac -w le-jean-baptiste-desktop -- --publish never`.
+For a local-only rebuild without touching GitHub release publishing, run `npm run package:mac -w grognard-desktop -- --publish never`.
 
 ### Bundled Python runtime (all platforms)
 
@@ -79,10 +79,10 @@ Then, from the repo root:
 npm run build:desktop:linux
 ```
 
-The `.deb` lands in `apps/desktop/release/` (e.g. `Le-Jean-Baptiste-linux-0.0.1-arm64.deb`). Install it with:
+The `.deb` lands in `apps/desktop/release/` (e.g. `Grognard-linux-0.0.1-arm64.deb`). Install it with:
 
 ```bash
-sudo apt install ./apps/desktop/release/Le-Jean-Baptiste-linux-*.deb
+sudo apt install ./apps/desktop/release/Grognard-linux-*.deb
 ```
 
 For GitHub-hosted updates, the release workflow publishes a signed APT repo
@@ -97,12 +97,12 @@ After the signing key is added once, `apt update` will pick up new versions
 automatically:
 
 ```bash
-curl -fsSL https://<owner>.github.io/<repo>/apt/le-jean-baptiste-archive-key.asc \
-  | sudo gpg --dearmor -o /usr/share/keyrings/le-jean-baptiste-archive-key.gpg
-echo "deb [signed-by=/usr/share/keyrings/le-jean-baptiste-archive-key.gpg] https://<owner>.github.io/<repo>/apt stable main" \
-  | sudo tee /etc/apt/sources.list.d/le-jean-baptiste.list
+curl -fsSL https://<owner>.github.io/<repo>/apt/grognard-archive-key.asc \
+  | sudo gpg --dearmor -o /usr/share/keyrings/grognard-archive-key.gpg
+echo "deb [signed-by=/usr/share/keyrings/grognard-archive-key.gpg] https://<owner>.github.io/<repo>/apt stable main" \
+  | sudo tee /etc/apt/sources.list.d/grognard.list
 sudo apt update
-sudo apt install le-jean-baptiste-desktop
+sudo apt install grognard-desktop
 ```
 
 Platform-specific electron-builder settings live in `electron-builder.mac.json`, `electron-builder.linux.json`, and `electron-builder.win.json`, all extending `electron-builder.base.json`.
@@ -138,7 +138,7 @@ This produces a native Arch package for the host architecture (`x86_64` or
 ### Windows (NSIS)
 
 ```bash
-npm run package:win -w le-jean-baptiste-desktop
+npm run package:win -w grognard-desktop
 ```
 
 The `prepackage:win` hook exports the icon and stages the bundled Python
@@ -154,7 +154,7 @@ runtime (see above) before electron-builder assembles the installer.
 
 ## Asset sources
 
-Artwork and spoiler-protected game assets come from the private [visual_design](https://github.com/lejeanbaptiste/visual_design) repo. Run `npm run visual-design:sync` (from the repo root) to refresh the mirrored files below.
+Artwork and spoiler-protected game assets come from the private [visual_design](https://github.com/grognard/visual_design) repo. Run `npm run visual-design:sync` (from the repo root) to refresh the mirrored files below.
 
 Tracked here as mirrored or generated assets:
 

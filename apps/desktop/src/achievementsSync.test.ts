@@ -1,10 +1,10 @@
 jest.mock('electron', () => ({
-  app: { getPath: () => '/tmp/ljb-test-userdata' },
+  app: { getPath: () => '/tmp/grognard-test-userdata' },
 }));
 
 jest.mock('./projectPrefs', () => ({
   getAchievementsFolder: async () => null,
-  getEntityDbFolder: async () => '/tmp/ljb-achievements-sync-test',
+  getEntityDbFolder: async () => '/tmp/grognard-achievements-sync-test',
 }));
 
 jest.mock('./achievementsFile', () => {
@@ -32,7 +32,7 @@ const writeRaw = writeAchievementsEnvelopeRaw as jest.MockedFunction<
 >;
 const writePlain = writeAchievementsFile as jest.MockedFunction<typeof writeAchievementsFile>;
 
-const ENTITY_DIR = '/tmp/ljb-achievements-sync-test';
+const ENTITY_DIR = '/tmp/grognard-achievements-sync-test';
 
 describe('runAchievementsSync', () => {
   beforeEach(async () => {
@@ -51,7 +51,7 @@ describe('runAchievementsSync', () => {
     );
     await fs.rm(ENTITY_DIR, { recursive: true, force: true });
     await fs.mkdir(ENTITY_DIR, { recursive: true });
-    await fs.rm('/tmp/ljb-test-userdata/entity-sync-achievements-marker.json', { force: true });
+    await fs.rm('/tmp/grognard-test-userdata/entity-sync-achievements-marker.json', { force: true });
   });
 
   it('pushes a new local blob when the server is empty', async () => {

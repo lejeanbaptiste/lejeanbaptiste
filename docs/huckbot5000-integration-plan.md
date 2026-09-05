@@ -40,7 +40,7 @@ Two data sources need this, not one, and they don't cleanly line up:
   `compileRecords.mjs`, so our redistributable tagging packs do not carry that third-party prose.
 - **CBDB installed for the user** (`stripReferenceDb.mjs` / `downloadCbdbDirect`): table-subset
   of CBDB's **official** release, left intact as published (including any `(Hucker)` citations
-  CBDB itself includes). LJB reads office glosses from that local install the same way a user
+  CBDB itself includes). Grognard reads office glosses from that local install the same way a user
   would consult CBDB directly. We do not re-package those strings into our GitHub pack assets.
 - **Collision filter:** generated candidates are checked against Hucker OCR and CBDB's
   `(Hucker)`-cited fields. Matches are excluded from the publishable Huckbot5000 pack and

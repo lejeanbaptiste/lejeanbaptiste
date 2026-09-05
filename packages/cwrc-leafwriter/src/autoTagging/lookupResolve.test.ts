@@ -271,17 +271,17 @@ describe('parseAuthorityUri', () => {
       idnoType: 'NDL',
       value: '00270123',
     });
-    expect(parseAuthorityUri('urn:ljb:authority:norbert:office:4135')).toEqual({
+    expect(parseAuthorityUri('urn:grognard:authority:norbert:office:4135')).toEqual({
       idnoType: 'NORBERT',
       crosswalkKey: 'norbert',
       value: 'office-4135',
     });
-    expect(parseAuthorityUri('urn:ljb:authority:norbert:person:12')).toEqual({
+    expect(parseAuthorityUri('urn:grognard:authority:norbert:person:12')).toEqual({
       idnoType: 'NORBERT',
       crosswalkKey: 'norbert',
       value: 'person-12',
     });
-    expect(parseAuthorityUri('urn:ljb:authority:cbdb:office:42')).toEqual({
+    expect(parseAuthorityUri('urn:grognard:authority:cbdb:office:42')).toEqual({
       idnoType: 'CBDB',
       crosswalkKey: 'cbdb',
       value: '42',
@@ -529,7 +529,7 @@ describe('planLookupResolution / applyLookupResolution', () => {
       .map((el) => el.textContent);
     expect(cbdbValues).toEqual(['99999']);
 
-    const warnings = fs.files.get('/proj/.ljb/entity-warnings.jsonl') ?? '';
+    const warnings = fs.files.get('/proj/.grognard/entity-warnings.jsonl') ?? '';
     expect(warnings).toContain('idno-conflict');
     expect(warnings).toContain('31305');
   });
@@ -553,7 +553,7 @@ describe('planLookupResolution / applyLookupResolution', () => {
   it('logs a manual-lookup decision', async () => {
     const { fs, store } = makeStore();
     await applyLookupResolution(input(), { store, packIds, readPackFile });
-    const log = fs.files.get('/proj/.ljb/entity-decisions.jsonl') ?? '';
+    const log = fs.files.get('/proj/.grognard/entity-decisions.jsonl') ?? '';
     expect(log).toContain('"source":"manual-lookup"');
     expect(log).toContain('"surface":"攸之"');
   });
@@ -758,7 +758,7 @@ describe('linkWithoutEnrichment', () => {
     const after = await store.loadEntities().then((d) => d.getElementsByTagName('idno').length);
     expect(after).toBe(before);
 
-    const warnings = fs.files.get('/proj/.ljb/entity-warnings.jsonl') ?? '';
+    const warnings = fs.files.get('/proj/.grognard/entity-warnings.jsonl') ?? '';
     expect(warnings).toContain('concordance-conflict');
     expect(warnings).toContain(b.id);
   });

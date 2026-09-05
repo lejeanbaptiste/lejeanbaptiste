@@ -20,9 +20,9 @@ jest.mock('react-i18next', () => ({
 const baseProps = {
   serviceRibbons: [],
   medals: [],
-  headImageUrl: 'ljb-asset://head.svg',
-  bodyBackImageUrl: 'ljb-asset://back.svg',
-  bodyFrontImageUrl: 'ljb-asset://front.svg',
+  headImageUrl: 'grognard-asset://head.svg',
+  bodyBackImageUrl: 'grognard-asset://back.svg',
+  bodyFrontImageUrl: 'grognard-asset://front.svg',
   backgroundImageKey: 'bg-01',
 };
 

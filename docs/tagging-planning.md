@@ -8,14 +8,14 @@
 
 ## Summary
 
-LEAF-Writer today conflates **identifying** a string (`persName`), **linking** it to an authority (`@ref`), and **managing entities** (dialogs, RDF) in one slow path. LJB replaces that with a **phased workflow** inspired by Markus and especially **Norbert**:
+LEAF-Writer today conflates **identifying** a string (`persName`), **linking** it to an authority (`@ref`), and **managing entities** (dialogs, RDF) in one slow path. Grognard replaces that with a **phased workflow** inspired by Markus and especially **Norbert**:
 
 1. **Automated markup** — in-app tag bomb / date propose / plugins (Norbert, Sanmiao/`cjk-dates`), plus optional external scripts for corpus prep.
 2. **Identify** — wrap text in schema-valid tags **without attributes**; fast, keyboard-driven.
 3. **Disambiguate** — batch negative filtering against project databases (wrong 1:1 match, pick among homonyms, mark new entities).
 4. **Propagate attributes** — table-driven bulk update of `@ref`, `person_id`, etc., then push new records to the database.
 
-This document plans **tagging infrastructure** for LJB. **v1 core** is Oxygen-style keyboard editing:
+This document plans **tagging infrastructure** for Grognard. **v1 core** is Oxygen-style keyboard editing:
 
 - **Enter** — tag chooser popup (wrap selection, insert at caret, or apply/propagate/queue-walk **inside popup only**); never renames tags.
 - **F2** — rename tag in editor; rename file/folder in explorer (same chord, focus-dependent).
@@ -27,7 +27,7 @@ Later phases: disambiguation queue, resolution-file attribute propagation, linke
 
 ---
 
-## Why the current LEAF-Writer model is wrong for LJB
+## Why the current LEAF-Writer model is wrong for Grognard
 
 | Norbert / Markus phase | Goal                   | LEAF-Writer today                           |
 | ---------------------- | ---------------------- | ------------------------------------------- |
@@ -165,7 +165,7 @@ Implementation notes:
 - `resolveInsertAction` in `tagCommand.ts` — three-step: `inside` → `after` → `add` (wrap).
 - `insertEmptyTagAtCaret` uses `editor.insertContent` with a `﻿` placeholder and `utilities.selectElementById` to place cursor inside the new tag.
 - `applyWrapTag` in `tagCommand.ts` handles `expandSelectionToElementBoundaries` before `addStructureTag`.
-- Extend or replace `tagger.splitTag` (today skips `_entity` tags; LJB bare tags should not use full entity wrapper).
+- Extend or replace `tagger.splitTag` (today skips `_entity` tags; Grognard bare tags should not use full entity wrapper).
 - Use validator **`getPossibleNodesAt`** with actions `addInside`, `addAfter`, speculative validate, to choose split vs nest vs reject.
 - Reference: Oxygen Author — paragraph break inside inline splits the inline element.
 
@@ -266,7 +266,7 @@ export interface TagColorsFile {
 }
 ```
 
-- Use **CSS custom properties** optionally (`--ljb-tag-persName-highlight`) for easier dark-mode overrides later.
+- Use **CSS custom properties** optionally (`--grognard-tag-persName-highlight`) for easier dark-mode overrides later.
 - **`tagColors.ts`**: read/write JSON, emit CSS, hot-reload editor stylesheet on save.
 - Colours apply to **WYSIWYG only** in v1; source editor syntax theme unchanged unless user opts in later.
 

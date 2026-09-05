@@ -44,7 +44,7 @@ import {
   preferredEntityPrimaryName,
 } from './nobleTitleHeadword';
 
-export const LJB_LOOKUP_RESP = '#ljb-lookup';
+export const GROGNARD_LOOKUP_RESP = '#grognard-lookup';
 
 /* ------------------------------------------------------------------------ */
 /* URI → (authority, id)                                                     */
@@ -100,14 +100,14 @@ const URI_PATTERNS: {
 ];
 
 export function parseAuthorityUri(uri: string): ParsedAuthorityRef | null {
-  const localPack = uri.match(/^urn:ljb:authority:(cbdb|norbert):(person|place|office):(.+)$/i);
+  const localPack = uri.match(/^urn:grognard:authority:(cbdb|norbert):(person|place|office):(.+)$/i);
   if (localPack) {
     const source = localPack[1]!.toLowerCase();
     const entityType = localPack[2]!.toLowerCase();
     const bareId = localPack[3]!;
     // Norbert person/office tables share a numeric id space — store typed
     // values (`person-12`) so authority-duplicate checks stay honest.
-    // CBDB keeps bare ids (its person/office spaces do not collide in LJB).
+    // CBDB keeps bare ids (its person/office spaces do not collide in Grognard).
     const value = source === 'norbert' ? `${entityType}-${bareId}` : bareId;
     return {
       idnoType: source === 'cbdb' ? 'CBDB' : 'NORBERT',
@@ -695,12 +695,12 @@ export async function planLookupResolution(
 
 async function appendWarnings(store: EntityStore, warnings: LookupWarning[]): Promise<void> {
   if (warnings.length === 0) return;
-  const existing = (await store.readProjectLjbFile(WARNINGS_FILE)) ?? '';
+  const existing = (await store.readProjectGrognardFile(WARNINGS_FILE)) ?? '';
   const body =
     (existing && !existing.endsWith('\n') ? existing + '\n' : existing) +
     warnings.map((warning) => JSON.stringify(warning)).join('\n') +
     '\n';
-  await store.writeProjectLjbFile(WARNINGS_FILE, body);
+  await store.writeProjectGrognardFile(WARNINGS_FILE, body);
 }
 
 async function logDecision(

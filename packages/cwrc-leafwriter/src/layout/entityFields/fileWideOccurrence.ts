@@ -11,7 +11,7 @@ export interface FileEntityFieldRef {
   entityKey: string;
 }
 
-/** All ljb-entity fields in companion document order. */
+/** All grognard-entity fields in companion document order. */
 export const collectEntityFieldsInDocumentOrder = (
   doc: Document,
   alignmentUnit: 'div' | 'p' | 'ab',

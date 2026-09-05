@@ -397,8 +397,8 @@ export const KanripoImportDialog = ({
   useEffect(() => {
     const syncPlugins = () => setDaozangPluginEnabled(isPluginEnabled(DAOZANG_PLUGIN_ID));
     syncPlugins();
-    window.addEventListener('ljbPluginRegistryChanged', syncPlugins);
-    return () => window.removeEventListener('ljbPluginRegistryChanged', syncPlugins);
+    window.addEventListener('grognardPluginRegistryChanged', syncPlugins);
+    return () => window.removeEventListener('grognardPluginRegistryChanged', syncPlugins);
   }, [open]);
 
   const applyDaozangParallelText = useCallback(

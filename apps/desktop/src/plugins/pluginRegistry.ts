@@ -55,7 +55,7 @@ export const fetchRemotePluginIndex = async (): Promise<PluginReleaseIndex> => {
 export async function installRemotePlugin(
   entry: PluginReleaseIndex['plugins'][number],
 ): Promise<void> {
-  const tempRoot = path.join(app.getPath('userData'), '.ljb-plugin-download');
+  const tempRoot = path.join(app.getPath('userData'), '.grognard-plugin-download');
   const archivePath = path.join(tempRoot, entry.fileName);
   const extractRoot = path.join(tempRoot, 'extract');
   await fsp.rm(tempRoot, { recursive: true, force: true });

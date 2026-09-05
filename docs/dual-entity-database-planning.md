@@ -27,24 +27,24 @@ Shipped modules (all in `packages/cwrc-leafwriter/src/autoTagging/` unless noted
 
 | Piece                                                             | Module                                                                                                                                                                |
 | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Per-entity `changed` timestamp (`<note type="ljb-changed" when>`) | `entities.ts` — `touchEntity`/`getEntityChanged`/`backfillEntityTimestamps`                                                                                           |
+| Per-entity `changed` timestamp (`<note type="grognard-changed" when>`) | `entities.ts` — `touchEntity`/`getEntityChanged`/`backfillEntityTimestamps`                                                                                           |
 | UUID minting both sides                                           | `entities.ts` — `mintEntityId`                                                                                                                                        |
-| `ljb-central` concordance rows                                    | `concordance.ts`                                                                                                                                                      |
+| `grognard-central` concordance rows                                    | `concordance.ts`                                                                                                                                                      |
 | `userStableId` in `{entityDbFolder}/user-id.txt`                  | `userStableId.ts`                                                                                                                                                     |
-| Per-corpus-file PEDB stamp (`<idno type="ljb-project-database">`) | `corpusStamp.ts`                                                                                                                                                      |
+| Per-corpus-file PEDB stamp (`<idno type="grognard-project-database">`) | `corpusStamp.ts`                                                                                                                                                      |
 | Order log + cursor + compose/union                                | `entityOrders.ts`; replay in `apps/commons/.../entityDb/applyOrders.ts`                                                                                               |
 | Classified orphan sweep (genuine vs stray-file)                   | `orphanSweep.ts`; orchestrated in `entityDatabaseCheck.ts`; gentle prompt on open in `useEntityDatabaseLifecycle.ts`                                                  |
 | Field-level reconcile (union/fill/conflict)                       | `reconcile.ts`                                                                                                                                                        |
 | Link / Promote (authority-first)                                  | `promote.ts`                                                                                                                                                          |
 | Bridge inbox (unlinked/broken/syncable/conflict)                  | `bridgeInbox.ts`; dialog `apps/commons/.../sidebar/BridgeInboxDialog.tsx` (Hub icon in the database toolbar)                                                          |
-| Central Time Machine tab                                          | `TimeMachineDialog.tsx` — snapshots the central folder into its own `.ljb-time-machine` (roams with the folder); restore preserves the order log via `unionOrderLogs` |
+| Central Time Machine tab                                          | `TimeMachineDialog.tsx` — snapshots the central folder into its own `.grognard-time-machine` (roams with the folder); restore preserves the order log via `unionOrderLogs` |
 | Fork-merge of two central copies                                  | `centralForkMerge.ts` (engine + tests; menu entry point still to wire)                                                                                                |
 
 Deliberate semantics worth remembering:
 
 - Corpus `@key`s are **never** touched by Link/Promote/reconcile — only Absorb
   (via the order log + remap) rewrites keys.
-- Writing an `ljb-central` mapping does **not** bump the entity's `changed`
+- Writing an `grognard-central` mapping does **not** bump the entity's `changed`
   timestamp (per-user metadata must not fake content recency).
 - Fork-merge treats absence as _addition on the other side_, never deletion —
   deletions travel exclusively through the order log.
@@ -72,7 +72,7 @@ This plan replaces that either/or with **both layers always present for a normal
 2. **Central `entities.xml`** — one scholar’s lifelong personal index (Norbert-style). Never required for collaborators to open the project.
 3. **Bridge** — link / promote / absorb operations that keep the two files aligned for _one user_, using authority `<idno>`s first and a per-user mapping when ids differ.
 
-**Collaboration rule:** two or more people may share a corpus **only if they accept the same project `entities.xml`**. Personal central databases stay private. No LJB-hosted SQL server; sync of the project folder remains Git and/or cloud (Dropbox, iCloud) with sequential edits of the shared entity file.
+**Collaboration rule:** two or more people may share a corpus **only if they accept the same project `entities.xml`**. Personal central databases stay private. No Grognard-hosted SQL server; sync of the project folder remains Git and/or cloud (Dropbox, iCloud) with sequential edits of the shared entity file.
 
 **Root folder:** no longer required. Projects may live anywhere; the central DB lives in the user-chosen folder from App Settings. Nesting projects under that folder remains a _suggestion_ for personal roaming, not a hard law.
 
@@ -114,7 +114,7 @@ UUIDs fix **identifier** collisions. They do **not** fix two records for the sam
 
 ### Mapping (“interpretation layer”)
 
-**Locked: store the bridge on the project entity as TEI `<idno>` rows, not a gitignored sidecar.** The value leaked to collaborators is an opaque central id string, not the rest of anyone's central DB — a modest privacy cost worth paying for the portability a sidecar can't offer (sidecars increase forgetfulness and do not travel with Git as cleanly; a `.ljb/central-links.json` also just silently vanishes for anyone who clones the repo fresh).
+**Locked: store the bridge on the project entity as TEI `<idno>` rows, not a gitignored sidecar.** The value leaked to collaborators is an opaque central id string, not the rest of anyone's central DB — a modest privacy cost worth paying for the portability a sidecar can't offer (sidecars increase forgetfulness and do not travel with Git as cleanly; a `.grognard/central-links.json` also just silently vanishes for anyone who clones the repo fresh).
 
 ```xml
 <person xml:id="person-a1b2c3d4-e5f6-7890-abcd-ef1234567890">
@@ -122,14 +122,14 @@ UUIDs fix **identifier** collisions. They do **not** fix two records for the sam
   <idno type="CBDB">3004</idno>
   <idno type="Wikidata">Q197132</idno>
   <!-- per-user link into that user’s central database -->
-  <idno type="ljb-central" subtype="‹userStableId›">person-000042</idno>
+  <idno type="grognard-central" subtype="‹userStableId›">person-000042</idno>
 </person>
 ```
 
-- `type="ljb-central"` — value is the central `xml:id` for this user.
+- `type="grognard-central"` — value is the central `xml:id` for this user.
 - `subtype` — stable **user** id (not machine path): a UUID minted once, so the same person on two machines writes the same subtype.
-- **Locked: store `userStableId` inside the central entity DB folder itself** (e.g. `{entityDbFolder}/user-id.txt`), **not** in Electron `userData`. `userData` is per-machine and is never what the "same person on two machines" requirement can rely on — this doc's whole premise is that the central folder is the thing the user already puts in Dropbox/iCloud for roaming (see "Personal multi-machine" above), so `userStableId` inherits that roaming property for free by living there too. Minting it in `userData` instead would silently produce a _second_ `userStableId` the first time the user opens the app on a second machine, splitting one scholar into two `ljb-central` rows on every entity they've linked — directly defeating the stated goal. First run with no central folder configured yet: mint a session-local id and persist it into the folder as soon as one is set.
-- Multiple collaborators → multiple `ljb-central` rows on the same project person (one per `subtype`). That reveals only central id _strings_, not the rest of anyone’s central DB.
+- **Locked: store `userStableId` inside the central entity DB folder itself** (e.g. `{entityDbFolder}/user-id.txt`), **not** in Electron `userData`. `userData` is per-machine and is never what the "same person on two machines" requirement can rely on — this doc's whole premise is that the central folder is the thing the user already puts in Dropbox/iCloud for roaming (see "Personal multi-machine" above), so `userStableId` inherits that roaming property for free by living there too. Minting it in `userData` instead would silently produce a _second_ `userStableId` the first time the user opens the app on a second machine, splitting one scholar into two `grognard-central` rows on every entity they've linked — directly defeating the stated goal. First run with no central folder configured yet: mint a session-local id and persist it into the folder as soon as one is set.
+- Multiple collaborators → multiple `grognard-central` rows on the same project person (one per `subtype`). That reveals only central id _strings_, not the rest of anyone’s central DB.
 - When in doubt, matching prefers **authority associations** present in either file (same CBDB / Wikidata / …) over name-only guesses.
 
 ### Collaboration
@@ -139,7 +139,7 @@ UUIDs fix **identifier** collisions. They do **not** fix two records for the sam
 - Central DBs are **not** shared with the team.
 - Concurrent writers on project `entities.xml` remain **unsupported** (same deferred constraint as today). Teach: pull/wait for sync, one librarian moment for entity create/merge; tagging mentions is the common path.
 - **Be explicit this is a workflow constraint, not a solved technical problem.** UUIDs remove _identifier_ collisions (two people no longer mint the same key for different people), but they do nothing about the ordinary git text conflict that happens when two collaborators both append a new `<person>` near-simultaneously — new entities almost always land at the same insertion point (end of list), so this is the _common_ case for a conflict, not an edge case. The collaboration banner (see UI sketch) should say this outright — something like "Entity additions can conflict like any shared file; if Git flags `entities.xml`, keep both `<person>`/`<place>`/… blocks and re-open the project" — rather than leaving first-timers to discover it as what looks like a data-loss bug report.
-- Transport: Git and/or cloud sync of the project folder (Workshop pedagogy). LJB does not run a sync server.
+- Transport: Git and/or cloud sync of the project folder (Workshop pedagogy). Grognard does not run a sync server.
 
 ### Personal multi-machine (central DB)
 
@@ -165,7 +165,7 @@ So this isn't a hypothetical edge case or generic tech debt — it's a correctne
 
 | Verb        | Meaning                                                                                             | Touches corpus `@key`?                                                        |
 | ----------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| **Link**    | Project UUID ↔ existing central id (write `ljb-central` mapping)                                    | No                                                                            |
+| **Link**    | Project UUID ↔ existing central id (write `grognard-central` mapping)                                    | No                                                                            |
 | **Promote** | Create (or authority-match) a central record from a project entity, then Link                       | No                                                                            |
 | **Absorb**  | Two project entities (or two central entities) are the same person; keep one, remap keys / mappings | **Yes** for project-side absorb (remap `@key` across registered corpus files) |
 
@@ -180,8 +180,8 @@ Matching order for Link / Promote:
 
 On project open (and optionally from a Bridge inbox UI):
 
-- Project entities with no `ljb-central` for **this** `userStableId` → “N unlinked — Promote or Link?”
-- `ljb-central` pointing at a missing central id → clear mapping + offer re-link.
+- Project entities with no `grognard-central` for **this** `userStableId` → “N unlinked — Promote or Link?”
+- `grognard-central` pointing at a missing central id → clear mapping + offer re-link.
 - Central gained new authority ids since last link → optional “refresh from central” (copy authorities onto project entity if project lacks them — **never** rewrite corpus keys to central ids).
 
 Central may lag the edition. That is acceptable; the inbox makes lag visible.
@@ -192,7 +192,7 @@ Align with [`versioning-planning.md`](versioning-planning.md):
 
 | Scope                               | History location                        |
 | ----------------------------------- | --------------------------------------- |
-| Corpus + **project** `entities.xml` | `<project>/.ljb/history/` (Project tab) |
+| Corpus + **project** `entities.xml` | `<project>/.grognard/history/` (Project tab) |
 | **Central** `entities.xml`          | Electron userData (Entity database tab) |
 
 **Rule:** restoring one file does **not** auto-restore the other or the corpus.
@@ -200,7 +200,7 @@ Align with [`versioning-planning.md`](versioning-planning.md):
 After rollback, run orphan checks:
 
 - Project entities restored/deleted → scan corpus for `@key`s with no project entity; offer purge key / reconstitute stub / cancel.
-- Central restored → clear or re-link broken `ljb-central` rows for this user; **do not** rewrite corpus.
+- Central restored → clear or re-link broken `grognard-central` rows for this user; **do not** rewrite corpus.
 - Corpus file restored → may revive old UUIDs; if project DB absorbed them away, orphan/`@key` remap UI.
 
 Always take a `rollback-pre` snapshot before overwrite (existing versioning plan).
@@ -209,14 +209,14 @@ Always take a `rollback-pre` snapshot before overwrite (existing versioning plan
 
 ## Mental model (SQL analogy for teaching)
 
-| SQL idea                   | LJB dual model                          |
+| SQL idea                   | Grognard dual model                          |
 | -------------------------- | --------------------------------------- |
 | Shared team database       | Project `entities.xml`                  |
 | Personal research DB       | Central `entities.xml`                  |
 | Primary key in the edition | Project UUID (`xml:id`)                 |
 | Foreign key in texts       | `@key` on mentions → project UUID only  |
 | External authority PK      | `<idno type="CBDB">` etc.               |
-| User-specific synonym      | `<idno type="ljb-central" subtype="…">` |
+| User-specific synonym      | `<idno type="grognard-central" subtype="…">` |
 | ETL / sync job             | Bridge: Link / Promote / Absorb         |
 
 ---
@@ -225,7 +225,7 @@ Always take a `rollback-pre` snapshot before overwrite (existing versioning plan
 
 ```
 # Personal (anywhere; often cloud-synced)
-~/LJB-entities/                         ← App Settings entity DB folder
+~/Grognard-entities/                         ← App Settings entity DB folder
 ├── entities.xml                        ← central (sequential ids)
 ├── entity-projects.json                ← registry (may evolve)
 ├── authority-packs/
@@ -234,10 +234,10 @@ Always take a `rollback-pre` snapshot before overwrite (existing versioning plan
 # Shared edition (Git / Dropbox) — not required to nest under central
 ~/editions/han-commentary/
 ├── jean-baptiste.project.json          ← entityDatabaseId = project DB fingerprint
-├── entities.xml                        ← project (UUID ids + ljb-central mappings)
+├── entities.xml                        ← project (UUID ids + grognard-central mappings)
 ├── chapter1.xml                        ← @key = project UUIDs only
 ├── chapter2.xml
-└── .ljb/                               ← gitignore; decision log; project history
+└── .grognard/                               ← gitignore; decision log; project history
 ```
 
 ---
@@ -251,7 +251,7 @@ Target: projects that participate in this model always have project `entities.xm
 Suggested migration paths (product copy TBD):
 
 1. **Was project-only** — already has project file; mint `userStableId` if needed; offer bulk “Promote unlinked to central” (optional).
-2. **Was central-only with `@key`s pointing at central** — on first open under the new model: create project `entities.xml`; **Import** entities referenced by corpus from central (authority-preserving, new project UUIDs); write `ljb-central` mappings; **remap** corpus `@key`s from old sequential ids → new UUIDs. Reuse existing import + `rewriteMentionKeys` / `applyKeyRemap` machinery.
+2. **Was central-only with `@key`s pointing at central** — on first open under the new model: create project `entities.xml`; **Import** entities referenced by corpus from central (authority-preserving, new project UUIDs); write `grognard-central` mappings; **remap** corpus `@key`s from old sequential ids → new UUIDs. Reuse existing import + `rewriteMentionKeys` / `applyKeyRemap` machinery.
 3. **Legacy sequential project ids** — grandfathered (see Open questions): allow mixed ids until Absorb/edit touches them, rather than a one-shot bulk rewrite of a live corpus.
 
 Fingerprint / mismatch recovery remains oriented at the **project** database id stored in project JSON.
@@ -275,7 +275,7 @@ Not a full viewer redesign (see [`entity-database-viewer-planning.md`](entity-da
 ### Phase A — Data model & ids
 
 - [ ] Scaffold / validate project entities with UUID `xml:id` minting (keep sequential minting for central).
-- [ ] `ljb-central` `<idno>` read/write helpers; `userStableId` persisted inside the central entity DB folder (not userData — see §Mapping).
+- [ ] `grognard-central` `<idno>` read/write helpers; `userStableId` persisted inside the central entity DB folder (not userData — see §Mapping).
 - [ ] Document TEI shape in `entities.ts` comments + this doc; tests for round-trip.
 - [ ] Exclude project `entities.xml` from corpus ops (already required).
 
@@ -296,7 +296,7 @@ Not a full viewer redesign (see [`entity-database-viewer-planning.md`](entity-da
 ### Phase D — Staleness & rollback hooks
 
 - [ ] Orphan `@key` scan after project DB or corpus rollback.
-- [ ] Broken `ljb-central` cleanup after central rollback.
+- [ ] Broken `grognard-central` cleanup after central rollback.
 - [ ] Inbox badges for “unlinked” / “broken link.”
 
 ### Phase E — Pedagogy & docs
@@ -308,7 +308,7 @@ Not a full viewer redesign (see [`entity-database-viewer-planning.md`](entity-da
 
 ## Open questions
 
-Resolved since the first draft (see inline **locked** notes above): UUID form (kind-prefixed, §Id schemes), `userStableId` storage (central DB folder, §Mapping), and `ljb-central` privacy (kept in the shared file, §Mapping). Registry redesign is no longer "open" either — see "Registry fragility" above, sequenced into Phase A/B.
+Resolved since the first draft (see inline **locked** notes above): UUID form (kind-prefixed, §Id schemes), `userStableId` storage (central DB folder, §Mapping), and `grognard-central` privacy (kept in the shared file, §Mapping). Registry redesign is no longer "open" either — see "Registry fragility" above, sequenced into Phase A/B.
 
 1. **Force UUID migration** for existing project sequential ids, or grandfather until edit? — leaning grandfather: a bulk remap of a live corpus is exactly the kind of operation that shouldn't run unsupervised the first time this ships; let Absorb/edit upgrade ids opportunistically instead.
 2. **Authority packs** — remain beside central folder (per-machine download) so project sync stays small?
@@ -317,7 +317,7 @@ Resolved since the first draft (see inline **locked** notes above): UUID form (k
 
 ## Deferred (explicitly not this plan)
 
-- LJB-hosted or third-party SQL entity server.
+- Grognard-hosted or third-party SQL entity server.
 - Concurrent multi-writer merge of the same `entities.xml` (CRDT/OT).
 - Real-time co-editing (Yjs) of entity records.
 - Standalone merge of two **central** files with no project context (nice-to-have later; authority-dedupe import can reuse Promote logic).

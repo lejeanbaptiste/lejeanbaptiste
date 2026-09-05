@@ -1,5 +1,5 @@
 /**
- * The stable per-user id used as the `subtype` on `ljb-central` concordance
+ * The stable per-user id used as the `subtype` on `grognard-central` concordance
  * rows. It is minted once and stored inside the central entity-database folder
  * (`{entityDbFolder}/user-id.txt`) — NOT Electron `userData` — so that when the
  * scholar roams that folder via Dropbox/iCloud, the same id follows them to

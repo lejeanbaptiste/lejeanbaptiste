@@ -795,7 +795,7 @@ export class AutoTaggingSession {
   }
 
   /**
-   * Run AI suggest on the live document. Uses `.ljb/ai-cache/` when a project
+   * Run AI suggest on the live document. Uses `.grognard/ai-cache/` when a project
    * store is available. `onProgress` reports completed chunk count. Pass
    * `range` (from getSelectionRange) to tag only the blocks it intersects.
    */
@@ -835,7 +835,7 @@ export class AutoTaggingSession {
 
   /**
    * Run AI audit on the live document (existing tags rendered inline per chunk).
-   * Uses `.ljb/ai-cache/` when a project store is available.
+   * Uses `.grognard/ai-cache/` when a project store is available.
    */
   async runAiAudit(
     tags: string[],
@@ -1358,7 +1358,7 @@ export class AutoTaggingSession {
   }
 
   /**
-   * Flush buffered decisions to `/.ljb/entity-decisions.jsonl`. No-op (but
+   * Flush buffered decisions to `/.grognard/entity-decisions.jsonl`. No-op (but
    * still clears the buffer) in the web app where no project store exists.
    * Returns the number of records written.
    */

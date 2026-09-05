@@ -1,5 +1,5 @@
 name: CI
-run-name: CI for lejeanbaptiste/lejeanbaptiste
+run-name: CI for grognard/grognard
 
 on:
   push:
@@ -255,12 +255,12 @@ jobs:
         env:
           # package:mac triggers prepackage:mac, which downloads the Python
           # runtime, pmtiles and LemMinX. Pin them to the arch being packaged.
-          LJB_PYTHON_PLATFORM: darwin
-          LJB_PYTHON_ARCH: ${{ matrix.arch }}
-          LJB_PMTILES_PLATFORM: darwin
-          LJB_PMTILES_ARCH: ${{ matrix.arch }}
-          LJB_LEMMINX_PLATFORM: darwin
-          LJB_LEMMINX_ARCH: ${{ matrix.arch }}
+          GROGNARD_PYTHON_PLATFORM: darwin
+          GROGNARD_PYTHON_ARCH: ${{ matrix.arch }}
+          GROGNARD_PMTILES_PLATFORM: darwin
+          GROGNARD_PMTILES_ARCH: ${{ matrix.arch }}
+          GROGNARD_LEMMINX_PLATFORM: darwin
+          GROGNARD_LEMMINX_ARCH: ${{ matrix.arch }}
           APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
@@ -305,7 +305,7 @@ jobs:
             exit 1
           fi
 
-          app_path="/Applications/Le Jean-Baptiste.app"
+          app_path="/Applications/Grognard.app"
           sudo installer -pkg "${pkg_paths[0]}" -target /
 
           if [ ! -d "$app_path" ]; then
@@ -317,7 +317,7 @@ jobs:
             exit 1
           fi
 
-          test -x "$app_path/Contents/MacOS/Le Jean-Baptiste"
+          test -x "$app_path/Contents/MacOS/Grognard"
           test -f "$app_path/Contents/Resources/app.asar"
           echo "Installed and verified $app_path"
 

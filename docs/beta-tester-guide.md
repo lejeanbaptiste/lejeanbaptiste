@@ -1,6 +1,6 @@
 # Beta Tester Guide
 
-This guide covers the practical checks for a packaged beta build of Le Jean-Baptiste. It is intended for testers who are not building the application from source.
+This guide covers the practical checks for a packaged beta build of Grognard. It is intended for testers who are not building the application from source.
 
 Use a clean test project where possible. Record the application version, operating system and architecture, project type, and approximate document size. If a check fails, record the exact steps that led to the failure and attach logs or screenshots.
 

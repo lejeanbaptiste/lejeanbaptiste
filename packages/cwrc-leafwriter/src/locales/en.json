@@ -95,7 +95,7 @@
         "always_on_help": "Skip the per-run AI checkbox (e.g. in Disambiguate) and always use AI curation when it's configured."
       },
       "github": {
-        "description": "Connect your GitHub account to publish leaderboard stats. LJB will also use this connection for issue, pull request, and commit statistics.",
+        "description": "Connect your GitHub account to publish leaderboard stats. Grognard will also use this connection for issue, pull request, and commit statistics.",
         "connect": "Connect GitHub",
         "reconnect": "Reconnect GitHub",
         "connecting": "Connecting…",
@@ -105,7 +105,7 @@
         "disconnected": "GitHub disconnected.",
         "connect_failed": "Could not connect to GitHub.",
         "disconnect_failed": "Could not disconnect from GitHub.",
-        "browser_code": "GitHub opened in your browser. Enter the code {{code}} to authorize LJB."
+        "browser_code": "GitHub opened in your browser. Enter the code {{code}} to authorize Grognard."
       },
       "map_tiles": {
         "title": "Offline map tiles (optional)",
@@ -174,7 +174,7 @@
         "match_across_line_breaks_description": "Find authority tag-bomb matches across empty <lb>, <pb>, and similar milestones. Keeps markers inside applied tags. Off by default.",
         "match_across_line_breaks_enable": "Enable for this project",
         "asset_packs_note": "Offline authority packs and map tiles now live in the Asset packs tab.",
-        "bdrc_closed_note": "BDRC (BUDA) is a closed catalogue and forbids scraping their website. Le Jean-Baptiste does not search library.bdrc.io. Access is via Wikidata identifiers (property P2477) already in the Tibetan Wikidata packs; links still open the official BUDA page.",
+        "bdrc_closed_note": "BDRC (BUDA) is a closed catalogue and forbids scraping their website. Grognard does not search library.bdrc.io. Access is via Wikidata identifiers (property P2477) already in the Tibetan Wikidata packs; links still open the official BUDA page.",
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>Are you sure you want to delete the authority </0><1>{{name}}</1><2>?</2>",
           "Authority deleted successfully": "Authority deleted successfully",
@@ -260,13 +260,13 @@
         "not_saved": "Not verified",
         "java_ok": "Java ready ({{version}})",
         "java_missing": "Java 17+ required for LanguageTool. Download it below, or install Temurin / Homebrew openjdk@17, then refresh.",
-        "java_managed": "LJB-managed",
+        "java_managed": "Grognard-managed",
         "java_download": "Download Java for LanguageTool",
         "java_downloading": "Downloading Java…",
         "java_install_ok": "Java installed.",
         "java_install_failed": "Java install failed.",
         "java_refresh": "Refresh",
-        "not_installed": "LanguageTool is not installed in LJB yet.",
+        "not_installed": "LanguageTool is not installed in Grognard yet.",
         "installed_version": "Installed LanguageTool {{version}}",
         "install": "Download & install",
         "reinstall": "Reinstall",
@@ -276,7 +276,7 @@
         "install_failed": "LanguageTool install failed.",
         "removed": "Managed LanguageTool removed.",
         "remove_failed": "Could not remove LanguageTool.",
-        "use_managed": "Use LJB-managed local server",
+        "use_managed": "Use Grognard-managed local server",
         "use_ngrams": "Use English n-gram models (if downloaded)",
         "ngrams_download": "Download English n-grams",
         "ngrams_installed": "English n-grams ready",
@@ -312,13 +312,13 @@
         "map_tiles": "Offline map tiles"
       },
       "privacy": {
-        "description": "What Le Jean-Baptiste stores locally and what it only sends if you choose to use a networked feature.",
-        "summary": "Le Jean-Baptiste is mostly local-first in normal desktop use. Your files, databases, and settings stay on your machine unless you use a feature that explicitly talks to another service.",
+        "description": "What Grognard stores locally and what it only sends if you choose to use a networked feature.",
+        "summary": "Grognard is mostly local-first in normal desktop use. Your files, databases, and settings stay on your machine unless you use a feature that explicitly talks to another service.",
         "local_first": "Normal editing, local entity databases, offline packs, and most settings remain on your computer.",
         "documents_title": "Document metadata",
         "documents_body": "The user name you enter in Settings can be written into your documents as project/document metadata. That name travels with the file because it becomes part of the document itself, not because the app uploads it somewhere automatically.",
         "leaderboard_title": "Leaderboard submission",
-        "leaderboard_body": "If you choose to submit your service record to the leaderboard, Le Jean-Baptiste sends your GitHub identity token for verification, your displayed user name/rank context, your achievement metrics counts, and your optional avatar image to the leaderboard service.",
+        "leaderboard_body": "If you choose to submit your service record to the leaderboard, Grognard sends your GitHub identity token for verification, your displayed user name/rank context, your achievement metrics counts, and your optional avatar image to the leaderboard service.",
         "telemetry_title": "Crash and error reporting",
         "telemetry_body": "The editor code supports optional Sentry crash/error reporting if a build enables it. That is configuration-dependent rather than a normal editing requirement.",
         "web_title": "Web-only measurement cookies",

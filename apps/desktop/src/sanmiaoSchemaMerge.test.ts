@@ -43,17 +43,17 @@ describe('sanmiaoSchemaMerge', () => {
 
   it('generates helper defines with sanmiao children and resolution attrs but no date define', () => {
     const helpers = generateSanmiaoHelperDefines();
-    expect(helpers).toContain('ljb.sanmiao.dyn');
+    expect(helpers).toContain('grognard.sanmiao.dyn');
     expect(helpers).toContain('name="era_id"');
     expect(helpers).toContain('name="jdn"');
     expect(helpers).toContain('<element name="rel">');
-    expect(helpers).toContain('<define name="ljb.sanmiao.int">');
+    expect(helpers).toContain('<define name="grognard.sanmiao.int">');
     expect(helpers).toContain('<element name="int">');
-    expect(helpers).toMatch(/<define name="ljb\.sanmiao\.int">[\s\S]*<text\/>/);
+    expect(helpers).toMatch(/<define name="grognard\.sanmiao\.int">[\s\S]*<text\/>/);
     expect(helpers).not.toContain(
-      '<define name="ljb.sanmiao.int">\n    <element name="int">\n      <empty/>',
+      '<define name="grognard.sanmiao.int">\n    <element name="int">\n      <empty/>',
     );
-    expect(helpers).toContain('<define name="ljb.kanripo.graphic">');
+    expect(helpers).toContain('<define name="grognard.kanripo.graphic">');
     expect(helpers).not.toContain('<grammar');
     expect(helpers).not.toContain('<define name="date">');
   });
@@ -63,22 +63,22 @@ describe('sanmiaoSchemaMerge', () => {
     expect(merged.teiCoreFileName).toBe('tei_all.tei.rng');
     expect(merged.flatRng).toContain('ns="http://www.tei-c.org/ns/1.0"');
     expect(merged.flatRng).not.toContain('<include');
-    expect(merged.flatRng).not.toContain('ljb-sanmiao-dates.rng');
+    expect(merged.flatRng).not.toContain('grognard-sanmiao-dates.rng');
     expect(merged.flatRng).not.toContain('<except>');
     expect(merged.flatRng).toContain('ref name="att.datable.attributes"');
-    expect(merged.flatRng).toContain('ljb.sanmiao.date.parts');
-    expect(merged.flatRng).toContain('<define name="ljb.sanmiao.date.parts">');
+    expect(merged.flatRng).toContain('grognard.sanmiao.date.parts');
+    expect(merged.flatRng).toContain('<define name="grognard.sanmiao.date.parts">');
     expect(merged.flatRng).toContain('ref name="persName"');
-    expect(merged.flatRng).toContain('ref name="ljb.nobleTitle"');
-    // <dynasty> is an LJB element, not TEI: allowing it inside <nobleTitle>
+    expect(merged.flatRng).toContain('ref name="grognard.nobleTitle"');
+    // <dynasty> is an Grognard element, not TEI: allowing it inside <nobleTitle>
     // means defining it here as well as referencing it.
-    expect(merged.flatRng).toContain('<define name="ljb.dynasty">');
+    expect(merged.flatRng).toContain('<define name="grognard.dynasty">');
     expect(merged.flatRng).toContain('<element name="dynasty">');
     const nobleTitleDefine = merged.flatRng.match(
-      /<define name="ljb\.nobleTitle">[\s\S]*?<\/define>/,
+      /<define name="grognard\.nobleTitle">[\s\S]*?<\/define>/,
     )?.[0];
-    expect(nobleTitleDefine).toContain('ref name="ljb.dynasty"');
-    // nobleTitle is an LJB element, so it has no attributes unless declared —
+    expect(nobleTitleDefine).toContain('ref name="grognard.dynasty"');
+    // nobleTitle is an Grognard element, so it has no attributes unless declared —
     // and the auto-tagger writes @dynasty, @ref, @resp, @source and @when.
     // @resp/@source come from att.global, @ref from att.personal, @when from
     // att.datable; only @dynasty has to be spelled out.
@@ -86,7 +86,7 @@ describe('sanmiaoSchemaMerge', () => {
     expect(nobleTitleDefine).toContain('ref name="att.personal.attributes"');
     expect(nobleTitleDefine).toContain('ref name="att.datable.attributes"');
     expect(nobleTitleDefine).toContain('<attribute name="dynasty">');
-    expect(merged.flatRng).toContain('ljb.kanripo.graphic');
+    expect(merged.flatRng).toContain('grognard.kanripo.graphic');
     expect(merged.flatRng).toContain('type=kanripo');
     expect(merged.flatRng).not.toMatch(/<attribute name="n">[\s\S]*?<attribute name="n">/);
     const kanripoBranch = merged.flatRng.match(
@@ -101,7 +101,7 @@ describe('sanmiaoSchemaMerge', () => {
   });
 
   it('flags v1 wrappers as outdated', () => {
-    const v1Wrapper = `<grammar><a:documentation>Le Jean-Baptiste: TEI + sanmiao East Asian date extension</a:documentation><include href="tei_all.tei.rng"><except><define name="date"/></except></include><include href="ljb-sanmiao-dates.rng"/></grammar>`;
+    const v1Wrapper = `<grammar><a:documentation>Grognard: TEI + sanmiao East Asian date extension</a:documentation><include href="tei_all.tei.rng"><except><define name="date"/></except></include><include href="grognard-sanmiao-dates.rng"/></grammar>`;
     expect(isSanmiaoMergedWrapper(v1Wrapper)).toBe(true);
     expect(isCurrentSanmiaoMergeVersion(v1Wrapper)).toBe(false);
   });
@@ -109,8 +109,8 @@ describe('sanmiaoSchemaMerge', () => {
   it('rejects merged schemas with duplicate @type on Kanripo g even when marker matches', () => {
     const merged = buildSanmiaoMergedSchemaFiles(MINIMAL_TEI, 'tei_all.rng');
     const broken = merged.flatRng.replace(
-      '<ref name="ljb.kanripo.graphic"/>',
-      '<ref name="ljb.kanripo.graphic"/><ref name="att.typed.attributes"/>',
+      '<ref name="grognard.kanripo.graphic"/>',
+      '<ref name="grognard.kanripo.graphic"/><ref name="att.typed.attributes"/>',
     );
     expect(kanripoGOverrideHasDuplicateType(broken)).toBe(true);
     expect(isCurrentSanmiaoMergeVersion(broken)).toBe(false);

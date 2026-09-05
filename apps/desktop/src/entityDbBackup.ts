@@ -116,7 +116,7 @@ interface Snapshot {
  */
 export const createSnapshot = async (sourceDbPath: string): Promise<Snapshot> => {
   await fs.access(sourceDbPath);
-  const stem = `ljb-entities-${compactTimestamp(new Date())}-${process.pid}`;
+  const stem = `grognard-entities-${compactTimestamp(new Date())}-${process.pid}`;
   const rawPath = path.join(app.getPath('temp'), `${stem}.sqlite`);
   const gzPath = path.join(app.getPath('temp'), `${stem}.sqlite.gz`);
 

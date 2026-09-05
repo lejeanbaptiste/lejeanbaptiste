@@ -304,7 +304,7 @@ export const familyAndGivenOf = (
 
 type PrecisionBase = 'b' | 'd' | 'fl' | 'active' | 'active_to';
 
-/** Parses LJB's stored `DatePrecision` string (entityOps.ts) into a base marker + circa flag. */
+/** Parses Grognard's stored `DatePrecision` string (entityOps.ts) into a base marker + circa flag. */
 const parsePrecision = (raw: string): { base: PrecisionBase; circa: boolean } | null => {
   switch (raw) {
     case 'b.':

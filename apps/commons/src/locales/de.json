@@ -698,7 +698,7 @@
           "dont_save_button": "Nicht speichern",
           "import_diagnostics_title": "Importdiagnose",
           "import_xml_continue_button": "Importieren",
-          "import_xml_warning_detail": "Fremde Entitätsschlüssel (@key) werden in ein Sicherungstoken unter @ana (ljb-former-key:…) verschoben, damit sie nicht auf den Entitätskatalog dieses Projekts verweisen. Kompatible Headerfelder bleiben in der Datei; die Metadaten der Projektausgabe werden zusammengeführt und das Projektschema angehängt. Die Elementzuordnung zwischen verschiedenen Schemata ist noch nicht möglich.",
+          "import_xml_warning_detail": "Fremde Entitätsschlüssel (@key) werden in ein Sicherungstoken unter @ana (grognard-former-key:…) verschoben, damit sie nicht auf den Entitätskatalog dieses Projekts verweisen. Kompatible Headerfelder bleiben in der Datei; die Metadaten der Projektausgabe werden zusammengeführt und das Projektschema angehängt. Die Elementzuordnung zwischen verschiedenen Schemata ist noch nicht möglich.",
           "import_xml_warning_message": "{{documentCount}} XML-Datei(en) werden in dieses Projekt importiert.",
           "import_xml_warning_title": "XML-Dokumente importieren",
           "imported_documents_with_problems": "{{documentCount}} Dokument(e) mit {{problemCount}} problematischen Datei(en) importiert.",
@@ -861,7 +861,7 @@
       },
       "entity_database_changed": {
         "title": "Entitätsdatenbank geändert",
-        "message": "entities.xml wurde außerhalb von Le Jean-Baptiste geändert. Vor dem Schreiben von Änderungen neu laden?",
+        "message": "entities.xml wurde außerhalb von Grognard geändert. Vor dem Schreiben von Änderungen neu laden?",
         "reload": "Datenbank neu laden",
         "keep": "Aktuelle Kopie behalten"
       },
@@ -891,7 +891,7 @@
         "folder_label": "Datenbankordner",
         "folder_placeholder": "Integrierten Standard verwenden…",
         "choose": "Cloud-synchronisierten Ordner auswählen…",
-        "note": "Optional. Ein leerer Ordner ist ausreichend — Le Jean-Baptiste richtet die Datenbank ein. Haben Sie bereits eine Datenbank von einem anderen Rechner? Wählen Sie diesen Ordner aus, um sie zu verwenden.",
+        "note": "Optional. Ein leerer Ordner ist ausreichend — Grognard richtet die Datenbank ein. Haben Sie bereits eine Datenbank von einem anderen Rechner? Wählen Sie diesen Ordner aus, um sie zu verwenden.",
         "done": "Fertig"
       },
       "tagging": {
@@ -942,16 +942,16 @@
       },
       "entity_db_setup": {
         "cancel": "Abbrechen",
-        "create_db_failed_message": "Le Jean-Baptiste konnte die Entitätsdatenbank in diesem Ordner nicht einrichten.",
+        "create_db_failed_message": "Grognard konnte die Entitätsdatenbank in diesem Ordner nicht einrichten.",
         "create_db_failed_title": "Entitätsdatenbank konnte nicht erstellt werden",
         "create_here": "Hier erstellen",
         "create_here_title": "Datenbank in diesem Ordner erstellen?",
-        "folder_is_project_message": "Dieser Ordner ist bereits ein Le-Jean-Baptiste-Projekt. Wählen Sie einen anderen Ordner für Ihre Entitätsdatenbank — er kann übergeordnet zu Ihren Projekten liegen, darf aber selbst kein Projektordner sein.",
+        "folder_is_project_message": "Dieser Ordner ist bereits ein Grognard-Projekt. Wählen Sie einen anderen Ordner für Ihre Entitätsdatenbank — er kann übergeordnet zu Ihren Projekten liegen, darf aber selbst kein Projektordner sein.",
         "folder_is_project_title": "Dieser Ordner ist ein Projekt",
         "ok": "OK",
-        "parent_has_db_detail": "Wenn Sie diese gemeinsam genutzte Datenbank meinten, wählen Sie stattdessen den übergeordneten Ordner. Andernfalls kann Le Jean-Baptiste eine neue leere Datenbank erstellen in:",
+        "parent_has_db_detail": "Wenn Sie diese gemeinsam genutzte Datenbank meinten, wählen Sie stattdessen den übergeordneten Ordner. Andernfalls kann Grognard eine neue leere Datenbank erstellen in:",
         "parent_has_db_intro": "Der übergeordnete Ordner enthält bereits eine Entitätsdatenbank:",
-        "save_folder_failed_session": "Der Ordner wurde für diese Sitzung festgelegt, konnte aber nicht gespeichert werden und bleibt möglicherweise nicht erhalten. Versuchen Sie es erneut oder prüfen Sie, ob Le Jean-Baptiste in seinen App-Datenordner schreiben kann.",
+        "save_folder_failed_session": "Der Ordner wurde für diese Sitzung festgelegt, konnte aber nicht gespeichert werden und bleibt möglicherweise nicht erhalten. Versuchen Sie es erneut oder prüfen Sie, ob Grognard in seinen App-Datenordner schreiben kann.",
         "save_folder_failed_title": "Entitätsdatenbankordner konnte nicht gespeichert werden",
         "save_parent_folder_failed": "Der übergeordnete Ordner konnte nicht gespeichert werden.",
         "use_parent_folder": "Übergeordneten Ordner verwenden"

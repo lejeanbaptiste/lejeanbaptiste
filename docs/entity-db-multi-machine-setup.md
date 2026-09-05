@@ -15,7 +15,7 @@ same folder as the entity database by default.
 | Type                        | Setup                                                        | Entity database                                                                                        | Achievements                                                                                                                                                 |
 | --------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **A — Local only**          | Default install                                              | `entities.sqlite` in the app's local data folder                                                       | `achievements.json` next to it — no sync needed                                                                                                              |
-| **B — File-sync folder**    | Entity DB or project in Dropbox / iCloud / Nextcloud         | **Do not do this.** SQLite's `-wal` / `-shm` files race with the sync client and corrupt the database. | A lone `achievements.json` in a synced folder is usually fine, but LJB does not optimise for this path                                                       |
+| **B — File-sync folder**    | Entity DB or project in Dropbox / iCloud / Nextcloud         | **Do not do this.** SQLite's `-wal` / `-shm` files race with the sync client and corrupt the database. | A lone `achievements.json` in a synced folder is usually fine, but Grognard does not optimise for this path                                                       |
 | **C — Cloud backup + sync** | Settings › Profil › **Cloud backup** + **Cross-device sync** | Local `entities.sqlite`; R2 holds compressed snapshots; D1 holds row-level entity sync                 | `achievements.json` in the **same folder** as `entities.sqlite` (default). See [Achievements on multiple machines](#achievements-on-multiple-machines) below |
 
 **Type C is the only path this guide is for.** Types A and B need no cloud
@@ -65,13 +65,13 @@ Edit `wrangler.toml`:
 2. **`database_id`** — create the database and paste the id Wrangler prints:
 
 ```bash
-npx wrangler d1 create ljb-entity-sync
-npx wrangler d1 migrations apply ljb-entity-sync --remote
+npx wrangler d1 create grognard-entity-sync
+npx wrangler d1 migrations apply grognard-entity-sync --remote
 npx wrangler deploy
 ```
 
-Note the deployed URL (e.g. `https://ljb-entity-sync.<your-subdomain>.workers.dev`).
-You will enter it in LJB on each machine. `wrangler.toml` is gitignored so your
+Note the deployed URL (e.g. `https://grognard-entity-sync.<your-subdomain>.workers.dev`).
+You will enter it in Grognard on each machine. `wrangler.toml` is gitignored so your
 ids stay on your machine.
 
 R2 setup (bucket + scoped API token) is separate — see
@@ -79,7 +79,7 @@ R2 setup (bucket + scoped API token) is separate — see
 
 ---
 
-## Primary machine (first LJB install)
+## Primary machine (first Grognard install)
 
 ### 1. Entity database
 
@@ -116,12 +116,12 @@ Use this when you already have a working type-C setup on machine A.
 
 ### 1. Install and sign in
 
-Install the same LJB version if possible. Sign in to **GitHub** with the same
+Install the same Grognard version if possible. Sign in to **GitHub** with the same
 account that owns the sync Worker (`OWNER_GITHUB_ID`).
 
 ### 2. Entity database folder
 
-Let LJB create a **new local** entity database folder (default). Do **not**:
+Let Grognard create a **new local** entity database folder (default). Do **not**:
 
 - Point at machine A's folder over the network
 - Put the folder in Dropbox/iCloud

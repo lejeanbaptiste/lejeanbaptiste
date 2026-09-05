@@ -233,7 +233,7 @@ describe('DisambiguationPanel', () => {
       baseUrl: 'http://localhost:11434',
       model: 'mock-model',
     });
-    window.dispatchEvent(new Event('ljbCommonsUiChanged'));
+    window.dispatchEvent(new Event('grognardCommonsUiChanged'));
 
     expect((await screen.findAllByText('沈攸之')).length).toBeGreaterThan(0);
     await waitFor(() => expect(screen.getByText(/AI is curating candidates/i)).toBeTruthy());
@@ -256,7 +256,7 @@ describe('DisambiguationPanel', () => {
       baseUrl: 'http://localhost:11434',
       model: 'mock-model',
     });
-    window.dispatchEvent(new Event('ljbCommonsUiChanged'));
+    window.dispatchEvent(new Event('grognardCommonsUiChanged'));
 
     await waitFor(() => expect(mockRankDisambiguationCandidates).toHaveBeenCalled());
     expect(mockRankDisambiguationCandidates.mock.calls[0]?.[0]).toEqual(
@@ -356,7 +356,7 @@ describe('DisambiguationPanel', () => {
       baseUrl: 'http://localhost:11434',
       model: 'mock-model',
     });
-    window.dispatchEvent(new Event('ljbCommonsUiChanged'));
+    window.dispatchEvent(new Event('grognardCommonsUiChanged'));
 
     await waitFor(() => expect(mockBuildDisambiguationCandidates).toHaveBeenCalled());
     await waitFor(() => expect(mockRankDisambiguationCandidates).toHaveBeenCalled());
@@ -384,7 +384,7 @@ describe('DisambiguationPanel', () => {
       baseUrl: 'http://localhost:11434',
       model: 'mock-model',
     });
-    window.dispatchEvent(new Event('ljbCommonsUiChanged'));
+    window.dispatchEvent(new Event('grognardCommonsUiChanged'));
 
     expect(
       await screen.findByText('AI reviewed these candidates and did not pre-select any.'),

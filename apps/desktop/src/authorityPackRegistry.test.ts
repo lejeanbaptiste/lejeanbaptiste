@@ -19,10 +19,10 @@ import {
 describe('authorityPackRegistryTypes', () => {
   it('builds GitHub release asset URLs', () => {
     expect(packsIndexUrl()).toBe(
-      'https://github.com/lejeanbaptiste/authoritypacks/releases/latest/download/packs-index.json',
+      'https://github.com/grognard/authoritypacks/releases/latest/download/packs-index.json',
     );
     expect(artifactRawUrl(AUTHORITY_PACK_REGISTRY, 'authority-packs-x.tar.gz')).toBe(
-      'https://github.com/lejeanbaptiste/authoritypacks/releases/latest/download/authority-packs-x.tar.gz',
+      'https://github.com/grognard/authoritypacks/releases/latest/download/authority-packs-x.tar.gz',
     );
   });
 
@@ -182,7 +182,7 @@ describe('remotePackUpdateAvailable', () => {
 
 describe('restoreFilesAbsentFromSource', () => {
   it('keeps plugin-only files when a release tree replaces a shared folder', async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ljb-pack-preserve-'));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'grognard-pack-preserve-'));
     const previous = path.join(root, 'previous');
     const next = path.join(root, 'next');
     await fs.mkdir(path.join(previous, 'norbert'), { recursive: true });

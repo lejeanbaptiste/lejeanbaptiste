@@ -79,8 +79,8 @@ export const useCommonsUiBridge = () => {
       const name = (event as CustomEvent<string>).detail?.trim();
       if (name) setEncoderNameState(name);
     };
-    window.addEventListener('ljbEncoderNameInherited', syncInheritedEncoderName);
-    return () => window.removeEventListener('ljbEncoderNameInherited', syncInheritedEncoderName);
+    window.addEventListener('grognardEncoderNameInherited', syncInheritedEncoderName);
+    return () => window.removeEventListener('grognardEncoderNameInherited', syncInheritedEncoderName);
   }, []);
 
   useEffect(() => {
@@ -323,7 +323,7 @@ export const useCommonsUiBridge = () => {
     const unsubscribe = window.electronAPI.onEntityDatabaseChanged(() => {
       void refreshEntityDbBackupStatus();
       void refreshEntitySyncStatus();
-      window.dispatchEvent(new CustomEvent('ljb-entity-database-changed'));
+      window.dispatchEvent(new CustomEvent('grognard-entity-database-changed'));
     });
     return unsubscribe;
   }, [refreshEntityDbBackupStatus, refreshEntitySyncStatus]);
@@ -645,7 +645,7 @@ export const useCommonsUiBridge = () => {
       resolveEntitySyncConflict,
     };
 
-    window.dispatchEvent(new Event('ljbCommonsUiChanged'));
+    window.dispatchEvent(new Event('grognardCommonsUiChanged'));
 
     return () => {
       delete window.__ljbCommonsUi;

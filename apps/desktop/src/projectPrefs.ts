@@ -448,7 +448,7 @@ export const getEntityDbFolder = async (): Promise<string | null> => {
       const detail = error instanceof Error ? error.message : String(error);
       dialog.showErrorBox(
         'Could not create your entity database folder',
-        `Le Jean-Baptiste could not create:\n${defaultFolder}\n\n${detail}\n\nEntity tagging will be unavailable until you choose a writable folder in Settings > Entity database.`,
+        `Grognard could not create:\n${defaultFolder}\n\n${detail}\n\nEntity tagging will be unavailable until you choose a writable folder in Settings > Entity database.`,
       );
     }
     cachedEntityDbFolder = defaultFolder;

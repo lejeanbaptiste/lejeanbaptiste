@@ -36,7 +36,7 @@ const STRINGS = {
       'LEAF-Writer can download a basemap (streets, satellite, relief) for comparing ' +
       'place-name candidates on a map — up to 500 MB, stored locally on this machine ' +
       '(not synced with your entity database), used entirely offline once downloaded.',
-    install_plugin_title: 'Install LJB plugin',
+    install_plugin_title: 'Install Grognard plugin',
     select_plugin_folder_message: 'Select a plugin package folder containing plugin.manifest.json.',
     move_entity_db_title: 'Move entity database?',
     move_entity_db_message:
@@ -88,7 +88,7 @@ const STRINGS = {
       'LEAF-Writer peut télécharger un fond de carte (rues, satellite, relief) pour comparer ' +
       'les candidats de noms de lieux sur une carte — jusqu’à 500 Mo, stocké localement sur cette machine ' +
       '(non synchronisé avec votre base de données d’entités), utilisable entièrement hors ligne une fois téléchargé.',
-    install_plugin_title: 'Installer un plugin LJB',
+    install_plugin_title: 'Installer un plugin Grognard',
     select_plugin_folder_message:
       'Sélectionnez un dossier de paquet de plugin contenant plugin.manifest.json.',
     move_entity_db_title: 'Déplacer la base de données d’entités ?',

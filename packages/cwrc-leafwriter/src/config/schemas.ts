@@ -65,14 +65,14 @@ export const schemas: Schema[] = [
     id: 'cbeta',
     name: 'CBETA P5',
     mapping: 'tei',
-    // Desktop projects install a bundled, LJB-loosened copy into the project's
+    // Desktop projects install a bundled, Grognard-loosened copy into the project's
     // schema/ folder (see apps/desktop schemaCatalog `cbeta`); this URL is only
     // a web/manual fallback pointing at the committed plugin artifact.
     rng: [
-      'https://raw.githubusercontent.com/lejeanbaptiste/plugins/main/packages/plugin-cbeta-import/data/schema/cbeta_p5.rng',
+      'https://raw.githubusercontent.com/grognard/plugins/main/packages/plugin-cbeta-import/data/schema/cbeta_p5.rng',
     ],
     css: [
-      'https://raw.githubusercontent.com/lejeanbaptiste/leaf-writer/main/apps/desktop/resources/schema/cbeta.css',
+      'https://raw.githubusercontent.com/grognard/leaf-writer/main/apps/desktop/resources/schema/cbeta.css',
     ],
   },
 ];

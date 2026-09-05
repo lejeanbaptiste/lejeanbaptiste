@@ -18,8 +18,8 @@ import { execFileSync } from 'node:child_process';
 const VERSION = '1.31.2';
 const root = path.dirname(fileURLToPath(import.meta.url));
 const targetDir = path.join(root, '../resources/pmtiles');
-const platform = process.env.LJB_PMTILES_PLATFORM || process.platform;
-const arch = process.env.LJB_PMTILES_ARCH || process.arch;
+const platform = process.env.GROGNARD_PMTILES_PLATFORM || process.platform;
+const arch = process.env.GROGNARD_PMTILES_ARCH || process.arch;
 const osName = { darwin: 'Darwin', linux: 'Linux', win32: 'Windows' }[platform];
 const archName = { arm64: 'arm64', x64: 'x86_64' }[arch];
 

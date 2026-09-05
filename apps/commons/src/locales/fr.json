@@ -492,7 +492,7 @@
           "dont_save_button": "Ne pas enregistrer",
           "import_diagnostics_title": "Diagnostics de l'import",
           "import_xml_continue_button": "Importer",
-          "import_xml_warning_detail": "Les clés d'entité étrangères (@key) seront déplacées vers un jeton de secours sur @ana (ljb-former-key:…) afin qu'elles ne pointent plus vers le catalogue d'entités de ce projet. Les champs d'en-tête compatibles restent dans le fichier ; les métadonnées d'édition du projet sont fusionnées ; le schéma du projet est attaché. Le remappage d'éléments entre schémas différents n'est pas encore effectué.",
+          "import_xml_warning_detail": "Les clés d'entité étrangères (@key) seront déplacées vers un jeton de secours sur @ana (grognard-former-key:…) afin qu'elles ne pointent plus vers le catalogue d'entités de ce projet. Les champs d'en-tête compatibles restent dans le fichier ; les métadonnées d'édition du projet sont fusionnées ; le schéma du projet est attaché. Le remappage d'éléments entre schémas différents n'est pas encore effectué.",
           "import_xml_warning_message": "{{documentCount}} fichier{{documentCount, plural, one {} other {s}}} XML sera{{documentCount, plural, one {} other {ont}}} importé{{documentCount, plural, one {} other {s}}} dans ce projet.",
           "import_xml_warning_title": "Importer des documents XML",
           "imported_documents_with_problems": "{{documentCount}} document{{documentCount, plural, one {} other {s}}} importé{{documentCount, plural, one {} other {s}}} avec {{problemCount}} fichier{{problemCount, plural, one {} other {s}}} problématique{{problemCount, plural, one {} other {s}}}.",
@@ -948,7 +948,7 @@
       },
       "entity_database_changed": {
         "title": "Base d’entités modifiée",
-        "message": "entities.xml a été modifié en dehors de Le Jean-Baptiste. Recharger avant d’écrire des changements d’entités ?",
+        "message": "entities.xml a été modifié en dehors de Grognard. Recharger avant d’écrire des changements d’entités ?",
         "reload": "Recharger la base",
         "keep": "Garder la copie actuelle"
       },
@@ -966,7 +966,7 @@
         "folder_label": "Dossier de la base",
         "folder_placeholder": "Dossier par défaut en cours d’utilisation…",
         "choose": "Choisir un dossier synchronisé…",
-        "note": "Facultatif. Un dossier vide convient — Le Jean-Baptiste y créera la base. Vous avez déjà une base sur une autre machine ? Choisissez son dossier pour l’utiliser.",
+        "note": "Facultatif. Un dossier vide convient — Grognard y créera la base. Vous avez déjà une base sur une autre machine ? Choisissez son dossier pour l’utiliser.",
         "done": "Terminé"
       },
       "tagging": {
@@ -1072,16 +1072,16 @@
       },
       "entity_db_setup": {
         "cancel": "Annuler",
-        "create_db_failed_message": "Le Jean-Baptiste n'a pas pu configurer la base de données d'entités dans ce dossier.",
+        "create_db_failed_message": "Grognard n'a pas pu configurer la base de données d'entités dans ce dossier.",
         "create_db_failed_title": "Impossible de créer la base de données d'entités",
         "create_here": "Créer ici",
         "create_here_title": "Créer une base de données dans ce dossier ?",
-        "folder_is_project_message": "Ce dossier est déjà un projet Le Jean-Baptiste. Choisissez un dossier différent pour votre base de données d'entités — vous pouvez le garder comme parent de vos projets, mais pas comme dossier de projet lui-même.",
+        "folder_is_project_message": "Ce dossier est déjà un projet Grognard. Choisissez un dossier différent pour votre base de données d'entités — vous pouvez le garder comme parent de vos projets, mais pas comme dossier de projet lui-même.",
         "folder_is_project_title": "Ce dossier est un projet",
         "ok": "OK",
-        "parent_has_db_detail": "Si vous vouliez dire cette base de données partagée, choisissez plutôt le dossier parent. Sinon, Le Jean-Baptiste peut créer une nouvelle base de données vide dans :",
+        "parent_has_db_detail": "Si vous vouliez dire cette base de données partagée, choisissez plutôt le dossier parent. Sinon, Grognard peut créer une nouvelle base de données vide dans :",
         "parent_has_db_intro": "Le dossier parent possède déjà une base de données d'entités :",
-        "save_folder_failed_session": "Le dossier a été défini pour cette session, mais son enregistrement a échoué et il pourrait ne pas persister. Réessayez, ou vérifiez que Le Jean-Baptiste peut écrire dans son dossier de données d'application.",
+        "save_folder_failed_session": "Le dossier a été défini pour cette session, mais son enregistrement a échoué et il pourrait ne pas persister. Réessayez, ou vérifiez que Grognard peut écrire dans son dossier de données d'application.",
         "save_folder_failed_title": "Impossible d'enregistrer le dossier de la base de données d'entités",
         "save_parent_folder_failed": "L'enregistrement du dossier parent a échoué.",
         "use_parent_folder": "Utiliser le dossier parent"

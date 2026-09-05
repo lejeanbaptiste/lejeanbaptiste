@@ -57,7 +57,7 @@ export interface BatchResult {
   snapshot: string;
   /** Populated when apply diagnostics are built (integration layer). */
   diagnostics?: import('./applyDiagnostics').ApplyDiagnosticsReport;
-  /** LJB wrapper validation after the batch; pending cert=unknown is reported separately. */
+  /** Grognard wrapper validation after the batch; pending cert=unknown is reported separately. */
   personWrapperValidation?: PersonWrapperValidation;
   /**
    * Set when the document's total text content length changed across the

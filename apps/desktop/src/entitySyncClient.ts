@@ -113,7 +113,7 @@ export class EntitySyncQuotaError extends EntitySyncError {
 }
 
 export interface EntitySyncClientOptions {
-  /** Base URL of the deployed Worker, e.g. https://ljb-entity-sync.<sub>.workers.dev */
+  /** Base URL of the deployed Worker, e.g. https://grognard-entity-sync.<sub>.workers.dev */
   endpoint: string;
   /** Returns the current GitHub token, or null when the user isn't signed in. */
   getToken: () => Promise<string | null> | string | null;

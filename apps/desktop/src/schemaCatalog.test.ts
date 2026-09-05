@@ -34,7 +34,7 @@ describe('schema catalog — CBETA P5', () => {
     }
   });
 
-  test('bundled cbeta_p5.rng carries the LJB loosen marker', () => {
+  test('bundled cbeta_p5.rng carries the Grognard loosen marker', () => {
     const rng = fs.readFileSync(path.join(__dirname, '../resources/schema/cbeta_p5.rng'), 'utf-8');
     expect(rng).toContain('ljb-cbeta-loosen');
   });

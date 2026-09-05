@@ -57,20 +57,20 @@ describe('LlmCache', () => {
 
   it('persists to disk and reloads into a fresh instance', async () => {
     const api = memoryFileApi();
-    const cache1 = new LlmCache(api, '/proj/.ljb/ai-cache');
+    const cache1 = new LlmCache(api, '/proj/.grognard/ai-cache');
     await cache1.set('chunk text', ['persName'], 'ollama:m', 'suggest.v1', [item]);
 
-    const cache2 = new LlmCache(api, '/proj/.ljb/ai-cache');
+    const cache2 = new LlmCache(api, '/proj/.grognard/ai-cache');
     expect(await cache2.get('chunk text', ['persName'], 'ollama:m', 'suggest.v1')).toEqual([item]);
   });
 
   it('ignores a corrupt on-disk cache entry', async () => {
     const api = memoryFileApi();
-    const cache = new LlmCache(api, '/proj/.ljb/ai-cache');
+    const cache = new LlmCache(api, '/proj/.grognard/ai-cache');
     await cache.set('chunk text', ['persName'], 'ollama:m', 'suggest.v1', [item]);
     for (const path of api.files.keys()) api.files.set(path, 'not json');
 
-    const cache2 = new LlmCache(api, '/proj/.ljb/ai-cache');
+    const cache2 = new LlmCache(api, '/proj/.grognard/ai-cache');
     expect(await cache2.get('chunk text', ['persName'], 'ollama:m', 'suggest.v1')).toBeNull();
   });
 });

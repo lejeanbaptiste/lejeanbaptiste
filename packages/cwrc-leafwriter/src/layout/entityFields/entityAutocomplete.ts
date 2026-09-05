@@ -249,7 +249,7 @@ const isInsideProtectedField = (node: Node): boolean => {
     const tag = el.tagName.toLowerCase();
     if (
       tag === 'ref' &&
-      (el.getAttribute('type') === 'ljb-entity' || el.getAttribute('type') === 'ljb-date')
+      (el.getAttribute('type') === 'grognard-entity' || el.getAttribute('type') === 'grognard-date')
     ) {
       return true;
     }

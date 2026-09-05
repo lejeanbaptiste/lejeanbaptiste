@@ -1,4 +1,4 @@
-# Le Jean-Baptiste changelog
+# Grognard changelog
 
 ## 0.0.1–0.0.4-rc.7
 
@@ -106,7 +106,7 @@
 
 ### Performance and stability
 
-- Serialised boots to avoid a TinyMCE load race that leaves LJB without an editor pane.
+- Serialised boots to avoid a TinyMCE load race that leaves Grognard without an editor pane.
 
 ### Editor
 
@@ -240,7 +240,7 @@
 
 - Dynasty spans can no longer become a person's birth and death dates, from any authority. Nationality-derived years remain what they always were — useful anchors for the Disambiguate date filter — but they are never stored as vitals, never shown as a lifespan on the disambiguation panel, and never minted. The guards that enforce this all key on `metadata.dateSource`, which the Norbert person pack set on none of its 16,050 rows, so every one of them failed open. `filterYearsFromMetadata` now reports `derivedFromDynasty` when the years it returns were computed from a dynasty/nationality span rather than read from the record, and the candidate builder, the mint path, and the backfill cleanup all consult that instead of trusting a label that may be absent. Fixed at source too (see the authority-extraction changelog): Norbert person compile now emits `dateSource: 'nationality'`, so a rebuilt pack is labelled correctly and an unlabelled older pack is still handled. Regression cases are written per source — Norbert unlabelled, CBDB/DILA labelled — rather than only for the one that happened to fail.
 - Authority backfill now clears birth/death rows that earlier mints wrote from `index`, `nationality`, or dynasty-derived years, not only the ones a real floruit supersedes. In the test corpus this took Norbert-sourced authority vitals from 10,676 rows / 5,342 entities down to zero on every live person; the rows that remain sit on soft-deleted entities, which the backfill target set excludes by design and which never display. Every distinct year pair cleared was a dynasty span (先秦 −5999/−220, 唐 618–907, 東晉, 西晉, 東漢, 三國, 南齊, 劉宋, 北魏, 梁, 吳, 北周, 北齊) — Norbert's `person` table has no year columns at all, so a Norbert-sourced lifespan is bogus by construction.
-- Note when running the headless `apps/desktop/scripts/backfill-entity-sqlite.ts`: pass `--packs` explicitly. It defaults to `~/Library/Application Support/Le Jean-Baptiste/authority-assets`, which is the _installed_ pack and can lag the project's own `authority-packs/` — in the test corpus the two diverged (16,050 vs 16,570 rows) and the stale copy resolved only 39 of 250 authority ids. An id the pack cannot resolve yields no enrichment, so the entity is skipped silently and keeps whatever it already had; "the pack does not have this record" currently looks identical to "the pack says nothing is wrong."
+- Note when running the headless `apps/desktop/scripts/backfill-entity-sqlite.ts`: pass `--packs` explicitly. It defaults to `~/Library/Application Support/Grognard/authority-assets`, which is the _installed_ pack and can lag the project's own `authority-packs/` — in the test corpus the two diverged (16,050 vs 16,570 rows) and the stale copy resolved only 39 of 250 authority ids. An id the pack cannot resolve yields no enrichment, so the entity is skipped silently and keeps whatever it already had; "the pack does not have this record" currently looks identical to "the pack says nothing is wrong."
 
 ## 0.1.0-beta.4
 
@@ -252,9 +252,9 @@
 
 ### Kanripo import and gaiji
 
-- Added a self-contained Kanripo import plugin (`plugin-kanripo-import`) that no longer depends on a sibling `normalization_zh` checkout on the machine. Mandoku → TEI conversion, DPM variant normalization, and commentary validation all run from vendored Python inside the plugin; the host only sets `LJB_PLUGIN_INSTALL_PATH` when invoking the bridge.
+- Added a self-contained Kanripo import plugin (`plugin-kanripo-import`) that no longer depends on a sibling `normalization_zh` checkout on the machine. Mandoku → TEI conversion, DPM variant normalization, and commentary validation all run from vendored Python inside the plugin; the host only sets `GROGNARD_PLUGIN_INSTALL_PATH` when invoking the bridge.
 - Bundled Kanripo gaiji data from [kanripo/KR-Gaiji](https://github.com/kanripo/KR-Gaiji): `charlist.org.txt` plus ~5,200 PNGs under `data/gaiji/`, with `npm run download:gaiji` to refresh them. Import resolves `&KRnnnn;` to Unicode or IDS where the charlist allows, and otherwise emits TEI `<g type="kanripo">` / `<graphic url="_gaiji/…">` markup, copying referenced PNGs into `<project>/imported/kanripo/<KR_ID>/_gaiji/`.
-- Editor inline display for imported gaiji: document-relative `_gaiji/…` URLs resolve through the open file path to `ljb://local/…`, graphics sized in `em` to sit flush with surrounding text, and CSS for `.lw-kanripo-gaiji` in the visual editor. Graphics refresh when a document loads or re-imports.
+- Editor inline display for imported gaiji: document-relative `_gaiji/…` URLs resolve through the open file path to `grognard://local/…`, graphics sized in `em` to sit flush with surrounding text, and CSS for `.lw-kanripo-gaiji` in the visual editor. Graphics refresh when a document loads or re-imports.
 - Paste an image from the clipboard (with no accompanying plain text) into an on-disk TEI file to insert a Kanripo-style gaiji: the PNG is saved beside the document in `_gaiji/`, and a `<g type="kanripo">` wrapper is inserted at the caret. Right-click a gaiji graphic to change its height in `em` or replace its PNG.
 - Bulk Kanripo import now reloads any already-open tabs for written juan files from disk, not only when a single juan was imported.
 - Fixed CI typecheck failures in `utitlities.ts` (correct `fetchResource` import path; `HTMLImageElement` typing for image load callbacks). Added `writeBinaryFile` to the Electron bridge for saving pasted or replaced gaiji PNGs.
@@ -281,7 +281,7 @@
 ### Wikisource import
 
 - Built-in **File → Import from Wikisource…** (not a language plugin): inspect a URL, choose among edition trees when more than one exists, fetch wikitext via the MediaWiki API, map zh templates (`header`, `pb`, `〈…〉` notes) to TEI, and write one file per chapter/juan under `imported/wikisource/{workTitle}/`. Wikidata sitelink metadata (Q-id, P50 authors, P4517 Ctext) fills the header; Wikisource `{{header}}` credit is kept as a note.
-- Brave/Chromium unpacked extension (`apps/browser-extension`) sends a small native-messaging order; LJB must be running with a project open. See `docs/wikisource-import.md`.
+- Brave/Chromium unpacked extension (`apps/browser-extension`) sends a small native-messaging order; Grognard must be running with a project open. See `docs/wikisource-import.md`.
 - Kanripo parallel punctuation now loads the shared Wikisource fetch module from the desktop app (plugin `scripts/wikisource-parallel.mjs` re-exports it).
 - Fixed imports from 四庫全書本 and similar zh pages that opened with “not well-formed XML”: strip HTML comments and wrapper tags (`onlyinclude`, `poem`), XML-escape angle brackets in plain text (e.g. `<子部,…>` catalog lines), map `{{SK notes|…}}` to `<note type="comm">`, and validate the wrapped TEI before writing the file.
 
@@ -306,18 +306,18 @@
 
 ### CBETA import
 
-- Wired end-to-end **CBETA import** (File → Import from CBETA…): host UI, `cbetaImportXml.ts` TEI wrapper, CBETA P5 schema bundle (`cbeta_p5.rng` / `.sch` + `cbeta.css`), and project bootstrap for CBETA-family targets. Requires the `cbeta-import` plugin from the [plugins](https://github.com/lejeanbaptiste/plugins) repo (Tools → Plugins).
+- Wired end-to-end **CBETA import** (File → Import from CBETA…): host UI, `cbetaImportXml.ts` TEI wrapper, CBETA P5 schema bundle (`cbeta_p5.rng` / `.sch` + `cbeta.css`), and project bootstrap for CBETA-family targets. Requires the `cbeta-import` plugin from the [plugins](https://github.com/grognard/plugins) repo (Tools → Plugins).
 - CBETA import dialog: fixed 720×700 layout (no resize while searching), **Split by section (mulu)** default for TEI-ALL projects (juan for CBETA-schema), plus **Clean import** and **Strip Taishō line breaks** checkboxes. Cross-family import now consumes nested `cb:mulu` into `<head>` (fixes TEI-ALL validation) and maps invalid `@place` on `<p>` to `@rend`. Dialog compacted: split-by dropdown, merged clean-import label, progress while importing/syncing.
 - Plugin-side mulu split fixes: omit the split-marker `cb:mulu` from slice bodies (no duplicate `<head>` with the host's section wrapper), fold content-less headings into the next slice, and strip redundant leading `<head>` when it repeats the slice title.
 
 ### BDRC import
 
-- Wired **BDRC import** (File → Import from BDRC… and browser extension): host UI, `bdrcImportXml.ts`, and plugin bridge. Requires the `bdrc-import` plugin from the [plugins](https://github.com/lejeanbaptiste/plugins) repo.
+- Wired **BDRC import** (File → Import from BDRC… and browser extension): host UI, `bdrcImportXml.ts`, and plugin bridge. Requires the `bdrc-import` plugin from the [plugins](https://github.com/grognard/plugins) repo.
 
 ### Browser extension (corpus import)
 
 - **Chrome / Brave / Edge / Firefox** extension for one-click import from Wikisource, Kanripo, and BDRC. Native-messaging host registration on **macOS, Linux, and Windows** (registry + batch launcher on Windows; Firefox gecko id supported).
-- Release zips (`ljb-browser-extension-chromium-*`, `ljb-browser-extension-firefox-*`) built by `npm run package:browser-extension` and attached to the same GitHub release as the desktop installers. Step-by-step install instructions in [readme.md](readme.md#browser-extension-corpus-import).
+- Release zips (`grognard-browser-extension-chromium-*`, `grognard-browser-extension-firefox-*`) built by `npm run package:browser-extension` and attached to the same GitHub release as the desktop installers. Step-by-step install instructions in [readme.md](readme.md#browser-extension-corpus-import).
 
 ### Import metadata and source description
 
@@ -332,7 +332,7 @@
 
 ### Fixed
 
-- The translation tab only loaded configured languages when a project was first opened, so saving English (or any target language) in Project settings left the Translation panel showing “no languages configured” until the project was closed and reopened. It now listens for the `ljb-project-config-saved` event and reloads `schema/translation-settings.json` immediately after a successful save.
+- The translation tab only loaded configured languages when a project was first opened, so saving English (or any target language) in Project settings left the Translation panel showing “no languages configured” until the project was closed and reopened. It now listens for the `grognard-project-config-saved` event and reloads `schema/translation-settings.json` immediately after a successful save.
 - Project settings had no guard against navigating away with unsaved edits — easy to miss because Save is separate from Add. The form now tracks a dirty snapshot and warns before leaving the Project tab, closing the settings dialog, or cancelling the native project-settings window.
 - Project settings save path fixed so schema and translation configuration persist reliably across sessions.
 
@@ -370,8 +370,8 @@
 
 ### Schema
 
-- **`<dynasty>` inside `<nobleTitle>`.** The merged TEI grammar now permits a `<dynasty>` child in `<nobleTitle>`, alongside `<placeName>`, `<roleName>` and `<persName>`. `dynasty` is not a TEI element, so it is defined as an LJB extension (`ljb.dynasty`, text plus `model.global`) in the same place as `nobleTitle` and `personWrapper`. `SANMIAO_MERGE_VERSION` is bumped to 15, so projects carrying an older generated wrapper regenerate it on open.
-- **`<nobleTitle>` accepts the attributes the tagger writes.** `nobleTitle` is an LJB element too — TEI defines no such element — so it carried no attribute declarations at all, while auto-tagging writes `@dynasty`, `@ref`, `@resp`, `@source` and `@when` onto it. Every auto-tagged noble title carrying one of those failed validation. The define now pulls in `att.global.attributes` (`@resp`, `@source`), `att.personal.attributes` (`@ref`, `@key`) and `att.datable.attributes` (`@when`), and declares `@dynasty` itself; unknown attributes are still rejected. `<dynasty>` gets `att.global.attributes` for the same reason.
+- **`<dynasty>` inside `<nobleTitle>`.** The merged TEI grammar now permits a `<dynasty>` child in `<nobleTitle>`, alongside `<placeName>`, `<roleName>` and `<persName>`. `dynasty` is not a TEI element, so it is defined as an Grognard extension (`grognard.dynasty`, text plus `model.global`) in the same place as `nobleTitle` and `personWrapper`. `SANMIAO_MERGE_VERSION` is bumped to 15, so projects carrying an older generated wrapper regenerate it on open.
+- **`<nobleTitle>` accepts the attributes the tagger writes.** `nobleTitle` is an Grognard element too — TEI defines no such element — so it carried no attribute declarations at all, while auto-tagging writes `@dynasty`, `@ref`, `@resp`, `@source` and `@when` onto it. Every auto-tagged noble title carrying one of those failed validation. The define now pulls in `att.global.attributes` (`@resp`, `@source`), `att.personal.attributes` (`@ref`, `@key`) and `att.datable.attributes` (`@when`), and declares `@dynasty` itself; unknown attributes are still rejected. `<dynasty>` gets `att.global.attributes` for the same reason.
 
 ### Fixed
 
@@ -426,7 +426,7 @@ CBETA and similar texts often split a running string across milestones, e.g. `�
 
 ### UI and settings
 
-- **LanguageTool: managed Java on macOS and Windows.** When Java 17+ is missing or too old, Settings → AI → LanguageTool offers **Download Java for LanguageTool** — a pinned Temurin 17 JRE (~40 MB) into app user data, checksum-verified like the managed LanguageTool install. `probeJava` checks the LJB-managed runtime before system `JAVA_HOME` / PATH; a **Refresh** button re-probes after a manual Temurin or Homebrew install. Linux still requires Java installed separately.
+- **LanguageTool: managed Java on macOS and Windows.** When Java 17+ is missing or too old, Settings → AI → LanguageTool offers **Download Java for LanguageTool** — a pinned Temurin 17 JRE (~40 MB) into app user data, checksum-verified like the managed LanguageTool install. `probeJava` checks the Grognard-managed runtime before system `JAVA_HOME` / PATH; a **Refresh** button re-probes after a manual Temurin or Homebrew install. Linux still requires Java installed separately.
 - **Match across line and page breaks** (Settings → Project): per-project toggle for the milestone-aware tag bomb. When enabled, authority packs, project crawl tags, and imported lists match on a flat projection of body text that bridges empty `<lb>`, `<pb>`, empty `<anchor>`, and `<gap>` — and apply wraps the DOM run with those milestones preserved inside the tag. Default **off**. Stored in `jean-baptiste.project.json` as `autoTaggingAuthority.matchAcrossLineBreaks`. Also available under Settings → Interface → Behaviour.
 - **Project settings now persist reliably.** Toggles that patch `jean-baptiste.project.json` (match across line/page breaks, show pack string counts, authority/disambiguation/validation prefs, name-type policy, sync-to-central) wrote to disk but the in-memory project config and settings caches were not refreshed; the cache was also cleared on every tab switch, so values appeared to revert immediately. A shared `persistProjectConfigPatch` helper now applies the returned bundle to Overmind and the desktop bridge; caches reset only when switching projects.
 - **Disambiguation place-proximity radius** (`disambiguation.placeProximityKm`) is no longer stripped when the project file is reloaded — the normalizer now keeps it.
@@ -489,7 +489,7 @@ CBETA and similar texts often split a running string across milestones, e.g. `�
 - **Norbert: generalized person-wrapper markup beyond noble titles alone.** `<name type="personWrapper">` now recognizes a canonical child order — `nationality → roleName → nobleTitle → placeName → persName`, all optional except `persName`, same-slot repeats allowed, at least one non-`persName` component required — instead of being noble-title-specific. Applies to both the manual "Group and Clean" cleanup pass and the suggestion-level auto-tagging pipeline.
 - **Norbert: front-loaded, atomic person-wrapper review during auto-tagging.** Fully contiguous, canonically-ordered pending tag suggestions (e.g. a role + a noble title + a name in a row, with no gaps) are now grouped into a single wrapper-candidate suggestion the user reviews and applies as one atomic unit, ahead of ordinary tag-category review — accepting or rejecting the whole wrapper accepts or returns all its member tags together, with a single undo step.
 - **Norbert: enriched compiled asset-pack data for person wrappers**, generating given-name-only and surname+given-name forms as separate lookup records, plus 太子/皇太子 bare-rank forms and 太后/太妃 consort surname+氏 forms, matching the richness of the original Python prototype's combination lookups (real compiled data: 1,165 → 3,813 wrapper records).
-- **Norbert: automatic disambiguation from harvested project data.** Person wrappers accepted in a project are now harvested into a per-project fact log (`.ljb/wrapper-facts.jsonl`) of confirmed dynasty/title/place/name combinations, consulted before falling back to the compiled Norbert pack — a combination that's uniquely resolved once in a project auto-resolves everywhere else it recurs, without waiting for a global pack rebuild. Auto-keyed wrappers now also get their structured facts written into the resolved entity's own SQLite record immediately, matching what manually accepting a Disambiguate candidate already did.
+- **Norbert: automatic disambiguation from harvested project data.** Person wrappers accepted in a project are now harvested into a per-project fact log (`.grognard/wrapper-facts.jsonl`) of confirmed dynasty/title/place/name combinations, consulted before falling back to the compiled Norbert pack — a combination that's uniquely resolved once in a project auto-resolves everywhere else it recurs, without waiting for a global pack rebuild. Auto-keyed wrappers now also get their structured facts written into the resolved entity's own SQLite record immediately, matching what manually accepting a Disambiguate candidate already did.
 - **Norbert: bare noble-title disambiguation.** A title mentioned with no name attached at all (e.g. 建安王薨, or a `<nobleTitle>` produced directly by tag-bombing with no adjacent `<persName>`) is now wrapped with an empty, keyless identity `persName` and fed into Disambiguate as a relaxed fief+role candidate list — instead of being left as raw, unreviewable markup. This runs automatically as part of the normal document scan whenever Disambiguate opens or refreshes; it no longer depends on manually running "Group and Clean" from the toolbar.
 - **Fixed a live crash** (`NOT NULL constraint failed: person_titles.role_name`) when a wrapper's noble-title data — including the new bare-title case — reconciled into SQLite with a fief or role left empty; the desktop repository was coercing the empty side to `NULL` against a `NOT NULL` column instead of storing the empty string.
 - **Disambiguate: fixed a false "disambiguate the inner person name first" warning** on a bare-title wrapper. That warning is meant for a wrapper whose inner `persName` has a real, unresolved name; a bare title's identity `persName` is deliberately empty by design, so the wrapper should resolve directly against its fief+role candidate list instead of being blocked.

@@ -90,9 +90,9 @@ interface AchievementsDialogProps {
 }
 
 // Verifies the player's GitHub identity, rate-limits, and publishes
-// scores.json to lejeanbaptiste/scoreboard - see that repo's worker/
+// scores.json to grognard/scoreboard - see that repo's worker/
 // directory. Superseded the Phase 1 copy-paste-into-a-GitHub-issue flow.
-const LEADERBOARD_WORKER_URL = 'https://ljb-leaderboard.lejeanbaptiste.workers.dev';
+const LEADERBOARD_WORKER_URL = 'https://grognard-leaderboard.grognard.workers.dev';
 // A hover-preview thumbnail on the leaderboard page, not the certificate's
 // full size - keeps the upload quick and comfortably under the Worker's
 // avatar size cap.
@@ -336,8 +336,8 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
         .catch(() => setEncoderName(''));
     };
     syncEncoderName();
-    window.addEventListener('ljbCommonsUiChanged', syncEncoderName);
-    return () => window.removeEventListener('ljbCommonsUiChanged', syncEncoderName);
+    window.addEventListener('grognardCommonsUiChanged', syncEncoderName);
+    return () => window.removeEventListener('grognardCommonsUiChanged', syncEncoderName);
   }, []);
 
   useEffect(() => {
@@ -664,7 +664,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
   // clears, just hidden under the overlay until onReady fires.
   return (
     <Dialog fullWidth keepMounted maxWidth="sm" onClose={onClose} open={open}>
-      {!revealingFirstPortrait && <DialogTitle>LJB Service Record</DialogTitle>}
+      {!revealingFirstPortrait && <DialogTitle>Grognard Service Record</DialogTitle>}
       <DialogContent
         sx={{ position: 'relative', ...(portraitEditorOpen ? { overflow: 'visible' } : undefined) }}
       >

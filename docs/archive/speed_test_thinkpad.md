@@ -11,7 +11,7 @@ From here on out, where roleName is just a string in local matching a string in 
 
 This computer is laggy, so 'laggy' is probably normal behaviour below without further qualification.
 
-Opened LJB, document loads; CPU peaks around 26%; RAM 1700. Once loaded these drop down to an average of 1% CPU or less, about 1 Go of RAM. The CPU is however doing things, bouncing between about 0.8% and 10% while doing absolutely nothing.
+Opened Grognard, document loads; CPU peaks around 26%; RAM 1700. Once loaded these drop down to an average of 1% CPU or less, about 1 Go of RAM. The CPU is however doing things, bouncing between about 0.8% and 10% while doing absolutely nothing.
 
 Maybe 10 tabs were open. I closed all but one. There was a minute long spike of activity, but now the CPU and RAM are about identical to the situation with 10 tabs open.
 

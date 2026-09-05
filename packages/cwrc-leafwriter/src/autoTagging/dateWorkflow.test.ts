@@ -111,7 +111,7 @@ describe('defaultSanmiaoCivForLanguage', () => {
 describe('countDocumentDates', () => {
   it('counts tagged and resolved dates', () => {
     const doc = docFromTei(
-      '<p><date resp="#ljb-sanmiao" cert="low">義熙元年</date><date when="405-03-01">義熙元年三月</date></p>',
+      '<p><date resp="#grognard-sanmiao" cert="low">義熙元年</date><date when="405-03-01">義熙元年三月</date></p>',
       'zh-Hant',
     );
     expect(countDocumentDates(doc)).toEqual({ tagged: 2, resolved: 1 });

@@ -167,7 +167,7 @@ export const Item = ({ authority, description, internal, isOwnDatabase, label, u
                     {internal.id}
                   </Typography>
                   {[...new Set(internal.idnos.map((idno) => idno.type))]
-                    .filter((type) => type !== 'ljb-entity-database')
+                    .filter((type) => type !== 'grognard-entity-database')
                     .map((type) => (
                       <Chip
                         key={type}

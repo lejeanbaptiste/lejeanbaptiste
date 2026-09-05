@@ -17,7 +17,7 @@ file grouping, with optional `--crosswalk` (DILA→Norbert/Wikidata) and
 `--authority-person` (dates, QIDs) enrichment; every input is optional and a
 no-arg run writes placeholders. Host UI wired end-to-end (File-menu item,
 `CbetaImportDialog`, host module, `cbetaImportXml.ts` → `<author ref=…>`,
-`LJB_PLUGIN_CACHE_PATH` in the desktop bridge) and typechecks.
+`GROGNARD_PLUGIN_CACHE_PATH` in the desktop bridge) and typechecks.
 **Cross-family downgrades** (§5.1–5.6) are implemented in
 `python/cbeta_import/downgrade.py`: `cb:yin`/`cb:fan`/`cb:sg`→`<note
 type="gloss">` (unconditional), and when the target project is not
@@ -54,7 +54,7 @@ runtime source). Sibling of
 [kanripo-import-plugin-planning.md](kanripo-import-plugin-planning.md),
 [bdrc-import-planning.md](bdrc-import-planning.md) (explored in parallel; live
 PDI fetch, not a bundled corpus),
-[ljb-tei-extensions.md](ljb-tei-extensions.md). Ship target: 2026-09-09 for a
+[grognard-tei-extensions.md](grognard-tei-extensions.md). Ship target: 2026-09-09 for a
 first one-way importer; the round-trip layer (§8) is a later phase.
 
 ---
@@ -63,7 +63,7 @@ first one-way importer; the round-trip layer (§8) is a later phase.
 
 | #                  | Decision                                                                                                                                                                                                                                                                                                                                                           |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Source             | Corpus from GitHub: `DILA-edu/cbeta-xml-p5` (public P5) + `DILA-edu/cbeta-metadata` (`work-info/`, `gaiji/`, `variants/`, `goto/`) + the split-out catalog repo. Bundled under the plugin's `data/`, resolved via `LJB_PLUGIN_INSTALL_PATH`, **no network at import time** (kanripo discipline). Pin the CBETA data-version tag (currently `2026R2`) + git commit. |
+| Source             | Corpus from GitHub: `DILA-edu/cbeta-xml-p5` (public P5) + `DILA-edu/cbeta-metadata` (`work-info/`, `gaiji/`, `variants/`, `goto/`) + the split-out catalog repo. Bundled under the plugin's `data/`, resolved via `GROGNARD_PLUGIN_INSTALL_PATH`, **no network at import time** (kanripo discipline). Pin the CBETA data-version tag (currently `2026R2`) + git commit. |
 | API                | Left out. Optional build-time only: assembled TOC JSON, and as a reference oracle to check our byline parser. Never a runtime dependency.                                                                                                                                                                                                                          |
 | Split unit         | **By juan.** Cut at `<milestone unit="juan"/>` / `<cb:juan fun="open"/>…fun="close"/>` pairs.                                                                                                                                                                                                                                                                      |
 | Import scope       | Full-work **or** single-juan, like the Kanripo plugin (work id → all juan; one juan URL → one 卷).                                                                                                                                                                                                                                                                 |
@@ -131,11 +131,11 @@ and permitted attributes:
 
 1. **Authority pointers.** `@ref` / `@key` permitted on `<title>`,
    `<author>`, `<byline>`, and every NE element below.
-2. **LJB tagging inventory** permitted in the body content model — inside
+2. **Grognard tagging inventory** permitted in the body content model — inside
    `<p>`, `<l>`, `<head>`, `<lem>`, `<cb:t>`, `<note>`, `<seg>`, …:
    `persName`, `placeName`, `orgName`, `roleName`, `nobleTitle`, `title`,
    `date` (+ the Sanmiao `dyn`/`ruler`/`era`/`year`/`month`/`day` children
-   from [ljb-tei-extensions.md](ljb-tei-extensions.md)).
+   from [grognard-tei-extensions.md](grognard-tei-extensions.md)).
 3. **Interleaving.** The schema must let `<lb/>`, `<pb/>`, `<anchor/>`,
    `<g>` occur _inside_ those NE elements (TEI-ALL does). A name that spans
    a line boundary produces `<persName>阿<lb n="…"/>難</persName>` and that
@@ -304,21 +304,21 @@ source line on top of one `<lb>` per line.**
 **On `xml:id` collision (open question, with a recommended answer).**
 The imported file already contains thousands of `xml:id`s CBETA minted —
 `nkr_note_orig_0001005`, `beg0001005`, `beg_1`, paragraph ids
-(`pT01p0001a0501`), line-group ids (`lgT01p0548c0201`). The risk: when LJB
+(`pT01p0001a0501`), line-group ids (`lgT01p0548c0201`). The risk: when Grognard
 later adds its own elements (entity links, annotations, `<app>` anchors of
 its own) and generates ids for them, it could mint one that already exists
-in the imported text → a duplicate-`xml:id` validity error, or LJB tooling
+in the imported text → a duplicate-`xml:id` validity error, or Grognard tooling
 that assumes it owns every id in the file.
 
 Recommended approach — no pre-emptive renaming:
 
 1. **Keep every CBETA `xml:id` verbatim.** The `@from`/`@to` apparatus and
    round-trip both depend on them.
-2. **Reserve a prefix for LJB-minted ids** (e.g. `ljb-…`, or the project's
-   existing scheme) so anything LJB generates is structurally incapable of
+2. **Reserve a prefix for Grognard-minted ids** (e.g. `grognard-…`, or the project's
+   existing scheme) so anything Grognard generates is structurally incapable of
    colliding with a CBETA id.
 3. **Guard at import.** The importer scans the incoming id set; on an
-   actual clash with something LJB needs to mint, it renames the _LJB_
+   actual clash with something Grognard needs to mint, it renames the _LJB_
    side, or (last resort) the CBETA side with an entry in the round-trip
    rename map. Report any rename in the import log.
 
@@ -443,8 +443,8 @@ reduced to bare `<ptr target="fnNN"/>` stubs.
   one `<anchor n="T.50.2060.<first-line>">` per juan file instead of the
   per-collation anchors.
 - **`@key` vs `@ref`.** DILA puts the bare authority id in `@key`
-  (`A005013`, `PL0000…`). LJB's XML-import path currently _demotes_
-  `@key` → `@ana` `ljb-former-key:…` for cross-family imports
+  (`A005013`, `PL0000…`). Grognard's XML-import path currently _demotes_
+  `@key` → `@ana` `grognard-former-key:…` for cross-family imports
   ([import-planning.md](import-planning.md)). For CBETA imports we want
   authority ids to land in a _live_ pointer — reconcile: either exempt the
   CBETA importer from the demotion and write `@ref="dila:A005013"` /
@@ -588,12 +588,12 @@ CBETA → project → CBETA (and TEI-ALL ⇄ CBETA) reversible:
    - **CBETA-internal** (multi-file works): `juan_split.prefix_ids`
      namespaces file 2..N's `xml:id`s + pointers with the file stem before
      concat; each juan's `<back>` is pruned to its own anchors.
-   - **LJB vs CBETA**: LJB's editor ids are `tinymce.DOM.uniqueId('dom_')`
+   - **Grognard vs CBETA**: Grognard's editor ids are `tinymce.DOM.uniqueId('dom_')`
      (`Writer.getUniqueId`), assigned to _every_ element on import and
      **stripped on save** — `cwrc2xml.ts` skips any `id` value starting
      `dom_`. CBETA's `xml:id` is not in `RESERVED_ATTRIBUTES`, so it rides
      through the `_attributes` blob and is re-emitted verbatim on export
-     (pointers stay valid). No `ljb-` prefix reservation needed.
+     (pointers stay valid). No `grognard-` prefix reservation needed.
 2. **`.sch` rules** — _resolved:_ CBETA's Schematron has only 3 rules, all
    requiring `@spanTo` on `addSpan`/`damageSpan`/`delSpan`; nothing touches
    inserted markup, so `loosen_schema.loosen_sch` passes it through.

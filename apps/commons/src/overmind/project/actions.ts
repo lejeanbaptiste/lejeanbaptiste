@@ -98,7 +98,7 @@ const replaceExtension = (filePath: string, extension: string): string => {
 };
 
 const isTempDocumentPath = (filePath: string): boolean =>
-  /[/\\]le-jean-baptiste[/\\]/.test(filePath);
+  /[/\\]grognard[/\\]/.test(filePath);
 
 const isTempTab = (tab: { filePath: string; isTemp?: boolean }) =>
   tab.isTemp || isTempDocumentPath(tab.filePath);
@@ -569,7 +569,7 @@ const finishOpeningProject = async (
     if (projectEncoderName) {
       await window.electronAPI?.setEncoderName?.(projectEncoderName);
       window.dispatchEvent(
-        new CustomEvent('ljbEncoderNameInherited', { detail: projectEncoderName }),
+        new CustomEvent('grognardEncoderNameInherited', { detail: projectEncoderName }),
       );
     }
   }

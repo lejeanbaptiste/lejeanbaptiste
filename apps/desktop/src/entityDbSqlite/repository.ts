@@ -472,7 +472,7 @@ function concordanceRefs(association: SqliteConcordanceAssociation): [string, st
   ].sort() as [string, string];
 }
 
-const CENTRAL_AUTHORITY_TYPE = 'ljb-central';
+const CENTRAL_AUTHORITY_TYPE = 'grognard-central';
 
 const ASSERTION_OWNER: Record<string, string> = {
   entity_names: 'entity_id',
@@ -3110,14 +3110,14 @@ export class EntitySqliteRepository {
       ...(this.db
         .prepare(
           `SELECT xml FROM entity_xml_fragments
-           WHERE entity_id = ? AND xml LIKE '%ljb-entity-note%'
+           WHERE entity_id = ? AND xml LIKE '%grognard-entity-note%'
            ORDER BY ordinal`,
         )
         .all(entityId) as { xml: string }[]),
       ...(this.db
         .prepare(
           `SELECT xml FROM entity_extensions
-           WHERE entity_id = ? AND xml LIKE '%ljb-entity-note%'
+           WHERE entity_id = ? AND xml LIKE '%grognard-entity-note%'
            ORDER BY ordinal`,
         )
         .all(entityId) as { xml: string }[]),
@@ -3130,13 +3130,13 @@ export class EntitySqliteRepository {
       this.db
         .prepare(
           `DELETE FROM entity_xml_fragments
-           WHERE entity_id = ? AND xml LIKE '%ljb-entity-note%'`,
+           WHERE entity_id = ? AND xml LIKE '%grognard-entity-note%'`,
         )
         .run(entityId);
       this.db
         .prepare(
           `DELETE FROM entity_extensions
-           WHERE entity_id = ? AND xml LIKE '%ljb-entity-note%'`,
+           WHERE entity_id = ? AND xml LIKE '%grognard-entity-note%'`,
         )
         .run(entityId);
       const ordinal = this.db

@@ -1,7 +1,7 @@
 # Sanmiao schema validation bugs — debugging session log
 
-**Status:** Verified end-to-end (2026-07-06). Sanmiao dates validate in LJB; remaining errors are genuine document/schema-content issues (e.g. `<int>` text content, typos like `<daaate>`).
-**Related:** `docs/sanmiao-dates-schema.md` (design), `docs/sanmiao-ljb-integration.md` (integration)
+**Status:** Verified end-to-end (2026-07-06). Sanmiao dates validate in Grognard; remaining errors are genuine document/schema-content issues (e.g. `<int>` text content, typos like `<daaate>`).
+**Related:** `docs/sanmiao-dates-schema.md` (design), `docs/sanmiao-grognard-integration.md` (integration)
 
 This log documents a single extended debugging session chasing why sanmiao-tagged
 dates (`<date><era>...</era><year>...</year>...</date>`) were rejected by the
@@ -29,7 +29,7 @@ The original wrapper tried to override TEI's `<date>` using:
 <include href="tei_all.tei.rng">
   <except><define name="date"/></except>
 </include>
-<include href="ljb-sanmiao-dates.rng"/>
+<include href="grognard-sanmiao-dates.rng"/>
 ```
 
 Three problems:
@@ -71,8 +71,8 @@ matched _no-namespace_ elements, while real documents use the TEI namespace.
 `apps/desktop/src/sanmiaoSchemaMerge.ts` (fix)
 
 The wrapper had **two** `<include>` elements: the TEI core (with the date
-override) and a separate `ljb-sanmiao-dates.rng` patch file with the
-`ljb.sanmiao.*` helper defines. `schemaManager.ts`'s `loadSchema()` does:
+override) and a separate `grognard-sanmiao-dates.rng` patch file with the
+`grognard.sanmiao.*` helper defines. `schemaManager.ts`'s `loadSchema()` does:
 
 ```js
 const include = $('include:first', this.schemaXML); // TODO add handling for multiple includes
@@ -82,7 +82,7 @@ if (include.length == 1) {
 ```
 
 Only the first include is ever processed. The second include (helper defines)
-was silently dropped. The date override's `<ref name="ljb.sanmiao.date.parts"/>`
+was silently dropped. The date override's `<ref name="grognard.sanmiao.date.parts"/>`
 then pointed at nothing, `xmlToJSON` returned `null` for the whole schema, and
 `getParentsForTag` returned `[]` for **every** tag — not just date's children.
 This is the "schema allows nothing, not even text in `<p>`" symptom from the
@@ -346,7 +346,7 @@ const validCache = cachedSchema?.hash ? verifyHash(url, cachedSchema) : false;
 truthy). Any IndexedDB entry for a schema id was treated as valid forever — typically
 **stock TEI** from an earlier session — even when the project file was correct v4 flat.
 
-**Fix:** `await verifyHash(...)`; `shouldCache: false` for local `ljb://` project schemas.
+**Fix:** `await verifyHash(...)`; `shouldCache: false` for local `grognard://` project schemas.
 
 This alone turned 542 errors into ~2 (real document issues).
 
@@ -356,7 +356,7 @@ This alone turned 542 errors into ~2 (real document issues).
 
 Reopening a document with the same catalog id (`project-tei-all`) skipped `loadSchema()`
 even though the on-disk RNG had changed (wrapper → flat v4). Added **schema revision**
-fingerprint (`ljb-sanmiao-merge vN` marker), reload on revision change, clear validator
+fingerprint (`grognard-sanmiao-merge vN` marker), reload on revision change, clear validator
 cache after sanmiao merge on project open, exclude `*.tei.rng` from schema auto-discovery
 (those are upstream preservation copies, not the merged schema).
 
@@ -373,7 +373,7 @@ Several interacting issues in the validator bootstrap:
 3. **Blob URLs in worker:** main-thread `blob:` URLs are not fetchable from the worker.
    **Fix:** pass `schemaText` via Comlink; compile with in-memory `StringResourceLoader`.
 
-4. **Invalid URL:** appending `#ljb-sanmiao-merge v4` to `ljb://` broke `new URL()` (space
+4. **Invalid URL:** appending `#grognard-sanmiao-merge v4` to `grognard://` broke `new URL()` (space
    in fragment). **Fix:** separate `schemaRevision` field; use `rng:///schema.rng` when
    compiling from text.
 
@@ -411,7 +411,7 @@ The validator worker is **not** in the commons dev watch loop:
 ### Diagnostic techniques (Phase 2 additions)
 
 - **Compare on-disk schema vs what the app uses:** read `tei_all.rng` via
-  `electronAPI.readFile`; grep for `ljb-sanmiao-merge vN`, `ljb.sanmiao.date.parts`,
+  `electronAPI.readFile`; grep for `grognard-sanmiao-merge vN`, `grognard.sanmiao.date.parts`,
   and absence of `<include`. If file is ~1 MB and correct but UI shows 542 errors → cache/lifecycle.
 - **Salve directly on disk file:** same error count as xmllint isolates “schema wrong” from
   “app wrong”.
@@ -433,7 +433,7 @@ only one is spec-correct, and we still use it:
 | `<include><except><define name="date"/></except></include>`                   | **No** — `<except>` is not a RelaxNG construct                            | Correctly rejected (Bug 1)                                                                                                                              |
 | Top-level `<define name="date">` in wrapper _without_ override inside include | Partially — needs `combine="override"` or you get duplicate-define errors | Avoided in favour of override-inside-include                                                                                                            |
 | **`<include href="tei.rng"><define name="date">…</define></include>`**        | **Yes** — official override mechanism                                     | **Still used** in the merge pipeline (wrapper stage)                                                                                                    |
-| Second `<include href="ljb-sanmiao-dates.rng"/>` for helpers                  | Valid RNG, but…                                                           | Rejected because **`schemaManager` only resolves the first `<include>`** (Bug 3) — valid reason for LJB, not a RelaxNG limitation                       |
+| Second `<include href="grognard-sanmiao-dates.rng"/>` for helpers                  | Valid RNG, but…                                                           | Rejected because **`schemaManager` only resolves the first `<include>`** (Bug 3) — valid reason for Grognard, not a RelaxNG limitation                       |
 | Thin wrapper on disk + runtime merge in app                                   | Valid RNG                                                                 | **Superseded** by flat-at-merge (v4+) because **three different merge implementations** diverged — architectural reason, not because includes are wrong |
 
 So if “the `<include>` solution” means **override defines nested inside `<include>`**: we did
@@ -443,7 +443,7 @@ If it means **`<except>` to delete stock `date`**: rejection was **correct** —
 does not exist in RelaxNG (it looks like XInclude or wishful thinking).
 
 If it means **leaving a multi-include wrapper as the runtime schema**: rejection was **correct
-for this codebase**, because LJB’s schema loader and validator each had incomplete include
+for this codebase**, because Grognard’s schema loader and validator each had incomplete include
 handling. Flattening sidesteps that without abandoning the include-override _authoring_ model.
 
 **The deeper lesson:** the painful session was rarely “we picked the wrong RelaxNG pattern.”
@@ -451,7 +451,7 @@ More often:
 
 1. **The on-disk schema was already correct** while the app validated against a stale copy
    (IndexedDB, worker lifecycle, schema id not changing).
-2. **`xmllint` passed** while in-app code failed, because xmllint and LJB use different merge paths.
+2. **`xmllint` passed** while in-app code failed, because xmllint and Grognard use different merge paths.
 3. **Symptoms looked like schema design failures** (“TEI doesn’t allow `<era>`”) when they were
    **infrastructure failures** (cache, async bug, worker never re-initialized).
 

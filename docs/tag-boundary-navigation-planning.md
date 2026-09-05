@@ -30,12 +30,12 @@ Continuing inward from position 3 (already inside, editing) reaches the other bo
 Inside tag moving right (ArrowRight), approaching closing bracket:
   1'. Jean-|Baptiste</tag>   (last char) mild highlight (closing bracket, internal approach)
   2'. Jean-[Baptiste</tag>]  vivid
-  3'. Jean-Baptiste</tag>|   caret exits tag into following text; no highlight
+  3'. Grognard</tag>|   caret exits tag into following text; no highlight
 
 Inside tag moving left (ArrowLeft), approaching opening bracket:
-  1'. <tag>|Jean-Baptiste    (first char) mild highlight (opening bracket, internal approach)
-  2'. [<tag>]Jean-Baptiste   vivid
-  3'. |<tag>Jean-Baptiste    caret exits tag into preceding text; no highlight
+  1'. <tag>|Grognard    (first char) mild highlight (opening bracket, internal approach)
+  2'. [<tag>]Grognard   vivid
+  3'. |<tag>Grognard    caret exits tag into preceding text; no highlight
 ```
 
 Deletion semantics at each position:

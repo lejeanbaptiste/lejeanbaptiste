@@ -106,7 +106,7 @@ To reset a file's translation state: delete its `*.translation.xml` companions a
    - Adjacent placeholders get a single space; runs of spaces collapse.
 3. AI payload sends **id + kind only** (no romanized/primary names). Dates payload sends **index only**.
 4. If required placeholders are missing from the reply, resend up to **Placeholder retry limit** (Settings → AI API, 0–5).
-5. Repair smart-quoted placeholders; strip “Governor of …” / “In/On …” glued onto placeholders; substitute into atomic `ref[type="ljb-entity"]` / date fields. Offices with a gloss default to translation-only display.
+5. Repair smart-quoted placeholders; strip “Governor of …” / “In/On …” glued onto placeholders; substitute into atomic `ref[type="grognard-entity"]` / date fields. Offices with a gloss default to translation-only display.
 
 **Automated:** `sourceUnitEntities.test.ts`, `aiPlaceholderGuard.test.ts`, `substituteEntityPlaceholders.test.ts`, office/display tests in `entityDisplay.test.ts`.
 
@@ -117,21 +117,21 @@ To reset a file's translation state: delete its `*.translation.xml` companions a
 - [ ] Norbert unit with `personWrapper` (holding office + person) appointed `為` a new office — console blinded XML shows `{{holding:…}} {{entity:…}}為{{as:…}}` (or `{{as:opaque:…}}`).
 - [ ] Unit with `nobleTitle` (e.g. 貞陽公 / 江夏王) — those strings remain as Chinese in the blinded XML for free translation; nested place keys are not cut out.
 - [ ] Translation pane → Generate translation (blank unit only).
-- [ ] In the companion raw XML or the pane: keyed mentions are `ref type="ljb-entity" key="…"` — **not** plain English invented by the model.
+- [ ] In the companion raw XML or the pane: keyed mentions are `ref type="grognard-entity" key="…"` — **not** plain English invented by the model.
 - [ ] Offices with an EN/FR gloss show the gloss alone by default (no pinyin/characters).
 - [ ] Deliberately break a model reply (or use a weak model): with retry limit ≥ 1, console shows a retry; with limit 0, no retry.
 - [ ] If placeholders remain missing after retries, check `ai-translation-debug.jsonl` and the console for `[translation] placeholders still missing`.
 
 ## 10b. AI translate — date placeholders (LJBtero Sanmiao glosses)
 
-**Pipeline (shipped):** `collectDatesFromSourceUnitXml` gathers `<date>` spans in document order. Before the model sees the unit, `replaceDatesWithPlaceholdersInSourceXml` swaps each `<date>…</date>` for a bare `{{date:N}}`. The dates list sent to the model is index-only (gloss applied locally after substitute). Leading In/On/En/Le before a date field or `{{date:N}}` are stripped. After the response, `substituteDatePlaceholders` builds atomic `ref[type="ljb-date"]` fields.
+**Pipeline (shipped):** `collectDatesFromSourceUnitXml` gathers `<date>` spans in document order. Before the model sees the unit, `replaceDatesWithPlaceholdersInSourceXml` swaps each `<date>…</date>` for a bare `{{date:N}}`. The dates list sent to the model is index-only (gloss applied locally after substitute). Leading In/On/En/Le before a date field or `{{date:N}}` are stripped. After the response, `substituteDatePlaceholders` builds atomic `ref[type="grognard-date"]` fields.
 
 **Automated:** `dateGloss.test.ts`, `substituteDatePlaceholders.test.ts`, `adjustDatePrepositions.test.ts`.
 
 **Manual:**
 
 - [ ] Source unit with a resolved Sanmiao `<date>` (parse children + `@when`).
-- [ ] Generate translation → companion shows `ref type="ljb-date"` whose text matches LJBtero (year/month/day slots, Emperor …, Roman months, italic ganzhi, Western date in parentheses when day-level) — AI may keep by/until/before before the field; only in/on (en/le) are auto-adjusted to granularity.
+- [ ] Generate translation → companion shows `ref type="grognard-date"` whose text matches LJBtero (year/month/day slots, Emperor …, Roman months, italic ganzhi, Western date in parentheses when day-level) — AI may keep by/until/before before the field; only in/on (en/le) are auto-adjusted to granularity.
 - [ ] Untagged / structure-less dates still free-translate (no placeholder).
 
 ## 10c. AI translate — note splitting
@@ -152,7 +152,7 @@ To reset a file's translation state: delete its `*.translation.xml` companions a
 
 ## 10d. Mention-faithful entity rendering
 
-**Pipeline (shipped):** Each keyed source span becomes one manifest row (`MentionContext`) blinded as `{{mention:N}}` (or `{{holding:N}}` / `{{as:N}}` for offices). After AI translate, `substituteMentionPlaceholders` renders atomic `ref[type="ljb-entity"]` chips from the DB using the as-written surface, resolved role (courtesy, partial given, place-as-written, …), and **file-wide** first vs later occurrence. Western targets (`en`, `fr`, `de`) show romanization + Chinese on first file mention; CJK targets (`zh`, `ja`, `ko`, `lzh`) show characters only (no romanization) with CJK life-date typography on first mention. Partial kinship names respect the user **brackets policy** (`never` / `first-mention-only` / `always`). Manual insert and autocomplete use the same renderer.
+**Pipeline (shipped):** Each keyed source span becomes one manifest row (`MentionContext`) blinded as `{{mention:N}}` (or `{{holding:N}}` / `{{as:N}}` for offices). After AI translate, `substituteMentionPlaceholders` renders atomic `ref[type="grognard-entity"]` chips from the DB using the as-written surface, resolved role (courtesy, partial given, place-as-written, …), and **file-wide** first vs later occurrence. Western targets (`en`, `fr`, `de`) show romanization + Chinese on first file mention; CJK targets (`zh`, `ja`, `ko`, `lzh`) show characters only (no romanization) with CJK life-date typography on first mention. Partial kinship names respect the user **brackets policy** (`never` / `first-mention-only` / `always`). Manual insert and autocomplete use the same renderer.
 
 **Automated:** `mentionContext.test.ts`, `mentionRender.test.ts`, `fileWideOccurrence.test.ts`, updated `sourceUnitEntities.test.ts` (blinding tokens).
 

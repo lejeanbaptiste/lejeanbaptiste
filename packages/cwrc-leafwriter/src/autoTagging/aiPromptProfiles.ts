@@ -55,8 +55,8 @@ export function createDefaultAiPromptProfilesState(): AiPromptProfilesState {
   return { activeProfileId: profile.id, profiles: [profile] };
 }
 
-export function aiPromptProfilesPath(ljbDir: string): string {
-  return joinPath(ljbDir, AI_PROMPT_PROFILES_FILE);
+export function aiPromptProfilesPath(grognardDir: string): string {
+  return joinPath(grognardDir, AI_PROMPT_PROFILES_FILE);
 }
 
 export function getActiveAiPromptProfile(state: AiPromptProfilesState): AiPromptProfile {
@@ -160,7 +160,7 @@ export async function readAiPromptProfilesFromDesktop(): Promise<AiPromptProfile
   const store = entityStoreFromDesktop();
   if (!store) return createDefaultAiPromptProfilesState();
   try {
-    const raw = await store.readProjectLjbFile(AI_PROMPT_PROFILES_FILE);
+    const raw = await store.readProjectGrognardFile(AI_PROMPT_PROFILES_FILE);
     return raw ? parseAiPromptProfilesFile(raw) : createDefaultAiPromptProfilesState();
   } catch {
     return createDefaultAiPromptProfilesState();
@@ -170,7 +170,7 @@ export async function readAiPromptProfilesFromDesktop(): Promise<AiPromptProfile
 export async function persistAiPromptProfiles(state: AiPromptProfilesState): Promise<void> {
   const store = entityStoreFromDesktop();
   if (!store) return;
-  await store.writeProjectLjbFile(AI_PROMPT_PROFILES_FILE, serializeAiPromptProfilesFile(state));
+  await store.writeProjectGrognardFile(AI_PROMPT_PROFILES_FILE, serializeAiPromptProfilesFile(state));
 }
 
 export function newAiPromptProfileId(): string {

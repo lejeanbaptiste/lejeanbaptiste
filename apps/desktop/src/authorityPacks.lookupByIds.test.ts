@@ -6,7 +6,7 @@ import { lookupAuthorityPackRowsByIds } from './authorityPacks';
 
 describe('lookupAuthorityPackRowsByIds', () => {
   it('returns only matching NDJSON rows from a single-file pack', async () => {
-    const root = await fsp.mkdtemp(path.join(os.tmpdir(), 'ljb-pack-lookup-'));
+    const root = await fsp.mkdtemp(path.join(os.tmpdir(), 'grognard-pack-lookup-'));
     const packDir = path.join(root, 'authority-packs', 'cbdb');
     await fsp.mkdir(packDir, { recursive: true });
     const lines = [
@@ -53,7 +53,7 @@ describe('lookupAuthorityPackRowsByIds', () => {
   });
 
   it('scans date-chunked packs including undated', async () => {
-    const root = await fsp.mkdtemp(path.join(os.tmpdir(), 'ljb-pack-chunks-'));
+    const root = await fsp.mkdtemp(path.join(os.tmpdir(), 'grognard-pack-chunks-'));
     const packDir = path.join(root, 'authority-packs', 'cbdb');
     await fsp.mkdir(path.join(packDir, 'persons'), { recursive: true });
     await fsp.writeFile(path.join(packDir, 'persons.ndjson'), '', 'utf8');

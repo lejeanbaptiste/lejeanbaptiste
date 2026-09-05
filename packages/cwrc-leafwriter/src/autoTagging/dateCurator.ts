@@ -1,6 +1,6 @@
 import type { DateResolution, Suggestion } from './types';
 
-const SANMIAO_RESP = '#ljb-sanmiao';
+const SANMIAO_RESP = '#grognard-sanmiao';
 
 /** Full date string for curator UI (structured `<date>` spans many text nodes). */
 export function dateCuratorDisplaySurface(suggestion: Suggestion): string {

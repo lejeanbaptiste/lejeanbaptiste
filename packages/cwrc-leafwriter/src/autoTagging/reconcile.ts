@@ -1,6 +1,6 @@
 /**
  * Field-level reconciliation between a project (PEDB) entity and the central
- * (CEDB) entity it maps to (via the `ljb-central` concordance). This is the
+ * (CEDB) entity it maps to (via the `grognard-central` concordance). This is the
  * "compare children" step of the CEDB↔PEDB sync:
  *
  *   - **union fields** (names, external authorities) merge both ways — keep

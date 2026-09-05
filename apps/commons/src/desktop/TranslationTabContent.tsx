@@ -158,8 +158,8 @@ export const TranslationTabContent = ({ active }: TranslationTabContentProps) =>
     const onConfigSaved = () => {
       void applyConfiguredLanguages(true);
     };
-    window.addEventListener('ljb-project-config-saved', onConfigSaved);
-    return () => window.removeEventListener('ljb-project-config-saved', onConfigSaved);
+    window.addEventListener('grognard-project-config-saved', onConfigSaved);
+    return () => window.removeEventListener('grognard-project-config-saved', onConfigSaved);
   }, [applyConfiguredLanguages]);
 
   // Leaving the translation tab calls exitTranslationMode (active → false). Clear the

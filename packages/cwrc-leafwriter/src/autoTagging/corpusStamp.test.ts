@@ -38,7 +38,7 @@ describe('corpus PEDB stamp', () => {
     const { xml, changed } = stampProjectDatabase(stamped, 'pedb-123');
     expect(changed).toBe(true);
     expect(readProjectStamp(xml)).toBe('pedb-123');
-    expect((xml.match(/ljb-project-database/g) ?? []).length).toBe(1);
+    expect((xml.match(/grognard-project-database/g) ?? []).length).toBe(1);
   });
 
   it('skips files with no publicationStmt rather than corrupting them', () => {

@@ -108,7 +108,7 @@ export interface DocumentImportSource {
 }
 
 export interface TimeMachineSnapshotSummary {
-  app: 'le-jean-baptiste';
+  app: 'grognard';
   createdAt: string;
   fileCount: number;
   id: string;

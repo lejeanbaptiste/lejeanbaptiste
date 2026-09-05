@@ -1,10 +1,10 @@
-export const LEAF_WRITER_CLIPBOARD_MIME = 'application/x-le-jean-baptiste-fragment+json';
+export const LEAF_WRITER_CLIPBOARD_MIME = 'application/x-grognard-fragment+json';
 
 export type PasteMode = 'paragraphs' | 'line-breaks' | 'xml' | 'plain';
 export type PasteAmbiguity = 'line-breaks' | 'xml';
 
 export interface LeafWriterClipboardPayload {
-  app: 'le-jean-baptiste';
+  app: 'grognard';
   copiedAt: string;
   version: 1;
 }
@@ -17,7 +17,7 @@ const ENTITY_LIKE = /&(lt|gt|amp|quot|apos|nbsp|#\d+|#x[\da-f]+);/i;
 
 export const buildLeafWriterClipboardPayload = (): string =>
   JSON.stringify({
-    app: 'le-jean-baptiste',
+    app: 'grognard',
     copiedAt: new Date().toISOString(),
     version: 1,
   } satisfies LeafWriterClipboardPayload);
@@ -26,7 +26,7 @@ export const isLeafWriterClipboardPayload = (value: string | null | undefined): 
   if (!value) return false;
   try {
     const parsed = JSON.parse(value) as Partial<LeafWriterClipboardPayload>;
-    return parsed.app === 'le-jean-baptiste' && parsed.version === 1;
+    return parsed.app === 'grognard' && parsed.version === 1;
   } catch {
     return false;
   }

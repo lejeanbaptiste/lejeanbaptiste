@@ -32,7 +32,7 @@ Defaults: `test_project/project/gold_test/manual.xml` + `auto.xml`. Override wit
 
 Developers can edit these files directly today. **Next build:** prompt profiles in the app so users can tune suggest text per model/corpus without touching the repo.
 
-- **Storage (proposed):** `.ljb/ai-prompt-profiles.json` per project, optional app-level defaults in AI API settings.
+- **Storage (proposed):** `.grognard/ai-prompt-profiles.json` per project, optional app-level defaults in AI API settings.
 - **UI (proposed):** “Edit prompt…” on the AI suggest step; auto-select profile by model id pattern.
 - **Safety:** `preamble.txt` (locator + JSON rules) stays locked; profiles edit task wording and tag definitions only.
 - **Cache:** bump profile `version` on save — same rule as `versions.json`.

@@ -23,7 +23,7 @@ export const ENTITY_DB_RESERVED_NAMES = [
   'entity-orders.jsonl',
   'achievements.json',
   'source-profiles.json',
-  '.ljb-time-machine',
+  '.grognard-time-machine',
 ] as const;
 
 const normalizeFolder = (folder: string): string =>
@@ -48,7 +48,7 @@ const assertNotProjectFolder = async (folder: string): Promise<void> => {
   try {
     await fs.access(path.join(folder, PROJECT_FILE_NAME));
     throw new MoveEntityDbError(
-      'That folder is a Le Jean-Baptiste project. Choose a different folder.',
+      'That folder is a Grognard project. Choose a different folder.',
     );
   } catch (error) {
     if (error instanceof MoveEntityDbError) throw error;

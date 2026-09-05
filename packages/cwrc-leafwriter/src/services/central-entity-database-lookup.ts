@@ -4,8 +4,8 @@
  * Registered alongside the project entity database so the user's own data
  * (project + central) is always consulted in disambiguation, ahead of every
  * external authority. See `entity-database-lookup.ts` for the project (PEDB)
- * counterpart; a result's uri scheme (`ljb-central-entity://` vs
- * `ljb-entity://`) is how the disambiguation dialog tells the two apart.
+ * counterpart; a result's uri scheme (`grognard-central-entity://` vs
+ * `grognard-entity://`) is how the disambiguation dialog tells the two apart.
  */
 import { centralEntityStoreFromDesktop } from '../autoTagging/entityStore';
 import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from '../autoTagging/sqliteRequired';
@@ -21,7 +21,7 @@ export const CENTRAL_ENTITY_DATABASE_SERVICE_ID = 'central-entities';
 export const CENTRAL_ENTITY_DATABASE_SERVICE_NAME = 'Central entities';
 
 /** URI scheme for central-database results (never written as @ref). */
-export const CENTRAL_ENTITY_URI_SCHEME = 'ljb-central-entity';
+export const CENTRAL_ENTITY_URI_SCHEME = 'grognard-central-entity';
 
 export function centralEntityUri(id: string): string {
   return `${CENTRAL_ENTITY_URI_SCHEME}://${id}`;

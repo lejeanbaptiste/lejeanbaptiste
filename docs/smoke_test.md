@@ -144,8 +144,8 @@ Prerequisites: catalog-installed TEI project with edition metadata; encoder name
 - [x] **File → Check for schema updates…** on up-to-date project → “Schema is up to date.” snackbar (no 24h wait)
 - [x] Tamper `sourceHash` in project JSON, save, then **File → Check for schema updates…** → update dialog appears
 - [x] Local-schema project → menu check shows “local schema” snackbar
-- [x] TEI file → edit body → Save → `encodingDesc/appInfo/application[@ident="le-jean-baptiste"]` with encoder name and date; re-save updates same entry; `revisionDesc` unchanged
-- [ ] Orlando file → Save → `REVISIONDESC/RESPONSIBILITY[@RESP="Le Jean-Baptiste"]` updated with encoder name and date; other `RESPONSIBILITY` entries unchanged
+- [x] TEI file → edit body → Save → `encodingDesc/appInfo/application[@ident="grognard"]` with encoder name and date; re-save updates same entry; `revisionDesc` unchanged
+- [ ] Orlando file → Save → `REVISIONDESC/RESPONSIBILITY[@RESP="Grognard"]` updated with encoder name and date; other `RESPONSIBILITY` entries unchanged
 - [ ] Edition metadata → bulk apply → change one file’s managed field in file metadata panel → change edition default → bulk apply again → edited file keeps its value; others update
 - [ ] After bulk apply, `schema/project-metadata.json` contains `lastApplied` snapshot
 

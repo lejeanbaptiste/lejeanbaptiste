@@ -237,7 +237,7 @@ describe('AutoTaggingSession', () => {
       const files = new Map<string, string>();
       if (seedFacts.length > 0) {
         files.set(
-          '/proj/.ljb/wrapper-facts.jsonl',
+          '/proj/.grognard/wrapper-facts.jsonl',
           `${seedFacts.map((fact) => JSON.stringify(fact)).join('\n')}\n`,
         );
       }
@@ -686,7 +686,7 @@ describe('AutoTaggingSession', () => {
       return dictionaryTag(doc, [{ string: surface, tag: 'persName' }], 'ignore')[0]!;
     };
 
-    it('buffers decisions and flushes them to /.ljb/entity-decisions.jsonl', async () => {
+    it('buffers decisions and flushes them to /.grognard/entity-decisions.jsonl', async () => {
       const { writer } = makeWriter(XML);
       const { store, files } = makeStore();
       const session = new AutoTaggingSession(writer, 'ignore', store);
@@ -700,7 +700,7 @@ describe('AutoTaggingSession', () => {
       expect(written).toBe(2);
       expect(session.pendingDecisionCount).toBe(0);
 
-      const body = files.get('/proj/.ljb/entity-decisions.jsonl')!;
+      const body = files.get('/proj/.grognard/entity-decisions.jsonl')!;
       const records = parseLog(body);
       expect(records.map((r) => r.action)).toEqual(['accepted', 'rejected']);
       expect(records[0]).toMatchObject({ surface: '張衡', tag: 'persName', source: 'dictionary' });

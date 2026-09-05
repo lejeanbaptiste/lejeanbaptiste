@@ -1,4 +1,4 @@
-# Sanmiao ↔ LJB integration — source code audit
+# Sanmiao ↔ Grognard integration — source code audit
 
 **Status (2026-08-01):** **Shipped** on desktop via the **`cjk-dates`** plugin (`sanmiao.tei_bridge`). Japanese pack onboarding installs/enables it; Chinese assets dialog can too. This file is the original design audit (namespace risks + fragment-bridge recommendation) — keep for Sanmiao internals; do not treat “Planning” sections below as unfinished product work.  
 **Related:** [Auto-tagging.md](Auto-tagging.md), [sanmiao-dates-schema.md](sanmiao-dates-schema.md)
@@ -7,7 +7,7 @@
 
 ## Summary
 
-**Minimal-change path (recommended):** run sanmiao on **namespace-free text fragments**, return JSON suggestions to LJB; apply results into the live TEI tree from TypeScript (with correct TEI namespace on insert). This reuses existing internal functions with **one new sanmiao module** (~200 lines) and **almost no changes** to `tagging.py` / `xml_utils.py`.
+**Minimal-change path (recommended):** run sanmiao on **namespace-free text fragments**, return JSON suggestions to Grognard; apply results into the live TEI tree from TypeScript (with correct TEI namespace on insert). This reuses existing internal functions with **one new sanmiao module** (~200 lines) and **almost no changes** to `tagging.py` / `xml_utils.py`.
 
 **Full in-document path:** run `tag_date_elements` inside a TEI file with default namespace — requires a **medium refactor** (namespace-aware xpath, skip sets, element creation) across `tagging.py`, `xml_utils.py`, and parts of `bulk_processing.py`.
 
@@ -28,7 +28,7 @@ tag_date_elements(text) → consolidate_date → remove_lone_tags → strip_text
 - XPath `.//date`, `.//date[gz]` — works.
 - Solving, proliferate, sequential implied state — unchanged.
 
-**LJB can call this today** per text span or per paragraph batch extracted from the document.
+**Grognard can call this today** per text span or per paragraph batch extracted from the document.
 
 ---
 
@@ -61,7 +61,7 @@ Partial namespace support exists only in:
 
 ## Recommended integration: fragment bridge
 
-### New sanmiao module: `ljb_bridge.py` (or `tei_bridge.py`)
+### New sanmiao module: `grognard_bridge.py` (or `tei_bridge.py`)
 
 Public API — no changes to core tagging logic required:
 
@@ -107,16 +107,16 @@ def parse_xml_from_dataframe_row(row) -> str:
     """Rebuild inner XML from df string columns for apply."""
 ```
 
-LJB subprocess: `python -m sanmiao.ljb_bridge --json < config.json`
+Grognard subprocess: `python -m sanmiao.grognard_bridge --json < config.json`
 
-### LJB side (TypeScript)
+### Grognard side (TypeScript)
 
 1. Walk document text nodes (existing anchor / search-text policy).
 2. Batch plain text to sanmiao → suggestions with `parseXml` + `candidates`.
-3. **Apply** inserts into live TEI with correct namespace (LJB already owns XML mutation).
+3. **Apply** inserts into live TEI with correct namespace (Grognard already owns XML mutation).
 4. Re-resolve on existing markup: either re-tag from `normalize-space(string())` or read sanmiao children if present (call `dates_xml_to_df` on a wrapped fragment).
 
-**Namespace handling stays in LJB apply**, not sanmiao — avoids refactoring the whole package.
+**Namespace handling stays in Grognard apply**, not sanmiao — avoids refactoring the whole package.
 
 ---
 
@@ -150,7 +150,7 @@ Estimated effort: **2–4 days** for namespace refactor + tests on TEI fixtures.
 | Fix                                                        | File                       | Effort  |
 | ---------------------------------------------------------- | -------------------------- | ------- |
 | `tei:nmd_gz` → `tei:nmdgz` (or local-name)                 | `bulk_processing.py`       | Trivial |
-| Export `propose_dates` / `row_to_tei_attrs`                | new `ljb_bridge.py`        | Small   |
+| Export `propose_dates` / `row_to_tei_attrs`                | new `grognard_bridge.py`        | Small   |
 | Unit test: TEI-namespaced `<date>` round-trip via fragment | `tests/test_ljb_bridge.py` | Small   |
 
 ---
@@ -164,7 +164,7 @@ When the edition already has parse children inside TEI `<date>`:
 3. `index_date_nodes` + `extract_date_table_bulk(..., attributes=True)` if attrs present.
 4. Return candidates to resolve UI.
 
-Reading **in place** is now supported via `local-name()` xpath and TEI-aware tagging (sanmiao 0.2.8+). LJB may still prefer extract/wrap for apply-round-trip control.
+Reading **in place** is now supported via `local-name()` xpath and TEI-aware tagging (sanmiao 0.2.8+). Grognard may still prefer extract/wrap for apply-round-trip control.
 
 ---
 
@@ -182,9 +182,9 @@ Tests: `sanmiao/tests/test_tei_ns.py` (run with `PYTHONPATH=src pytest`).
 
 ---
 
-## Editable dev install (tweak sanmiao + LJB together)
+## Editable dev install (tweak sanmiao + Grognard together)
 
-Keep `sanmiao` as a **sibling folder** of `leaf-writer` (e.g. `~/Code/sanmiao` beside `~/Code/leaf-writer`). LJB auto-detects that checkout and uses its venv — not the PyPI copy in system Python.
+Keep `sanmiao` as a **sibling folder** of `leaf-writer` (e.g. `~/Code/sanmiao` beside `~/Code/leaf-writer`). Grognard auto-detects that checkout and uses its venv — not the PyPI copy in system Python.
 
 **One-time setup** (in the sanmiao repo):
 
@@ -201,7 +201,7 @@ Verify:
 # should print …/sanmiao/src/sanmiao/__init__.py
 ```
 
-**Day to day:** edit files under `sanmiao/src/sanmiao/`, restart or re-run auto-tagging in LJB — no reinstall. Each tagging run spawns a fresh Python subprocess that loads your current source.
+**Day to day:** edit files under `sanmiao/src/sanmiao/`, restart or re-run auto-tagging in Grognard — no reinstall. Each tagging run spawns a fresh Python subprocess that loads your current source.
 
 **Optional:** pin a specific interpreter if the sibling layout differs:
 
@@ -209,7 +209,7 @@ Verify:
 export SANMIAO_PYTHON=~/Code/sanmiao/.venv/bin/python
 ```
 
-Launch LJB from a shell with that variable set, or add it to your desktop app environment.
+Launch Grognard from a shell with that variable set, or add it to your desktop app environment.
 
 **Tests** after changing sanmiao:
 
@@ -224,8 +224,8 @@ PYTHONPATH=src .venv/bin/python -m pytest tests/test_tei_ns.py -q
 
 | Approach                               | Sanmiao changes                                                                               | Namespace risk                                                       | Re-resolve stored parse  |
 | -------------------------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------ |
-| **Fragment bridge (v1 LJB)**           | `tei_bridge.py`                                                                               | Low                                                                  | `resolve_date_element()` |
+| **Fragment bridge (v1 Grognard)**           | `tei_bridge.py`                                                                               | Low                                                                  | `resolve_date_element()` |
 | **In-document tagging**                | Done in core (ns helpers)                                                                     | Low–medium                                                           | Native                   |
-| **Paragraph batch with implied carry** | `propose_dates_batch()` passes `implied` from chunk to chunk when `sequential=True` (0.2.10+) | LJB sends one `<p>` per chunk; cross-paragraph 其三年 still resolves |
+| **Paragraph batch with implied carry** | `propose_dates_batch()` passes `implied` from chunk to chunk when `sequential=True` (0.2.10+) | Grognard sends one `<p>` per chunk; cross-paragraph 其三年 still resolves |
 
-**Recommendation:** LJB calls `propose_dates()` / `resolve_date_element()` via subprocess; apply TEI mutations in TypeScript. Sanmiao core is now TEI-capable for standalone batch use too.
+**Recommendation:** Grognard calls `propose_dates()` / `resolve_date_element()` via subprocess; apply TEI mutations in TypeScript. Sanmiao core is now TEI-capable for standalone batch use too.

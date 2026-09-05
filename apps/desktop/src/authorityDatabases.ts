@@ -51,7 +51,7 @@ const MAX_ENTRY_BYTES = 4 * 1024 * 1024 * 1024;
 const MAX_ARCHIVE_ENTRIES = 20_000;
 const MAX_DOWNLOAD_BYTES = 8 * 1024 * 1024 * 1024;
 const DOWNLOAD_TIMEOUT_MS = 30 * 60 * 1000;
-const FETCH_USER_AGENT = 'LeJeanBaptiste-authority/1.0';
+const FETCH_USER_AGENT = 'Grognard-authority/1.0';
 
 /** Norbert reduced-authority export pin (CBDB is fetched independently — see below). */
 const NORBERT_REFERENCE_VERSION = '2026-07-25-reduced-authority';
@@ -438,7 +438,7 @@ export const downloadNorbertReferenceBundle = async (
  * Publishable *tagging* packs omit those fields before redistribution
  * (authority extraction/cbdb/compileRecords.mjs). This reference sqlite is a
  * table-subset of CBDB's official release as installed for the user: office
- * translations are left intact so LJB can display what CBDB publishes. Nothing
+ * translations are left intact so Grognard can display what CBDB publishes. Nothing
  * here is re-packaged into our GitHub pack assets.
  */
 export const downloadCbdbDirect = async (

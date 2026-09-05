@@ -79,20 +79,20 @@ jobs:
             --output release-publish/apt \
             --suite stable \
             --component main \
-            --origin "Le Jean-Baptiste" \
-            --label "Le Jean-Baptiste" \
+            --origin "Grognard" \
+            --label "Grognard" \
             --codename stable \
-            --description "Le Jean-Baptiste desktop packages" \
+            --description "Grognard desktop packages" \
             --gpg-key "$GPG_KEY_ID" \
             --gpg-home "$RUNNER_TEMP/gnupg" \
-            --export-public-key release-publish/apt/le-jean-baptiste-archive-key.asc
+            --export-public-key release-publish/apt/grognard-archive-key.asc
 
       - name: Attach archive key to release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload "$TAG_NAME" --repo "$GITHUB_REPOSITORY" \
-            release-publish/apt/le-jean-baptiste-archive-key.asc \
+            release-publish/apt/grognard-archive-key.asc \
             --clobber
 
       - name: Configure GitHub Pages

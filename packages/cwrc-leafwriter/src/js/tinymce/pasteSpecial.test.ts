@@ -23,7 +23,7 @@ describe('pasteSpecial', () => {
     expect(hasAmbiguousLineBreaks('one line')).toBe(false);
   });
 
-  test('ignores Le Jean-Baptiste clipboard payloads', () => {
+  test('ignores Grognard clipboard payloads', () => {
     expect(
       detectPasteAmbiguity({
         fromLeafWriter: true,
@@ -58,7 +58,7 @@ describe('pasteSpecial', () => {
   });
 
   test('recognizes clipboard marker payloads', () => {
-    expect(isLeafWriterClipboardPayload('{"app":"le-jean-baptiste","version":1}')).toBe(true);
+    expect(isLeafWriterClipboardPayload('{"app":"grognard","version":1}')).toBe(true);
     expect(isLeafWriterClipboardPayload('{"app":"something-else","version":1}')).toBe(false);
   });
 });

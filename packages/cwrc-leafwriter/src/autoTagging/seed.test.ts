@@ -294,7 +294,7 @@ describe('autoLinkUnique', () => {
     // the minted entity carries the authority idno
     const person = entityByAuthority(entitiesDoc, 'p1')!;
     expect(person.getElementsByTagName('idno')[0]?.textContent).toBe('p1');
-    expect(person.getAttribute('resp')).toBe('#ljb-autotag');
+    expect(person.getAttribute('resp')).toBe('#grognard-autotag');
   });
 
   it('links Norbert noble-title wrappers to the Norbert person id', async () => {

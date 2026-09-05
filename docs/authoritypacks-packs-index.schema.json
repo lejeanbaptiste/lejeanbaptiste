@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/lejeanbaptiste/lejeanbaptiste/docs/authoritypacks-packs-index.schema.json",
+  "$id": "https://github.com/grognard/grognard/docs/authoritypacks-packs-index.schema.json",
   "title": "Authority Packs Index",
   "type": "object",
   "additionalProperties": false,

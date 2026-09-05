@@ -148,17 +148,17 @@ Under the dual plan, keep these mentally separate:
 | Where you merge                  | What should move                                                                                                                       |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | **Project catalogue** (edition)  | Union cards; rewrite `@key` in **this edition’s** texts (and only those). Collaborators all see the same Absorb.                       |
-| **Central catalogue** (personal) | Union _your_ cards; update **mappings** (`ljb-central`) on project cards if needed. Corpus `@key`s should **not** flip to central ids. |
+| **Central catalogue** (personal) | Union _your_ cards; update **mappings** (`grognard-central`) on project cards if needed. Corpus `@key`s should **not** flip to central ids. |
 
 If central Absorb still walked the old registry and rewrote corpus keys, you would break collaborators’ editions. The bridge plan’s Absorb verb must respect that boundary.
 
 ### Dual-database twist — mappings after Absorb
 
-Project cards may carry `<idno type="ljb-central">` for you (and for colleagues). If you Absorb project B into A:
+Project cards may carry `<idno type="grognard-central">` for you (and for colleagues). If you Absorb project B into A:
 
 - Sticky notes B→A (corpus).
 - Mapping rows on B must move onto A (or be re-linked).
-- If you and a colleague both had mappings on B, both need to survive on A (two `ljb-central` rows with different subtypes).
+- If you and a colleague both had mappings on B, both need to survive on A (two `grognard-central` rows with different subtypes).
 
 If you Absorb in **central** only: project texts unchanged; your mapping may now point at the surviving central id — or become stale if the mapping still names the deleted central id. The “bridge inbox” idea exists for that staleness.
 
@@ -307,7 +307,7 @@ If I understand correctly, the problem is that there is an entity id merge/purge
 Solution: when a user implements a merge (or associates an external authority, in what is also kind of a merge), a timestampted merge order is deposed in the CEDB registry, and in the PEDB registry of everything available to him on his machine, then we launch a crawl that merges those CEDB ids in all the PEDB, and merges associated PEDB ids in the PEDB and in all project XML files. If he didn't get everything on his local machine, that's fine, because periodic sweeps and filters will identify the problems and the instructions to apply. This is also the case if he, say, restores a corpus from a checkpoint, unzips an archive, or whatever. Let's say for whatever reason he has a separate CEDB on his work computer ; that's also fine, because the PEDB is now merged, and there are merge orders. In fact, we could prompt him to accept the same merge orders on his work machine CEDB, translating between PEDB ids and CEDB ids, THEN, we could have his work machine issue a merge order accross all corpora at its disposal. Or, he could reject, and the change would be limited to the one PEDB to which he connected on his home machine. The same principal would work for collaborators.
 
 Story B — You renamed or moved a folder
-The merge or purge order misses a folder, because it can't find it. However, once we relink its PEDB to the CEDB that issued the order, it will see that there was an order, and it will implement it. You cannot use LJB without a CEDB.
+The merge or purge order misses a folder, because it can't find it. However, once we relink its PEDB to the CEDB that issued the order, it will see that there was an order, and it will implement it. You cannot use Grognard without a CEDB.
 
 Story C — Git clone on a second computer
 Same as B
@@ -327,9 +327,9 @@ The CEDB should live in the cloud and never have this problem. Nevertheless, we 
 
 ## Questions
 
-### You cannot use LJB without a CEDB”
+### You cannot use Grognard without a CEDB”
 
-That is how LJB is built, but, yes, they should be able to run a PEDB without linking it to their CEDB. The real question is how does a collaborator using, say, XMLMind or Oxygen meant to plug into the LJB assets. I don't have an answer to that, but maybe we can solve that much later.
+That is how Grognard is built, but, yes, they should be able to run a PEDB without linking it to their CEDB. The real question is how does a collaborator using, say, XMLMind or Oxygen meant to plug into the Grognard assets. I don't have an answer to that, but maybe we can solve that much later.
 
 ### Automatic apply of CEDB merge orders into PEDB “with or without his say”
 
@@ -378,20 +378,20 @@ The order-based design sketched above shipped. In this doc's vocabulary:
   paths it can't see from the current machine (the Story A bug); the registry is
   demoted to an eager-crawl optimization, with the order log as the correctness
   backbone.
-- **Timestamps exist.** Every entity record carries `<note type="ljb-changed"
+- **Timestamps exist.** Every entity record carries `<note type="grognard-changed"
 when="…">`, the substrate for the sync algorithm in the Reflections.
 - **Both databases mint kind-prefixed UUIDs** (`person-<uuid>`); legacy
   sequential ids are grandfathered until touched.
 - **The corpus sweep is classified, not wholesale.** Each corpus file carries
-  its PEDB fingerprint (`<idno type="ljb-project-database">`), so the sweep
+  its PEDB fingerprint (`<idno type="grognard-project-database">`), so the sweep
   distinguishes "file copied from another project" (left untouched, reported)
   from "database rolled back" (offered as an explicit, severe strip — the
   gentle prompt on open). Wholesale purge is no longer the default recovery.
 - **The bridge verbs exist without a fake Split.** Link/Promote write per-user
-  `<idno type="ljb-central" subtype="{userStableId}">` rows and never rewrite
+  `<idno type="grognard-central" subtype="{userStableId}">` rows and never rewrite
   corpus keys (moral #5 honored: no "Split entity…" button was shipped).
 - **Time Machine has two tabs.** Central snapshots live in the central folder's
-  own `.ljb-time-machine` and roam with it; restoring the central database
+  own `.grognard-time-machine` and roam with it; restoring the central database
   preserves the order log (append-only truth survives rollback — moral #6).
 - **Story F's Unison merge exists** (`centralForkMerge.ts`): additions union,
   identical records adopt the newer timestamp, field disagreements surface as

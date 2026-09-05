@@ -7,15 +7,15 @@ const scaffoldEntityDb = async (dir: string) => {
   await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(path.join(dir, 'entities.xml'), '<entities/>', 'utf-8');
   await fs.mkdir(path.join(dir, 'authority-packs'), { recursive: true });
-  await fs.mkdir(path.join(dir, '.ljb-time-machine'), { recursive: true });
-  await fs.writeFile(path.join(dir, '.ljb-time-machine', 'snap.json'), '{}', 'utf-8');
+  await fs.mkdir(path.join(dir, '.grognard-time-machine'), { recursive: true });
+  await fs.writeFile(path.join(dir, '.grognard-time-machine', 'snap.json'), '{}', 'utf-8');
 };
 
 describe('moveEntityDbFolder', () => {
   let root = '';
 
   beforeEach(async () => {
-    root = await fs.mkdtemp(path.join(os.tmpdir(), 'ljb-move-entity-db-'));
+    root = await fs.mkdtemp(path.join(os.tmpdir(), 'grognard-move-entity-db-'));
   });
 
   afterEach(async () => {

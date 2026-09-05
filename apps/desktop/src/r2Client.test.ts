@@ -7,15 +7,15 @@ const CONFIG = {
   endpoint: 'https://acct123.r2.cloudflarestorage.com',
   accessKeyId: 'AKIDEXAMPLE',
   secretAccessKey: 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY',
-  bucket: 'ljb-backups',
+  bucket: 'grognard-backups',
 };
 const FIXED_DATE = new Date('2026-09-01T20:30:15.000Z');
 const EMPTY_SHA256 = createHash('sha256').update('').digest('hex');
 
 describe('canonicalUri', () => {
   it('encodes each segment but keeps the separators', () => {
-    expect(canonicalUri('ljb-backups/snapshots/entities-2026.sqlite.gz')).toBe(
-      '/ljb-backups/snapshots/entities-2026.sqlite.gz',
+    expect(canonicalUri('grognard-backups/snapshots/entities-2026.sqlite.gz')).toBe(
+      '/grognard-backups/snapshots/entities-2026.sqlite.gz',
     );
   });
 
@@ -42,7 +42,7 @@ describe('signRequest', () => {
     expect(headers['x-amz-content-sha256']).toBe(EMPTY_SHA256);
     expect(headers.host).toBe('acct123.r2.cloudflarestorage.com');
     expect(headers['x-amz-date']).toBe('20260901T203015Z');
-    expect(url).toBe('https://acct123.r2.cloudflarestorage.com/ljb-backups/some/key');
+    expect(url).toBe('https://acct123.r2.cloudflarestorage.com/grognard-backups/some/key');
   });
 
   it('hashes the body when present', () => {
@@ -89,6 +89,6 @@ describe('signRequest', () => {
     );
     expect(url).toContain('continuation-token=a%2Fb%2Bc%3D');
     expect(url).toContain('list-type=2');
-    expect(url.startsWith('https://acct123.r2.cloudflarestorage.com/ljb-backups?')).toBe(true);
+    expect(url.startsWith('https://acct123.r2.cloudflarestorage.com/grognard-backups?')).toBe(true);
   });
 });

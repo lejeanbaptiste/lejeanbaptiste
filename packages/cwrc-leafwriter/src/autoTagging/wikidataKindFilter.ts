@@ -6,7 +6,7 @@
 import type { EntityKind } from './entities';
 
 /**
- * P31 roots and exclusions per LJB entity kind. `thing` deliberately has no
+ * P31 roots and exclusions per Grognard entity kind. `thing` deliberately has no
  * entry here — it has no clean Wikidata root set (a philosophical concept,
  * say), so it's matched by exclusion instead; see `wikidataQidsExcludingKnownKinds`.
  */
@@ -170,7 +170,7 @@ async function runSparqlQuery(query: string, fetchImpl: WikidataFetchFn): Promis
   const response = await fetchImpl(url, {
     headers: {
       Accept: 'application/sparql-results+json',
-      'User-Agent': 'LeJeanBaptiste/1.0 (disambiguation; https://github.com/cwrc/leaf-writer)',
+      'User-Agent': 'Grognard/1.0 (disambiguation; https://github.com/cwrc/leaf-writer)',
     },
   });
   if (!response.ok) {

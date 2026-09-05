@@ -1,6 +1,6 @@
 {
   "extends": "./electron-builder.base.json",
-  "artifactName": "Le-Jean-Baptiste-linux-flatpak-${version}-${arch}.${ext}",
+  "artifactName": "Grognard-linux-flatpak-${version}-${arch}.${ext}",
   "linux": {
     "target": ["flatpak"],
     "icon": "icons",

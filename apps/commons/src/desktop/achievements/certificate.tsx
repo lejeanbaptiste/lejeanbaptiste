@@ -46,7 +46,7 @@ export interface CertificatePortraitInput {
    * compositor - already pre-padded, same as UniformAvatar. */
   headSvgMarkup: string;
   /** Raw body/pose/rank/weapon SVG markup for the two layers the head sits
-   * between, exactly as fetched from bodyAssets.ts's ljb-body:// composer -
+   * between, exactly as fetched from bodyAssets.ts's grognard-body:// composer -
    * the exact same composite UniformAvatar is showing live, not
    * independently re-picked. See UniformAvatar.tsx for why there are two
    * (a `back` layer for rear props/flags behind the head, `front` for the
@@ -80,7 +80,7 @@ export interface CertificateOptions {
  * portrait fragment is always the only portrait in whatever document it ends
  * up in - the certificate wrapper embeds exactly one, and a leaderboard
  * thumbnail is its own standalone data: URI. */
-const PORTRAIT_TONE_PREFIX = 'ljb-portrait';
+const PORTRAIT_TONE_PREFIX = 'grognard-portrait';
 
 export const CERTIFICATE_WIDTH = 640;
 export const CERTIFICATE_HEIGHT = 900;
@@ -218,7 +218,7 @@ function findMatchingClose(svgText: string, tagName: string, searchFrom: number)
 }
 
 /** Physically removes every display:none subtree, rather than leaving it
- * merely hidden - bodyAssets.ts's ljb-body:// composer toggles visibility
+ * merely hidden - bodyAssets.ts's grognard-body:// composer toggles visibility
  * by rewriting `style="display:..."` on the relevant groups, but every
  * *other* rank/bodyType/weapon combination's embedded image data is still
  * sitting in the document, unused. That's fine for the live avatar (shown
@@ -454,7 +454,7 @@ export const buildCertificateSvg = (options: CertificateAssembleOptions): string
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${CERTIFICATE_WIDTH}" height="${CERTIFICATE_HEIGHT}" viewBox="0 0 ${CERTIFICATE_WIDTH} ${CERTIFICATE_HEIGHT}">
   <rect x="0" y="0" width="${CERTIFICATE_WIDTH}" height="${CERTIFICATE_HEIGHT}" rx="18" fill="#16233a" />
   <rect x="10" y="10" width="${CERTIFICATE_WIDTH - 20}" height="${CERTIFICATE_HEIGHT - 20}" rx="12" fill="none" stroke="#d4af37" stroke-width="3" />
-  <text x="${CERTIFICATE_WIDTH / 2}" y="55" text-anchor="middle" font-family="Georgia, serif" font-size="22" letter-spacing="4" fill="#d4af37">LJB SERVICE RECORD</text>
+  <text x="${CERTIFICATE_WIDTH / 2}" y="55" text-anchor="middle" font-family="Georgia, serif" font-size="22" letter-spacing="4" fill="#d4af37">Grognard SERVICE RECORD</text>
   <g transform="translate(${margin}, ${portraitTop}) scale(${portraitScale})">
     ${options.portraitFragment.svg}
   </g>
@@ -469,7 +469,7 @@ export const buildCertificateSvg = (options: CertificateAssembleOptions): string
   <line x1="60" y1="${dividerY}" x2="${CERTIFICATE_WIDTH - 60}" y2="${dividerY}" stroke="#3a4a63" stroke-width="1" />
   ${metricLines}
   <text x="${CERTIFICATE_WIDTH / 2}" y="${statsStartY + options.metrics.length * statsLineHeight + 20}" text-anchor="middle" font-family="Georgia, serif" font-size="15" fill="#8b93a6">${options.unlockedCount} / ${options.totalAchievements} achievements</text>
-  <text x="${CERTIFICATE_WIDTH / 2}" y="${footerY}" text-anchor="middle" font-family="Georgia, serif" font-size="12" fill="#5b6579">Le Jean-Baptiste — printed ${escapeXml(new Date().toLocaleDateString())}</text>
+  <text x="${CERTIFICATE_WIDTH / 2}" y="${footerY}" text-anchor="middle" font-family="Georgia, serif" font-size="12" fill="#5b6579">Grognard — printed ${escapeXml(new Date().toLocaleDateString())}</text>
 </svg>`;
 };
 

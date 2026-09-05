@@ -225,7 +225,7 @@ export function dateAuthorityPackageLabel(
 }
 
 function setWorkingAttribute(suggestion: Suggestion, name: string, value: string): void {
-  suggestion.attributes = { ...(suggestion.attributes ?? {}), resp: '#ljb-sanmiao', cert: 'high' };
+  suggestion.attributes = { ...(suggestion.attributes ?? {}), resp: '#grognard-sanmiao', cert: 'high' };
   suggestion.dateResolution ??= { status: 'unique' };
   suggestion.dateResolution.editorAttributes = {
     ...(suggestion.dateResolution.editorAttributes ?? {}),
@@ -281,7 +281,7 @@ export function updateDateEditorField(
             ? '-1'
             : ''
         : value.trim();
-  suggestion.attributes = { ...(suggestion.attributes ?? {}), resp: '#ljb-sanmiao', cert: 'high' };
+  suggestion.attributes = { ...(suggestion.attributes ?? {}), resp: '#grognard-sanmiao', cert: 'high' };
   suggestion.dateResolution ??= { status: 'unique' };
   suggestion.dateResolution.editorAttributes = {
     ...(suggestion.dateResolution.editorAttributes ?? {}),

@@ -5,7 +5,7 @@
 
 import { canonicalLanguageCode } from '../../utilities/languageCodes';
 
-const STORAGE_KEY = 'ljb.assets.openccScript.v1';
+const STORAGE_KEY = 'grognard.assets.openccScript.v1';
 
 type ConverterFn = (text: string) => string;
 

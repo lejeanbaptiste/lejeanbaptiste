@@ -9,7 +9,7 @@
 
 !macro customInit
   ClearErrors
-  FileOpen $9 "$TEMP\\Le Jean-Baptiste-installer.log" w
+  FileOpen $9 "$TEMP\\Grognard-installer.log" w
   FileWrite $9 "[installer] init"
   FileWriteByte $9 13
   FileWriteByte $9 10
@@ -31,34 +31,34 @@
 !macroend
 
 !macro customInstall
-  FileOpen $9 "$TEMP\\Le Jean-Baptiste-installer.log" a
+  FileOpen $9 "$TEMP\\Grognard-installer.log" a
   FileWrite $9 "[installer] install-begin"
   FileWriteByte $9 13
   FileWriteByte $9 10
   FileWrite $9 "[installer] instdir=$INSTDIR"
   FileWriteByte $9 13
   FileWriteByte $9 10
-  IfFileExists "$INSTDIR\\Le Jean-Baptiste.exe" app_present app_missing
+  IfFileExists "$INSTDIR\\Grognard.exe" app_present app_missing
 app_present:
   FileWrite $9 "[installer] app-exe=present"
   FileWriteByte $9 13
   FileWriteByte $9 10
-  DetailPrint "Application executable found: $INSTDIR\\Le Jean-Baptiste.exe"
+  DetailPrint "Application executable found: $INSTDIR\\Grognard.exe"
   Goto app_check_done
 app_missing:
   FileWrite $9 "[installer] app-exe=MISSING"
   FileWriteByte $9 13
   FileWriteByte $9 10
-  DetailPrint "WARNING: application executable missing: $INSTDIR\\Le Jean-Baptiste.exe"
-  MessageBox MB_OK|MB_ICONEXCLAMATION "Installation finished but Le Jean-Baptiste.exe was not found in:$\r$\n$INSTDIR$\r$\n$\r$\nPlease send %TEMP%\Le Jean-Baptiste-installer.log to the developers."
+  DetailPrint "WARNING: application executable missing: $INSTDIR\\Grognard.exe"
+  MessageBox MB_OK|MB_ICONEXCLAMATION "Installation finished but Grognard.exe was not found in:$\r$\n$INSTDIR$\r$\n$\r$\nPlease send %TEMP%\Grognard-installer.log to the developers."
 app_check_done:
   FileWrite $9 "[installer] install-end"
   FileWriteByte $9 13
   FileWriteByte $9 10
   FileClose $9
-  CopyFiles /SILENT "$TEMP\\Le Jean-Baptiste-installer.log" "$INSTDIR\\Le Jean-Baptiste-installer.log"
+  CopyFiles /SILENT "$TEMP\\Grognard-installer.log" "$INSTDIR\\Grognard-installer.log"
 !macroend
 
 !macro customUnInstall
-  Delete "$INSTDIR\\Le Jean-Baptiste-installer.log"
+  Delete "$INSTDIR\\Grognard-installer.log"
 !macroend

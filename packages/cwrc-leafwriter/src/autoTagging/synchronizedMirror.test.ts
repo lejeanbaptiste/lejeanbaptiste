@@ -11,8 +11,8 @@ const fakeStore = (doc: Document) => {
     saveEntities: async (next: Document) => {
       doc = next;
     },
-    readProjectLjbFile: async (name: string) => files.get(name) ?? null,
-    writeProjectLjbFile: async (name: string, content: string) => {
+    readProjectGrognardFile: async (name: string) => files.get(name) ?? null,
+    writeProjectGrognardFile: async (name: string, content: string) => {
       files.set(name, content);
     },
   } as never;

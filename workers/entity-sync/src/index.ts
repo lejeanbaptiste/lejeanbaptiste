@@ -325,7 +325,7 @@ export function createWorker(deps: WorkerDeps = {}) {
       const url = new URL(request.url);
 
       if (request.method === 'GET' && url.pathname === '/') {
-        return json({ ok: true, service: 'ljb-entity-sync' });
+        return json({ ok: true, service: 'grognard-entity-sync' });
       }
 
       const auth = await authenticate(request, env, verifyGitHubUser);

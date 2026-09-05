@@ -44,7 +44,7 @@ export interface BuildImportedXmlDocumentResult {
 }
 
 /** Token stored in `@ana` when a foreign `@key` is demoted on XML import. */
-export const FORMER_KEY_ANA_PREFIX = 'ljb-former-key:';
+export const FORMER_KEY_ANA_PREFIX = 'grognard-former-key:';
 
 /** Comments and CDATA sections are opaque: never rewrite inside them. */
 const OPAQUE_SECTION = /(<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>)/g;
@@ -365,7 +365,7 @@ export const catalogXmlFamily = (catalogId?: string | null): XmlDocumentFamily =
 };
 
 /**
- * Move live `@key` values onto `@ana` as `ljb-former-key:…` tokens so imported
+ * Move live `@key` values onto `@ana` as `grognard-former-key:…` tokens so imported
  * mentions keep a breadcrumb without pointing at this project's entity catalogue.
  */
 export const demoteEntityKeys = (xml: string): DemoteEntityKeysResult => {
@@ -486,7 +486,7 @@ const appendImportProvenanceNote = ({
       return xml.replace(
         /<REVISIONDESC\b[^>]*>/i,
         (open) =>
-          `${open}\n    <RESPONSIBILITY RESP="Le Jean-Baptiste" when="${date}">${escapeXmlText(note)}</RESPONSIBILITY>`,
+          `${open}\n    <RESPONSIBILITY RESP="Grognard" when="${date}">${escapeXmlText(note)}</RESPONSIBILITY>`,
       );
     }
     if (/<SOURCEDESC\b[^>]*>[\s\S]*?<\/SOURCEDESC>/i.test(xml)) {

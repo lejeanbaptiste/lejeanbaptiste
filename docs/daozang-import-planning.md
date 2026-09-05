@@ -12,7 +12,7 @@ When the plugin is enabled:
 
 1. **File → Import from Daozang…** opens a search dialog.
 2. The user finds a text by title (or future DZ number) in the bundled corpus.
-3. LJB converts the selected UTF-8 `.txt` to schema-valid project TEI and writes it under e.g. `imported/daozang/`.
+3. Grognard converts the selected UTF-8 `.txt` to schema-valid project TEI and writes it under e.g. `imported/daozang/`.
 
 Secondary goal (concordance ready, UI not wired): when importing a **Kanripo** Dao work, offer the matching bundled Daozang transcription as a **parallel punctuation** source — same tape engine as Wikisource, no network fetch.
 
@@ -27,7 +27,7 @@ Secondary goal (concordance ready, UI not wired): when importing a **Kanripo** D
 | Index builder                     | `python/daozang_import/corpus_index.py`                                        |
 | Mandoku-style → TEI body          | `python/daozang_import/daozang_tei.py`                                         |
 | Desktop IPC                       | `daozang:search`, `daozang:resolveText`, `daozang:status`, corpus install/sync |
-| Wizard UI                         | LJB host module `daozangImportUi`                                              |
+| Wizard UI                         | Grognard host module `daozangImportUi`                                              |
 | **Kanripo ↔ Daozang concordance** | `plugin-kanripo-import/data/concordance/` (see below)                          |
 
 Provenance: **方瞳子源** (Fang Tongzi / homeinmists.com) transcriptions of the Zhengtong and Wanli Supplement Daozang.
@@ -42,7 +42,7 @@ node scripts/build-corpus-data.mjs --from-utf8 ~/path/to/道藏_txt
 Then refresh the Kanripo crosswalk (after corpus index changes):
 
 ```bash
-npm run build:concordance -w @ljb/plugin-kanripo-import
+npm run build:concordance -w @grognard/plugin-kanripo-import
 ```
 
 ---
@@ -74,7 +74,7 @@ Bridge (for host): JSON stdin `{ "op": "concordance_lookup", "kr_id": "KR5a0001"
 ### User-facing flow (to implement)
 
 1. User imports a Kanripo work (`KR5…` or any id with a map hit).
-2. On the parallel punctuation step, if `concordance_lookup` returns a `daozang` entry and the Daozang plugin is enabled, LJB shows **“Bundled Daozang match found”** with the matched title (or a search picker when ambiguous / override needed).
+2. On the parallel punctuation step, if `concordance_lookup` returns a `daozang` entry and the Daozang plugin is enabled, Grognard shows **“Bundled Daozang match found”** with the matched title (or a search picker when ambiguous / override needed).
 3. Host reads the `.txt` via `daozang:resolveText(rel_path)` and passes plain punctuated text to `parallel_punct.py` in **tape** mode (same as Wikisource).
 4. Coverage bar and apply behave like any other parallel source.
 

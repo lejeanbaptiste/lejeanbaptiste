@@ -240,10 +240,10 @@
           selectedMode = 'paragraphs';
         }
 
-        var $dialog = $('<div class="ljb-paste-special" />');
+        var $dialog = $('<div class="grognard-paste-special" />');
         var $list = $('<div role="listbox" aria-label="Paste options" />').appendTo($dialog);
         modes.forEach(function (option) {
-          var $button = $('<button type="button" class="ljb-paste-special-option" />')
+          var $button = $('<button type="button" class="grognard-paste-special-option" />')
             .attr('data-mode', option.mode)
             .prop('disabled', option.disabled === true)
             .css({

@@ -20,9 +20,9 @@ export interface ApplyDiagnosticsReport {
   summary: string;
 }
 
-const APPLY_DEBUG_KEY = 'ljb.autoTaggingApplyDebug';
+const APPLY_DEBUG_KEY = 'grognard.autoTaggingApplyDebug';
 
-/** Turn on verbose apply logging: localStorage.setItem('ljb.autoTaggingApplyDebug', '1') */
+/** Turn on verbose apply logging: localStorage.setItem('grognard.autoTaggingApplyDebug', '1') */
 export function isApplyDebugEnabled(): boolean {
   try {
     return typeof localStorage !== 'undefined' && localStorage.getItem(APPLY_DEBUG_KEY) === '1';
@@ -222,7 +222,7 @@ export function logApplyDiagnosticsReport(report: ApplyDiagnosticsReport): void 
   }
   console.log('Full report:', report);
   console.log(
-    "Tip: run localStorage.setItem('ljb.autoTaggingApplyDebug', '1') to always log apply details.",
+    "Tip: run localStorage.setItem('grognard.autoTaggingApplyDebug', '1') to always log apply details.",
   );
   console.groupEnd();
 }

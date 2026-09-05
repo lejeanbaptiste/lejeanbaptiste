@@ -20,7 +20,7 @@ describe('toTeiApplicationVersion', () => {
 });
 
 describe('stampLastEditedInXml', () => {
-  test('adds Le Jean-Baptiste application stamp to TEI skeleton', () => {
+  test('adds Grognard application stamp to TEI skeleton', () => {
     const xml = buildTeiSkeletonXml({
       schema: { catalogId: 'teiLite', rng: 'schema/tei_lite.rng', css: 'schema/tei.css' },
     });
@@ -94,7 +94,7 @@ describe('stampLastEditedInXml', () => {
     expect(stamped).not.toContain('Last saved');
   });
 
-  test('adds Le Jean-Baptiste responsibility without changing other revision entries', () => {
+  test('adds Grognard responsibility without changing other revision entries', () => {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <ENTRY>
 <ORLANDOHEADER>
@@ -120,7 +120,7 @@ describe('stampLastEditedInXml', () => {
     expect(stamped).toContain('>Potato</DATE>');
   });
 
-  test('updates Le Jean-Baptiste responsibility on re-save', () => {
+  test('updates Grognard responsibility on re-save', () => {
     const xml = buildOrlandoSkeletonXml({
       schema: { catalogId: 'orlando', rng: 'schema/orlando_entry.rng', css: 'schema/orlando.css' },
     });

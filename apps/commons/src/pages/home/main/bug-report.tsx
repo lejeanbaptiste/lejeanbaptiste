@@ -97,7 +97,7 @@ const GitLabTIcket = () => {
   return (
     <Button
       endIcon={<OpenInNewIcon />}
-      href="https://github.com/lejeanbaptiste/lejeanbaptiste/issues/new"
+      href="https://github.com/grognard/grognard/issues/new"
       size="small"
       sx={{ borderRadius: 1, textTransform: 'none' }}
       target="_blank"

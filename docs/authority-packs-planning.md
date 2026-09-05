@@ -39,9 +39,9 @@ This document reframes auto-tagging priorities after the first live AI runs: **w
 
 ## 1. Executive summary
 
-**The feeling of being lost is structural, not a failure of the AI work.** LJB has been building shared infrastructure (suggestion objects, review UI, apply engine, chunking, cache) plus two different _products_ at once:
+**The feeling of being lost is structural, not a failure of the AI work.** Grognard has been building shared infrastructure (suggestion objects, review UI, apply engine, chunking, cache) plus two different _products_ at once:
 
-| Layer              | Job                                | Maturity in LJB                                                                                                                          |
+| Layer              | Job                                | Maturity in Grognard                                                                                                                          |
 | ------------------ | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | **Tag bomb**       | Match known strings → wrap in tags | Engine ready (`dictionaryTag`, `MultiStringMatcher`, `seedSuggestions`); CBDB/DILA download manager built; **compile + UI not finished** |
 | **AI suggest**     | Find mentions lists miss           | Wired (desktop); Groq Qwen3.6 + `suggest.v3` ≈ F1 0.74 on Chinese gold                                                                   |
@@ -69,7 +69,7 @@ Norbert and MARKUS succeed because:
 3. **Inspectable** — user sees _why_ (dictionary row, authority id, clue line).
 4. **Language-agnostic architecture** — swap the string list, keep the matcher.
 
-LJB already matches this design:
+Grognard already matches this design:
 
 - `dictionaryTag` + `MultiStringMatcher` — O(text × distinct string lengths), not O(all patterns × text).
 - `AuthorityCandidate` — normalized shape for any source ([`authority.ts`](../packages/cwrc-leafwriter/src/autoTagging/authority.ts)).
@@ -81,7 +81,7 @@ Phase 4a explicitly positioned AI as supplement ([Auto-tagging-phases.md](Auto-t
 
 ## 3. What “authority pack” means
 
-An **authority pack** is a versioned, downloadable artifact LJB installs beside the user’s entity database (`<entityDbFolder>/authority-databases/` or a sibling `authority-packs/` directory).
+An **authority pack** is a versioned, downloadable artifact Grognard installs beside the user’s entity database (`<entityDbFolder>/authority-databases/` or a sibling `authority-packs/` directory).
 
 ### 3.1 Pack contents (target format)
 
@@ -148,7 +148,7 @@ provenance preserved. See
 
 | Who builds packs             | When                                                                                                                                |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| **LJB project (pre-ship)**   | Chinese: CBDB + DILA + one Wikidata subset; Japanese: NDL name sample. **Not shipping:** GeoNames place packs (decision 2026-08-02) |
+| **Grognard project (pre-ship)**   | Chinese: CBDB + DILA + one Wikidata subset; Japanese: NDL name sample. **Not shipping:** GeoNames place packs (decision 2026-08-02) |
 | **User import**              | CSV/TSV/xlsx (already works)                                                                                                        |
 | **Future: pack builder CLI** | Power users compile custom packs from SQL/Wikidata SPARQL                                                                           |
 
@@ -160,7 +160,7 @@ provenance preserved. See
 
 ## 4. Source-by-source feasibility research
 
-Below: can we get **bulk strings + ids + dates** offline? License? Realistic pack size? Fit for LJB?
+Below: can we get **bulk strings + ids + dates** offline? License? Realistic pack size? Fit for Grognard?
 
 Legend: **Tag** = good for string matching; **Link** = better for disambiguation/idnos after tag; **Hard** = no clean bulk path.
 
@@ -286,7 +286,7 @@ Legend: **Tag** = good for string matching; **Link** = better for disambiguation
 | **Partnership / manual export**    | THL, proprietary gazetteers                                                                 |
 | **Live API at tag time**           | **Avoid** for tag bomb (latency, rate limits, non-determinism) — reserve for disambiguation |
 
-**Build pipeline (out of app):** `tools/authority-pack-build/` (future) — Python or Node scripts that ingest raw dumps and emit `manifest.json` + NDJSON. LJB desktop app only **downloads pre-built packs** or compiles from raw files the user already fetched (CBDB/DILA path).
+**Build pipeline (out of app):** `tools/authority-pack-build/` (future) — Python or Node scripts that ingest raw dumps and emit `manifest.json` + NDJSON. Grognard desktop app only **downloads pre-built packs** or compiles from raw files the user already fetched (CBDB/DILA path).
 
 ---
 
@@ -363,11 +363,11 @@ gold XML → run suggest → measure P/R/F1 → LLM proposes edit to task block 
 
 TEI does not offer one standard for “person P held office O in year Y” that matches Norbert’s SQL attributes.
 
-| Norbert pattern                                        | LJB direction                                                                                   |
+| Norbert pattern                                        | Grognard direction                                                                                   |
 | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
 | Nested `<appointment>` with persName + roleName + date | **Deferred TEI modeling** — appointment clues are in authority packs, without dates/order       |
 | `person_id` on `<roleName>`                            | **Non-TEI** — avoid in interchange; use `@corresp` / standoff / event table later               |
-| Flat tag bomb then CSV disambiguation                  | **Current LJB path** — matches Phase 2–4 design; appointment metadata supplies additional clues |
+| Flat tag bomb then CSV disambiguation                  | **Current Grognard path** — matches Phase 2–4 design; appointment metadata supplies additional clues |
 
 **Do not block tag-bomb work on appointment modeling.** Tag offices as
 `roleName` strings and use office/appointment metadata for disambiguation;
@@ -448,7 +448,7 @@ Detailed action plan: **[wikidata-tag-packs-planning.md](wikidata-tag-packs-plan
 **Open questions for DPM:**
 
 1. Pre-ship packs in app installer vs download-on-first-use only?
-2. Host packs on HuggingFace/GitHub releases vs LJB CDN?
+2. Host packs on HuggingFace/GitHub releases vs Grognard CDN?
 3. Include CBDB altname type 0 (“unknown”, ~45k strings)?
 4. Office strings: ship as `roleName` tag list even without standoff entity?
 5. Wikidata pack: filter by occupation (scholar/buddhist) or take all zh-label humans?

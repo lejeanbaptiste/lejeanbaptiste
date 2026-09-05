@@ -1,6 +1,6 @@
-/** GitHub Release registry for installable LJB plugin archives. */
-export const LJB_PLUGIN_REGISTRY = {
-  releaseDownloadBaseUrl: 'https://github.com/lejeanbaptiste/plugins/releases/latest/download',
+/** GitHub Release registry for installable Grognard plugin archives. */
+export const GROGNARD_PLUGIN_REGISTRY = {
+  releaseDownloadBaseUrl: 'https://github.com/grognard/plugins/releases/latest/download',
 } as const;
 
 export const PLUGINS_INDEX_FILENAME = 'plugins-index.json';
@@ -27,10 +27,10 @@ export interface PluginReleaseIndex {
   plugins: PluginReleaseEntry[];
 }
 
-export const pluginIndexUrl = (registry = LJB_PLUGIN_REGISTRY): string =>
+export const pluginIndexUrl = (registry = GROGNARD_PLUGIN_REGISTRY): string =>
   `${registry.releaseDownloadBaseUrl}/${PLUGINS_INDEX_FILENAME}`;
 
-export const pluginArtifactUrl = (fileName: string, registry = LJB_PLUGIN_REGISTRY): string =>
+export const pluginArtifactUrl = (fileName: string, registry = GROGNARD_PLUGIN_REGISTRY): string =>
   `${registry.releaseDownloadBaseUrl}/${fileName.replace(/^\//, '')}`;
 
 const SHA256_RE = /^[0-9a-f]{64}$/;

@@ -4,9 +4,9 @@
 import { fromLocalFileUrl, isLocalFileUrl, resolveDocumentAssetUrl } from './fetchResource';
 
 describe('resolveDocumentAssetUrl', () => {
-  it('passes through absolute ljb and http URLs unchanged', () => {
-    const ljb = 'ljb://local/Users/d/project/_gaiji/KR0954.png';
-    expect(resolveDocumentAssetUrl(ljb, '/Users/d/project/doc.xml')).toBe(ljb);
+  it('passes through absolute grognard and http URLs unchanged', () => {
+    const grognard = 'grognard://local/Users/d/project/_gaiji/KR0954.png';
+    expect(resolveDocumentAssetUrl(grognard, '/Users/d/project/doc.xml')).toBe(grognard);
     expect(resolveDocumentAssetUrl('https://example.test/x.png', '/any/doc.xml')).toBe(
       'https://example.test/x.png',
     );

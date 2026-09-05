@@ -85,7 +85,7 @@ describe('canAcceptDateSuggestion', () => {
 describe('finalizeDateSuggestion', () => {
   it('merges the selected candidate attrs for ambiguous dates', () => {
     const suggestion = dateSuggestion({
-      attributes: { resp: '#ljb-sanmiao', cert: 'low' },
+      attributes: { resp: '#grognard-sanmiao', cert: 'low' },
       dateResolution: {
         status: 'ambiguous',
         candidates: [
@@ -96,7 +96,7 @@ describe('finalizeDateSuggestion', () => {
     });
     finalizeDateSuggestion(suggestion, 1);
     expect(suggestion.attributes).toEqual({
-      resp: '#ljb-sanmiao',
+      resp: '#grognard-sanmiao',
       cert: 'high',
       when: '200-01-01',
     });

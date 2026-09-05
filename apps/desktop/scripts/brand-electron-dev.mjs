@@ -1,5 +1,5 @@
 /**
- * macOS dev branding: maintain a local "Le Jean-Baptiste.app" bundle for dev.
+ * macOS dev branding: maintain a local "Grognard.app" bundle for dev.
  * Dock and Cmd+Tab read the .app bundle name/identity — patching node_modules
  * alone is not enough when the bundle folder is still named Electron.app.
  */
@@ -18,9 +18,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const APP_NAME = 'Le Jean-Baptiste';
-const DEV_APP_NAME = 'Le Jean-Baptiste.app';
-const DEV_BUNDLE_ID = 'fr.huma-num.le-jean-baptiste.dev';
+const APP_NAME = 'Grognard';
+const DEV_APP_NAME = 'Grognard.app';
+const DEV_BUNDLE_ID = 'fr.huma-num.grognard.dev';
 
 if (process.platform !== 'darwin') {
   process.exit(0);
@@ -58,7 +58,7 @@ const ensurePngIcon = () => {
 };
 
 const buildIcnsFromPng = (sourcePng, targetIcns) => {
-  const iconsetDir = path.join(os.tmpdir(), `ljb-icon-${process.pid}.iconset`);
+  const iconsetDir = path.join(os.tmpdir(), `grognard-icon-${process.pid}.iconset`);
   mkdirSync(iconsetDir, { recursive: true });
   const entries = [
     [16, 'icon_16x16.png'],
@@ -102,7 +102,7 @@ const syncDevAppBundle = (electronVersion) => {
     // rewrite them as absolute paths into node_modules, which breaks GPU helpers.
     cpSync(sourceAppRoot, devAppRoot, { recursive: true, verbatimSymlinks: true });
     writeFileSync(versionMarkerPath, electronVersion, 'utf8');
-    console.log(`[le-jean-baptiste] Created dev app bundle at ${devAppRoot}`);
+    console.log(`[grognard] Created dev app bundle at ${devAppRoot}`);
   }
 };
 
@@ -112,7 +112,7 @@ const patchDevAppMetadata = () => {
   writePlistValue(devPlistPath, 'CFBundleIdentifier', DEV_BUNDLE_ID);
 
   ensurePngIcon();
-  const tempIcns = path.join(os.tmpdir(), 'le-jean-baptiste-dev.icns');
+  const tempIcns = path.join(os.tmpdir(), 'grognard-dev.icns');
   buildIcnsFromPng(pngPath, tempIcns);
   copyFileSync(tempIcns, devBundleIconPath);
   rmSync(tempIcns, { force: true });
@@ -131,7 +131,7 @@ const patchDevAppMetadata = () => {
 try {
   if (!existsSync(electronVersionPath) || !existsSync(sourceAppRoot)) {
     console.error(
-      `[le-jean-baptiste] Electron binary is missing at ${path.join(electronRoot, 'dist')}.\n` +
+      `[grognard] Electron binary is missing at ${path.join(electronRoot, 'dist')}.\n` +
         'Run: node node_modules/electron/install.js',
     );
     process.exit(1);
@@ -139,8 +139,8 @@ try {
   const electronVersion = readFileSync(electronVersionPath, 'utf8').trim();
   syncDevAppBundle(electronVersion);
   patchDevAppMetadata();
-  console.log(`[le-jean-baptiste] Dev app ready: ${APP_NAME} (${electronVersion})`);
+  console.log(`[grognard] Dev app ready: ${APP_NAME} (${electronVersion})`);
 } catch (error) {
-  console.warn('[le-jean-baptiste] Could not prepare branded dev app:', error);
+  console.warn('[grognard] Could not prepare branded dev app:', error);
   process.exit(0);
 }

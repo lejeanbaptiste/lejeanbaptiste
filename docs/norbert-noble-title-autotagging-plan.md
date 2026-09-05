@@ -9,7 +9,7 @@ The authority-extraction review table
 source. Its accepted rows are compiled into the `noble-title-filter` authority
 pack. Deferred and rejected rows are not loaded as title rules.
 
-At runtime LJB loads this policy pack automatically when present. For every
+At runtime Grognard loads this policy pack automatically when present. For every
 authority candidate, an exact approved `persName`/`roleName` surface is removed
 from generic name matching and replaced by the derived structural candidate:
 
@@ -107,7 +107,7 @@ one textual person mention; its children remain ontologically distinct.
 
 ## TEI extensions
 
-LJB extends the TEI schemas with the following conventions.
+Grognard extends the TEI schemas with the following conventions.
 
 ### Sanmiao date components
 
@@ -432,7 +432,7 @@ the Norbert tagging/disambiguation path.
   disambiguation, so the plugin and the project entity store stay in sync.
 
 The current implementation ships `wiki-nt-links.ndjson` as structured
-AuthorityCandidate rows. LJB expands the noble-title components at runtime,
+AuthorityCandidate rows. Grognard expands the noble-title components at runtime,
 keeps wrapper search strings separate from standalone-title strings, and
 renders the latter as `nobleTitle`. The wrapper candidates participate in both
 the initial longest-match authority pass and the post-component concatenation
@@ -526,5 +526,5 @@ The apply pipeline now runs wrapper validation after every batch. A wrapper
 with `cert="unknown"` is reported as pending rather than structurally invalid;
 other missing keys, conflicting keys, malformed title children, or missing
 person components are reported as validation errors. The ordinary TEI schema
-therefore permits the explicit pending state, while the LJB wrapper validator
+therefore permits the explicit pending state, while the Grognard wrapper validator
 still enforces the resolved state.

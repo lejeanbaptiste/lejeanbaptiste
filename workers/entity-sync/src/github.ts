@@ -18,7 +18,7 @@ export async function verifyGitHubUser(
   const response = await fetch(`${apiBase}/user`, {
     headers: {
       authorization: `Bearer ${token}`,
-      'user-agent': 'ljb-entity-sync-worker',
+      'user-agent': 'grognard-entity-sync-worker',
       accept: 'application/vnd.github+json',
     },
   });

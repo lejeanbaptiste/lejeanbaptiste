@@ -130,7 +130,7 @@ class SchemaManager {
 
   /** Fingerprint used to detect on-disk schema changes without a schema id change. */
   static revisionFromRngContent(rngContent: string): string {
-    const mergeVersion = rngContent.match(/ljb-sanmiao-merge v\d+/i)?.[0];
+    const mergeVersion = rngContent.match(/grognard-sanmiao-merge v\d+/i)?.[0];
     if (mergeVersion) return mergeVersion.toLowerCase();
 
     // Use a whole-file fingerprint so changes later in large TEI RNG files
@@ -703,7 +703,7 @@ class SchemaManager {
         Math.max(localBase.lastIndexOf('/'), localBase.lastIndexOf('\\')),
       );
       const includePath = `${dir}${separator}${includeFile}`;
-      url = `ljb://${encodeURIComponent(includePath)}`;
+      url = `grognard://${encodeURIComponent(includePath)}`;
     } else if (/^https?:\/\//i.test(baseRng)) {
       const schemaBase = baseRng.match(/(.*\/)(.*)/)?.[1];
       url = schemaBase ? schemaBase + includeFile : `schema/${includeFile}`;

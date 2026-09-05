@@ -252,7 +252,7 @@ describe('saveAsDefaults', () => {
       explorerFocusedPath: '/project/sub',
       explorerFocusedIsDirectory: true,
       filename: 'untitled.xml',
-      previousPath: '/tmp/le-jean-baptiste/1/untitled.xml',
+      previousPath: '/tmp/grognard/1/untitled.xml',
       isTempFile: true,
     });
     expect(path).toBe('/project/sub/untitled.xml');

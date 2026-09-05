@@ -615,7 +615,7 @@
         "match_across_line_breaks_description": "Findet Tag-Bomben-Treffer über leere <lb>-, <pb>- und ähnliche Markierungen hinweg. Behält Markierungen in angewendeten Tags. Standardmäßig aus.",
         "match_across_line_breaks_enable": "Für dieses Projekt aktivieren",
         "asset_packs_note": "Offline-Autoritätspakete und Kartenkacheln sind jetzt auf der Registerkarte Asset-Pakete verfügbar.",
-        "bdrc_closed_note": "BDRC (BUDA) ist ein geschlossener Katalog und verbietet das Auslesen der Website. Le Jean-Baptiste durchsucht library.bdrc.io nicht. Der Zugriff läuft über Wikidata-Kennungen (Eigenschaft P2477) in den tibetischen Wikidata-Paketen; Links öffnen weiterhin die offizielle BUDA-Seite."
+        "bdrc_closed_note": "BDRC (BUDA) ist ein geschlossener Katalog und verbietet das Auslesen der Website. Grognard durchsucht library.bdrc.io nicht. Der Zugriff läuft über Wikidata-Kennungen (Eigenschaft P2477) in den tibetischen Wikidata-Paketen; Links öffnen weiterhin die offizielle BUDA-Seite."
       },
       "editor": {
         "Show Raw XML panel": "Rohes-XML-Panel anzeigen",
@@ -706,7 +706,7 @@
         "always_on_help": "Überspringen Sie das Kontrollkästchen KI pro Durchlauf (z. B. in Disambiguate) und verwenden Sie immer die KI-Kuration, wenn sie konfiguriert ist."
       },
       "github": {
-        "description": "Verbinde dein GitHub-Konto, um Ranglistenstatistiken zu veröffentlichen. LJB wird diese Verbindung auch für Issue-, Pull-Request- und Commit-Statistiken verwenden.",
+        "description": "Verbinde dein GitHub-Konto, um Ranglistenstatistiken zu veröffentlichen. Grognard wird diese Verbindung auch für Issue-, Pull-Request- und Commit-Statistiken verwenden.",
         "connect": "GitHub verbinden",
         "reconnect": "GitHub erneut verbinden",
         "connecting": "Verbindung wird hergestellt...",
@@ -716,7 +716,7 @@
         "disconnected": "GitHub getrennt.",
         "connect_failed": "Es konnte keine Verbindung zu GitHub hergestellt werden.",
         "disconnect_failed": "Verbindung zu GitHub konnte nicht getrennt werden.",
-        "browser_code": "GitHub wurde in Ihrem Browser geöffnet. Geben Sie den Code {{code}} ein, um LJB zu autorisieren."
+        "browser_code": "GitHub wurde in Ihrem Browser geöffnet. Geben Sie den Code {{code}} ein, um Grognard zu autorisieren."
       },
       "map_tiles": {
         "title": "Offline-Kartenkacheln (optional)",
@@ -799,13 +799,13 @@
         "not_saved": "Nicht verifiziert",
         "java_ok": "Java ist bereit ({{version}})",
         "java_missing": "Java 17+ für LanguageTool erforderlich. Laden Sie es unten herunter oder installieren Sie Temurin / Homebrew openjdk@17 und aktualisieren Sie.",
-        "java_managed": "LJB-verwaltet",
+        "java_managed": "Grognard-verwaltet",
         "java_download": "Java für LanguageTool herunterladen",
         "java_downloading": "Java wird heruntergeladen…",
         "java_install_ok": "Java installiert.",
         "java_install_failed": "Java-Installation fehlgeschlagen.",
         "java_refresh": "Aktualisieren",
-        "not_installed": "LanguageTool ist noch nicht in LJB installiert.",
+        "not_installed": "LanguageTool ist noch nicht in Grognard installiert.",
         "installed_version": "Installiertes LanguageTool {{version}}",
         "install": "Herunterladen & Installieren",
         "reinstall": "Neu installieren",
@@ -815,7 +815,7 @@
         "install_failed": "Installation von LanguageTool fehlgeschlagen.",
         "removed": "Verwaltetes LanguageTool entfernt.",
         "remove_failed": "LanguageTool konnte nicht entfernt werden.",
-        "use_managed": "LJB-verwalteter lokaler Server verwenden",
+        "use_managed": "Grognard-verwalteter lokaler Server verwenden",
         "use_ngrams": "Verwenden Sie englische n-Gramm-Modelle (falls heruntergeladen)",
         "ngrams_download": "Englische n-Gramme herunterladen",
         "ngrams_installed": "Englisch n-Gramm bereit",
@@ -851,13 +851,13 @@
         "map_tiles": "Offline-Kartenkacheln"
       },
       "privacy": {
-        "description": "Was Le Jean-Baptiste lokal speichert und was er nur sendet, wenn Sie sich für eine vernetzte Funktion entscheiden.",
-        "summary": "Le Jean-Baptiste ist bei normaler Desktop-Nutzung meist local-first. Ihre Dateien, Datenbanken und Einstellungen bleiben auf Ihrem Computer, es sei denn, Sie verwenden eine Funktion, die explizit mit einem anderen Dienst kommuniziert.",
+        "description": "Was Grognard lokal speichert und was er nur sendet, wenn Sie sich für eine vernetzte Funktion entscheiden.",
+        "summary": "Grognard ist bei normaler Desktop-Nutzung meist local-first. Ihre Dateien, Datenbanken und Einstellungen bleiben auf Ihrem Computer, es sei denn, Sie verwenden eine Funktion, die explizit mit einem anderen Dienst kommuniziert.",
         "local_first": "Normale Bearbeitung, lokale Entitätsdatenbanken, Offline-Pakete und die meisten Einstellungen verbleiben auf Ihrem Computer.",
         "documents_title": "Dokument-Metadaten",
         "documents_body": "Der Benutzername, den Sie in den Einstellungen eingeben, kann als Projekt-/Dokument-Metadaten in Ihre Dokumente geschrieben werden. Dieser Name reist mit der Datei, weil sie Teil des Dokuments selbst wird, nicht weil die App sie automatisch irgendwo hochlädt.",
         "leaderboard_title": "Einreichung der Bestenliste",
-        "leaderboard_body": "Wenn Sie sich entscheiden, Ihren Servicebericht an die Bestenliste zu senden, sendet Le Jean-Baptiste Ihr GitHub-Identitätstoken zur Überprüfung, Ihren angezeigten Benutzernamen/Rangkontext, Ihre Erfolgsmetriken und Ihr optionales Avatarbild an den Bestenlistendienst.",
+        "leaderboard_body": "Wenn Sie sich entscheiden, Ihren Servicebericht an die Bestenliste zu senden, sendet Grognard Ihr GitHub-Identitätstoken zur Überprüfung, Ihren angezeigten Benutzernamen/Rangkontext, Ihre Erfolgsmetriken und Ihr optionales Avatarbild an den Bestenlistendienst.",
         "telemetry_title": "Crash- und Fehlerreporting",
         "telemetry_body": "Der Editorcode unterstützt optionale Sentry-Absturz-/Fehlerberichte, wenn ein Build dies aktiviert. Das ist konfigurationsabhängig und kein normaler Bearbeitungsbedarf.",
         "web_title": "Nur-Web-Mess-Cookies",

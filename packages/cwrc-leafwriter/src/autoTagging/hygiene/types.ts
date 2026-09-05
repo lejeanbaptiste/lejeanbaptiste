@@ -2,7 +2,7 @@ import type { EntitySummary, NameEntry } from '../entityOps';
 import type { NameTypeId } from '../nameTypes';
 import type { EntityDataAssertion } from '../../plugins/entityDataExtractors';
 
-/** Peer shown on the right review card — another LJB entity or an authority pack hit. */
+/** Peer shown on the right review card — another Grognard entity or an authority pack hit. */
 export type HygienePeer =
   | { kind: 'entity'; entityId: string }
   | {
@@ -67,7 +67,7 @@ export type HygieneProposal =
 export interface HygieneFinding {
   id: string;
   kind: HygieneFindingKind;
-  /** Left-card entity (stored LJB record). */
+  /** Left-card entity (stored Grognard record). */
   entityId: string;
   /** Extra entity ids involved (merge / near-dup / authority-id dup). */
   relatedEntityIds?: string[];

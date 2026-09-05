@@ -309,7 +309,7 @@ import {
   validateEntitySqliteAssertion,
 } from './entityDbSqlite/readService';
 
-const APP_NAME = 'Le Jean-Baptiste';
+const APP_NAME = 'Grognard';
 
 // GTK4 (the Electron default on modern Linux desktops) renders popup menus
 // with the wrong font size; GTK3 follows the system font settings.
@@ -482,7 +482,7 @@ const logAiTranslationDebug = async (entry: Record<string, unknown>): Promise<vo
       'utf8',
     );
   } catch (error) {
-    console.error('[le-jean-baptiste] Failed to write AI translation debug log:', error);
+    console.error('[grognard] Failed to write AI translation debug log:', error);
   }
 };
 
@@ -839,7 +839,7 @@ const getAppIcon = () => {
 
 protocol.registerSchemesAsPrivileged([
   {
-    scheme: 'ljb',
+    scheme: 'grognard',
     privileges: {
       secure: true,
       standard: true,
@@ -886,11 +886,11 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 
-const registerLjbProtocol = () => {
-  protocol.registerFileProtocol('ljb', (request, callback) => {
+const registerGrognardProtocol = () => {
+  protocol.registerFileProtocol('grognard', (request, callback) => {
     try {
       const filePath = fromLocalFileUrl(request.url);
-      if (!filePath) throw new Error('invalid ljb:// url');
+      if (!filePath) throw new Error('invalid grognard:// url');
       callback({ path: path.normalize(filePath) });
     } catch {
       callback({ error: -2 });
@@ -901,11 +901,11 @@ const registerLjbProtocol = () => {
 const isDev = !app.isPackaged;
 // Allow opening DevTools in a packaged build too, but only when explicitly requested via env
 // var — this keeps it unreachable for normal end users while letting us inspect release builds
-// (e.g. `set LJB_OPEN_DEVTOOLS=1 && "Le Jean-Baptiste.exe"` on Windows) where devtools would
+// (e.g. `set GROGNARD_OPEN_DEVTOOLS=1 && "Grognard.exe"` on Windows) where devtools would
 // otherwise be completely inaccessible.
-const devToolsEnabled = isDev || process.env.LJB_OPEN_DEVTOOLS === '1';
+const devToolsEnabled = isDev || process.env.GROGNARD_OPEN_DEVTOOLS === '1';
 const DEV_COMMONS_URL = process.env.COMMONS_URL ?? 'http://localhost:3000';
-const PROD_SERVER_PORT = process.env.LJB_SERVER_PORT ?? '3847';
+const PROD_SERVER_PORT = process.env.GROGNARD_SERVER_PORT ?? '3847';
 const DEV_READY_TIMEOUT_MS = 120_000;
 const DEV_READY_POLL_MS = 1_000;
 const PROD_READY_TIMEOUT_MS = 30_000;
@@ -1048,7 +1048,7 @@ const startCommonsServer = async (): Promise<void> => {
   serverProcess = child;
 
   child.stdout?.on('data', (data: Buffer) => {
-    if (process.env.LJB_DEBUG === '1') console.log('[commons-server]', data.toString());
+    if (process.env.GROGNARD_DEBUG === '1') console.log('[commons-server]', data.toString());
   });
 
   child.stderr?.on('data', (data: Buffer) => {
@@ -1247,7 +1247,7 @@ const prepareRendererForQuit = async (): Promise<void> => {
     // A renderer that is already gone cannot block window shutdown. Continue
     // with Electron's normal quit path; the error is useful when diagnosing a
     // genuinely unresponsive renderer but should never trap the user in app.
-    console.warn('[le-jean-baptiste] could not prepare renderer for quit:', error);
+    console.warn('[grognard] could not prepare renderer for quit:', error);
   }
 };
 
@@ -1302,7 +1302,7 @@ const handleOpenProjectMenu = async () => {
       await waitForRendererReady();
       await new Promise<void>((resolve) => setImmediate(resolve));
     } catch (error) {
-      console.error('[le-jean-baptiste] Renderer not ready for open project:', error);
+      console.error('[grognard] Renderer not ready for open project:', error);
       return;
     }
   }
@@ -1319,7 +1319,7 @@ const handleOpenRecentProjectMenu = async (projectFilePath: string) => {
       await waitForRendererReady();
       await new Promise<void>((resolve) => setImmediate(resolve));
     } catch (error) {
-      console.error('[le-jean-baptiste] Renderer not ready for recent project:', error);
+      console.error('[grognard] Renderer not ready for recent project:', error);
       return;
     }
   }
@@ -1511,7 +1511,7 @@ function buildApplicationMenu() {
           settingsItem,
           menuSeparator(),
           {
-            label: 'About Le Jean-Baptiste',
+            label: 'About Grognard',
             click: () => sendMenuAction('open-about'),
           },
           menuSeparator(),
@@ -1635,7 +1635,7 @@ const openProjectFromPath = async (projectFilePath: string) => {
     }
     return await activateOpenedProject(bundle);
   } catch (error) {
-    console.error('[le-jean-baptiste] openProjectAtPath failed:', error);
+    console.error('[grognard] openProjectAtPath failed:', error);
     if (!mainWindow.isDestroyed()) {
       await dialog.showMessageBox(mainWindow, {
         type: 'error',
@@ -1681,7 +1681,7 @@ const openProjectFromDialog = async () => {
     const bundle = await loadOrCreateProject(result.filePaths[0]);
     return await activateOpenedProject(bundle);
   } catch (error) {
-    console.error('[le-jean-baptiste] openProject failed:', error);
+    console.error('[grognard] openProject failed:', error);
     if (!mainWindow.isDestroyed()) {
       await dialog.showMessageBox(mainWindow, {
         type: 'error',
@@ -1729,7 +1729,7 @@ const registerIpcHandlers = () => {
       await assertRendererWritePath(request.sourceEntitiesPath);
       await assertRendererWritePath(request.centralEntitiesPath);
       await assertRendererWritePath(
-        path.join(request.centralLjbDir, 'bulk-import-proposals.jsonl'),
+        path.join(request.centralGrognardDir, 'bulk-import-proposals.jsonl'),
       );
       return startBulkBridgeJob(
         request,
@@ -2982,7 +2982,7 @@ const registerIpcHandlers = () => {
   });
 
   ipcMain.handle('createTempDocument', async (_event, content: string) => {
-    const dir = path.join(app.getPath('temp'), 'le-jean-baptiste', `${Date.now()}`);
+    const dir = path.join(app.getPath('temp'), 'grognard', `${Date.now()}`);
     await fs.mkdir(dir, { recursive: true });
     const filePath = path.join(dir, 'untitled.xml');
     await fs.writeFile(filePath, content, 'utf-8');
@@ -3632,7 +3632,7 @@ const registerIpcHandlers = () => {
       properties: ['openDirectory', 'createDirectory'],
       title: 'Choose entity database folder',
       message:
-        'A blank folder is fine — Le Jean-Baptiste will set up the database. Prefer a folder synced by Dropbox, iCloud, or OneDrive so it can travel between machines.',
+        'A blank folder is fine — Grognard will set up the database. Prefer a folder synced by Dropbox, iCloud, or OneDrive so it can travel between machines.',
       defaultPath: await getDialogDefaultPath(),
     };
     const result = parent
@@ -3691,7 +3691,7 @@ const registerIpcHandlers = () => {
       return {
         ok: false,
         error:
-          'That folder is a Le Jean-Baptiste project. Choose a different folder for your entity database.',
+          'That folder is a Grognard project. Choose a different folder for your entity database.',
       };
     }
 
@@ -4095,7 +4095,7 @@ const createWindow = async () => {
 
   // Surface renderer console output in the terminal for startup debugging.
   mainWindow.webContents.on('console-message', (event) => {
-    if (process.env.LJB_DEBUG === '1' || event.level === 'warning' || event.level === 'error') {
+    if (process.env.GROGNARD_DEBUG === '1' || event.level === 'warning' || event.level === 'error') {
       console.log(`[renderer:${event.level}] ${event.message}`);
     }
   });
@@ -4154,7 +4154,7 @@ const createWindow = async () => {
     const url = await getAppUrl();
     await mainWindow.loadURL(url);
   } catch (error) {
-    console.error('[le-jean-baptiste] Failed to load app URL:', error);
+    console.error('[grognard] Failed to load app URL:', error);
     const message = isDev
       ? 'Could not connect to the LEAF-Writer dev server.'
       : 'Could not start the bundled LEAF-Writer server.';
@@ -4172,7 +4172,7 @@ const createWindow = async () => {
     return;
   }
 
-  if (devToolsEnabled && process.env.LJB_OPEN_DEVTOOLS === '1') {
+  if (devToolsEnabled && process.env.GROGNARD_OPEN_DEVTOOLS === '1') {
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
 
@@ -4221,7 +4221,7 @@ app.whenReady().then(() => {
   }
 
   syncPluginApiState();
-  registerLjbProtocol();
+  registerGrognardProtocol();
   registerGameAssetProtocol();
   registerAvatarProtocol();
   registerBodyProtocol();

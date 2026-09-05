@@ -80,12 +80,12 @@ export function sequentialMatchOffsets(
 }
 
 function tagOnlyAttributes(): Record<string, string> {
-  return { resp: '#ljb-sanmiao', cert: 'low' };
+  return { resp: '#grognard-sanmiao', cert: 'low' };
 }
 
 function proposalAttributes(proposal: SanmiaoProposal): Record<string, string> {
   if (proposal.status === 'tagged') return tagOnlyAttributes();
-  const base: Record<string, string> = { resp: '#ljb-sanmiao' };
+  const base: Record<string, string> = { resp: '#grognard-sanmiao' };
   if (proposal.status === 'unique' && proposal.attrs) {
     return { ...base, cert: 'high', ...proposal.attrs };
   }

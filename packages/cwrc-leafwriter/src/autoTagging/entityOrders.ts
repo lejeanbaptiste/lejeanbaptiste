@@ -17,7 +17,7 @@
  * (`null` = key deleted). Because corpus `@key`s live in the attached database's
  * id space, applying an order is a direct `rewriteMentionKeys`; no translation
  * is needed while a project speaks one database's ids. (Cross-database
- * translation via the `ljb-central` concordance is layered on in a later phase.)
+ * translation via the `grognard-central` concordance is layered on in a later phase.)
  *
  * Storage reuses the JSONL primitives of `decisionLog.ts`.
  */
@@ -173,15 +173,15 @@ const parseCursor = (raw: string): OrderCursor => {
 
 /**
  * The set of order ids this project checkout has already applied. Stored in the
- * project's `.ljb/` (per-machine, may be gitignored): correctness never depends
+ * project's `.grognard/` (per-machine, may be gitignored): correctness never depends
  * on it because replay is idempotent (rewriting `a→b` on files already rewritten
  * is a no-op) — the cursor only spares redundant scans.
  */
 export async function readAppliedOrderIds(
   api: EntityFileApi,
-  projectLjbDir: string,
+  projectGrognardDir: string,
 ): Promise<Set<string>> {
-  const path = joinPath(projectLjbDir, ORDER_CURSOR_FILE);
+  const path = joinPath(projectGrognardDir, ORDER_CURSOR_FILE);
   if (!(await api.pathExists(path))) return new Set();
   try {
     return new Set(parseCursor(await api.readFile(path)).applied);
@@ -193,11 +193,11 @@ export async function readAppliedOrderIds(
 /** Persist the applied-order-id set for this project checkout. */
 export async function writeAppliedOrderIds(
   api: EntityFileApi,
-  projectLjbDir: string,
+  projectGrognardDir: string,
   applied: Set<string>,
 ): Promise<void> {
-  const path = joinPath(projectLjbDir, ORDER_CURSOR_FILE);
-  await api.ensureDirectory(projectLjbDir);
+  const path = joinPath(projectGrognardDir, ORDER_CURSOR_FILE);
+  await api.ensureDirectory(projectGrognardDir);
   const body: OrderCursor = { applied: [...applied] };
   await api.armOwnWrite?.(path);
   await api.writeFile(path, JSON.stringify(body, null, 2));

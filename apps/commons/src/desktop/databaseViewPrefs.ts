@@ -2,8 +2,8 @@ import type { EntityKind } from '../../../../packages/cwrc-leafwriter/src/autoTa
 import { ENTITY_KINDS } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
 
 /** Shared with the sidebar database tab and the full Database Window. */
-export const KIND_FILTER_STORAGE_KEY = 'ljb:databaseKindFilter';
-export const LAST_ENTITY_BY_KIND_STORAGE_KEY = 'ljb:databaseLastEntityByKind';
+export const KIND_FILTER_STORAGE_KEY = 'grognard:databaseKindFilter';
+export const LAST_ENTITY_BY_KIND_STORAGE_KEY = 'grognard:databaseLastEntityByKind';
 
 const KIND_FILTER_VALUES = Object.keys(ENTITY_KINDS) as EntityKind[];
 export const DEFAULT_KIND_FILTER: EntityKind = 'person';

@@ -2,10 +2,10 @@ import { containsAnyKey, rewriteMentionKeys } from './rewriteMentionKeys';
 
 describe('rewriteMentionKeys', () => {
   it('remaps a key to the surviving id', () => {
-    const xml = '<p>豈<persName key="person-000014" resp="#ljb-autotag">禹</persName>罪己</p>';
+    const xml = '<p>豈<persName key="person-000014" resp="#grognard-autotag">禹</persName>罪己</p>';
     const result = rewriteMentionKeys(xml, { 'person-000014': 'person-000002' });
     expect(result.xml).toBe(
-      '<p>豈<persName key="person-000002" resp="#ljb-autotag">禹</persName>罪己</p>',
+      '<p>豈<persName key="person-000002" resp="#grognard-autotag">禹</persName>罪己</p>',
     );
     expect(result.count).toBe(1);
     expect(result.changed).toBe(true);

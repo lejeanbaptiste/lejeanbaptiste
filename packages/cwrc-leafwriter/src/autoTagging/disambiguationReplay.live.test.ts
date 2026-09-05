@@ -2,7 +2,7 @@
  * @jest-environment node
  *
  * Opt-in live replay of cached disambiguation candidate sets through the
- * current LLM ranking prompt. Reads a project's `.ljb/disambiguation-pending.json`,
+ * current LLM ranking prompt. Reads a project's `.grognard/disambiguation-pending.json`,
  * reconstructs matching mention groups from the project's XML files, and
  * prints how often the model selects candidates vs abstains.
  *
@@ -94,7 +94,7 @@ describe('disambiguation replay against a live model (opt-in)', () => {
     'replays cached pending candidates through the current AI ranker',
     async () => {
       expect(fs.existsSync(projectRoot)).toBe(true);
-      const pendingPath = path.join(projectRoot, '.ljb', 'disambiguation-pending.json');
+      const pendingPath = path.join(projectRoot, '.grognard', 'disambiguation-pending.json');
       expect(fs.existsSync(pendingPath)).toBe(true);
 
       const { baseUrl, model, key: apiKey, keySource } = resolveLiveClientConfig();

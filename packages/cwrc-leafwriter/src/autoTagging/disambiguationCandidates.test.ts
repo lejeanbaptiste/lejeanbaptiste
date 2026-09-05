@@ -590,10 +590,10 @@ describe('disambiguationCandidates', () => {
         authorityIds: [{ type: 'NORBERT', value: 'office-4135' }],
       },
       {
-        id: 'urn:ljb:authority:norbert:office:4135',
+        id: 'urn:grognard:authority:norbert:office:4135',
         label: '吳郡太守',
         sources: ['NORBERT'],
-        uri: 'urn:ljb:authority:norbert:office:4135',
+        uri: 'urn:grognard:authority:norbert:office:4135',
         authorityIds: [{ type: 'NORBERT', value: 'office-4135' }],
       },
     ]);
@@ -613,10 +613,10 @@ describe('disambiguationCandidates', () => {
         localEntityId: 'office-local-1',
       },
       {
-        id: 'urn:ljb:authority:norbert:office:4135',
+        id: 'urn:grognard:authority:norbert:office:4135',
         label: '吳郡太守',
         sources: ['NORBERT'],
-        uri: 'urn:ljb:authority:norbert:office:4135',
+        uri: 'urn:grognard:authority:norbert:office:4135',
         authorityIds: [{ type: 'NORBERT', value: '4135' }],
       },
     ]);

@@ -255,7 +255,7 @@ export interface CentralOrderSyncSummary {
 }
 
 /**
- * Converge this project's `ljb-central` mappings against the central
+ * Converge this project's `grognard-central` mappings against the central
  * database's own order log: any mapping naming an id that was merged or
  * deleted upstream gets repointed (or cleared) automatically. This is what
  * makes a central-database Absorb reach a linked PEDB even though the PEDB
@@ -515,7 +515,7 @@ export type MergeSuggestionDecision =
  * user confirmed are the same, or delete the central entity the user
  * confirmed is an orphan — see `centralMergeSuggestions.ts`. Both the merge
  * and the delete are ordinary central Absorb/delete operations: each records
- * a durable order (so every bridged PEDB converges its own `ljb-central`
+ * a durable order (so every bridged PEDB converges its own `grognard-central`
  * mapping the next time it opens or visits its Bridge inbox) and eagerly
  * rewrites any project still using this file directly, exactly like a
  * manual central merge/delete from the database panel.

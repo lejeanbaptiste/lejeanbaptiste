@@ -50,7 +50,7 @@ import {
   type PluginTagCommandItem,
 } from '../../../../../packages/cwrc-leafwriter/src/plugins/pluginExtensions';
 
-const LAST_USED_TAG_KEY = 'ljb:lastUsedTag';
+const LAST_USED_TAG_KEY = 'grognard:lastUsedTag';
 
 const isVisualEditorActive = (): boolean =>
   Boolean(window.writer?.editor) && window.writer?.overmindState?.ui?.editorViewMode !== 'source';
@@ -134,8 +134,8 @@ export const useTagCommandController = () => {
 
   useEffect(() => {
     const refresh = () => setPluginItemsVersion((version) => version + 1);
-    window.addEventListener('ljbPluginRegistryChanged', refresh);
-    return () => window.removeEventListener('ljbPluginRegistryChanged', refresh);
+    window.addEventListener('grognardPluginRegistryChanged', refresh);
+    return () => window.removeEventListener('grognardPluginRegistryChanged', refresh);
   }, []);
 
   const refreshStatsForActiveFile = useCallback(async () => {

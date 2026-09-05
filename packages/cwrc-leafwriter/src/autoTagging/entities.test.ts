@@ -8,7 +8,7 @@ import {
   getDatabaseId,
   getEntityChanged,
   isEntityDatabase,
-  LJB_AUTOTAG_RESP,
+  GROGNARD_AUTOTAG_RESP,
   mintEntityId,
   nextEntityId,
   parseEntities,
@@ -136,7 +136,7 @@ describe('entity changed timestamps', () => {
     touchEntity(element, '2026-07-23T12:00:00.000Z');
     expect(getEntityChanged(element)).toBe('2026-07-23T12:00:00.000Z');
     const changedNotes = Array.from(element.getElementsByTagName('note')).filter(
-      (n) => n.getAttribute('type') === 'ljb-changed',
+      (n) => n.getAttribute('type') === 'grognard-changed',
     );
     expect(changedNotes).toHaveLength(1);
   });
@@ -175,13 +175,13 @@ describe('addEntity', () => {
           { type: 'Wikidata', value: 'Q11332' },
         ],
       },
-      LJB_AUTOTAG_RESP,
+      GROGNARD_AUTOTAG_RESP,
     );
 
     expect(id).toMatch(UUID_ID);
     const el = findEntity(doc, id)!;
     expect(el.nodeName).toBe('person');
-    expect(el.getAttribute('resp')).toBe(LJB_AUTOTAG_RESP);
+    expect(el.getAttribute('resp')).toBe(GROGNARD_AUTOTAG_RESP);
     expect(el.getElementsByTagName('persName')[0]?.textContent).toBe('張衡');
 
     const idnos = Array.from(el.getElementsByTagName('idno'));
@@ -203,7 +203,7 @@ describe('addEntity', () => {
       nobleTitles: [
         {
           ref: 'norbert:noble-title:zhou-wang',
-          resp: LJB_AUTOTAG_RESP,
+          resp: GROGNARD_AUTOTAG_RESP,
           source: 'doc-1',
           when: '2026-07-26T00:00:00.000Z',
           placeName: { text: '鄱陽', ref: 'norbert:place:poyang' },
@@ -221,7 +221,7 @@ describe('addEntity', () => {
     const nobleTitles = Array.from(findEntity(doc, id)!.getElementsByTagName('nobleTitle'));
     expect(nobleTitles).toHaveLength(2);
     expect(nobleTitles[0]?.getAttribute('ref')).toBe('norbert:noble-title:zhou-wang');
-    expect(nobleTitles[0]?.getAttribute('resp')).toBe(LJB_AUTOTAG_RESP);
+    expect(nobleTitles[0]?.getAttribute('resp')).toBe(GROGNARD_AUTOTAG_RESP);
     expect(nobleTitles[0]?.getAttribute('source')).toBe('doc-1');
     expect(nobleTitles[0]?.getAttribute('when')).toBe('2026-07-26T00:00:00.000Z');
     expect(nobleTitles[0]?.getElementsByTagName('placeName')[0]?.textContent).toBe('鄱陽');

@@ -5,7 +5,7 @@
  * made for another language.
  */
 
-const STORAGE_KEY = 'ljb.translationPolicy.dateFormat.v2';
+const STORAGE_KEY = 'grognard.translationPolicy.dateFormat.v2';
 
 export type YearNumbering = 'astronomical' | 'historical';
 export type EraDisplay = 'none' | 'bce_only' | 'always';
@@ -203,7 +203,7 @@ export const loadDateFormatState = (): StoredDateFormatState => {
     }
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      const legacy = window.localStorage.getItem('ljb.translationPolicy.dateFormat.v1');
+      const legacy = window.localStorage.getItem('grognard.translationPolicy.dateFormat.v1');
       if (legacy) {
         const parsed = JSON.parse(legacy) as Partial<StoredDateFormatState>;
         return {

@@ -77,8 +77,8 @@ export const EditorToolbar = () => {
   const [pluginToolbarEpoch, setPluginToolbarEpoch] = useState(0);
   useEffect(() => {
     const onRegistryChanged = () => setPluginToolbarEpoch((n) => n + 1);
-    window.addEventListener('ljbPluginRegistryChanged', onRegistryChanged);
-    return () => window.removeEventListener('ljbPluginRegistryChanged', onRegistryChanged);
+    window.addEventListener('grognardPluginRegistryChanged', onRegistryChanged);
+    return () => window.removeEventListener('grognardPluginRegistryChanged', onRegistryChanged);
   }, []);
   const pluginToolbarItems = pluginToolbarEpoch >= 0 ? getPluginToolbarItems() : [];
 

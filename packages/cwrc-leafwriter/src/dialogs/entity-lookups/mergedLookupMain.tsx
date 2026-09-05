@@ -104,7 +104,7 @@ const primaryUriForCandidate = (candidate: DisambiguationCandidate): string => {
     if (type === 'bdrc')
       return `https://library.bdrc.io/show/bdr:${auth.value.replace(/^bdr:/i, '')}`;
   }
-  return `urn:ljb:lookup:${candidate.id}`;
+  return `urn:grognard:lookup:${candidate.id}`;
 };
 
 const entryFromCandidate = (
@@ -175,7 +175,7 @@ export const MergedLookupMain = () => {
           pathExists: async () => false,
           ensureDirectory: async () => undefined,
         },
-        '/tmp/ljb-lookup-cache',
+        '/tmp/grognard-lookup-cache',
       );
     }
     return cacheRef.current;

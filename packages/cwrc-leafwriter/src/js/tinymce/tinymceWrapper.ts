@@ -551,10 +551,10 @@ export const tinymceWrapperInit = function ({
       selectedMode = 'paragraphs';
     }
 
-    const $dialog = $('<div class="ljb-paste-special" />');
+    const $dialog = $('<div class="grognard-paste-special" />');
     const $list = $('<div role="listbox" aria-label="Paste options" />').appendTo($dialog);
     modes.forEach((option) => {
-      const $button = $('<button type="button" class="ljb-paste-special-option" />')
+      const $button = $('<button type="button" class="grognard-paste-special-option" />')
         .attr('data-mode', option.mode)
         .prop('disabled', option.disabled === true)
         .css({
@@ -658,9 +658,9 @@ export const tinymceWrapperInit = function ({
     if (!body || writer.isReadOnly === true) return;
     body.contentEditable = 'true';
     if (writer.isTextLocked === true) {
-      body.setAttribute('data-ljb-text-locked', 'true');
+      body.setAttribute('data-grognard-text-locked', 'true');
     } else {
-      body.removeAttribute('data-ljb-text-locked');
+      body.removeAttribute('data-grognard-text-locked');
     }
   };
   writer.applyTextLockDomGuard = applyTextLockDomGuard;

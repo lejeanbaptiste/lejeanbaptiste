@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
- * Chrome native-messaging host: stdin JSON → POST to LJB browser-bridge.
+ * Chrome native-messaging host: stdin JSON → POST to Grognard browser-bridge.
  */
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
 const pointerCandidates = () => [
-  path.join(os.homedir(), '.config', 'lejeanbaptiste', 'browser-bridge.json'),
-  path.join(os.homedir(), '.config', 'le-jean-baptiste', 'browser-bridge.json'),
+  path.join(os.homedir(), '.config', 'grognard', 'browser-bridge.json'),
+  path.join(os.homedir(), '.config', 'grognard', 'browser-bridge.json'),
 ];
 
 const readBridge = () => {
@@ -70,13 +70,13 @@ const main = async () => {
   }
   const bridge = readBridge();
   if (!bridge?.port || !bridge?.token) {
-    writeNativeMessage({ error: 'LJB_NOT_RUNNING' });
+    writeNativeMessage({ error: 'GROGNARD_NOT_RUNNING' });
     return;
   }
   try {
     process.kill(bridge.pid, 0);
   } catch {
-    writeNativeMessage({ error: 'LJB_NOT_RUNNING' });
+    writeNativeMessage({ error: 'GROGNARD_NOT_RUNNING' });
     return;
   }
   try {
@@ -91,7 +91,7 @@ const main = async () => {
     const body = await response.json();
     writeNativeMessage(body);
   } catch {
-    writeNativeMessage({ error: 'LJB_NOT_RUNNING' });
+    writeNativeMessage({ error: 'GROGNARD_NOT_RUNNING' });
   }
 };
 

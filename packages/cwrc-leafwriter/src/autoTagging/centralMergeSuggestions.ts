@@ -7,10 +7,10 @@
  * catalogue, so it must never happen silently.
  *
  *  - **merge**: a PEDB merge unioned two project entities that each carry a
- *    `ljb-central` mapping for the same user pointing at two *different*
+ *    `grognard-central` mapping for the same user pointing at two *different*
  *    central ids (see the `centralConflicts` produced by `mergeEntities`) —
  *    a strong hint the two central entities are duplicates too.
- *  - **delete**: a PEDB entity carrying a `ljb-central` mapping was deleted
+ *  - **delete**: a PEDB entity carrying a `grognard-central` mapping was deleted
  *    (purged) from the project — a hint the linked central entity may now be
  *    an orphan worth reviewing for deletion too. (Not raised for the
  *    corpus-only "purge keys" recovery flow, which never touches

@@ -33,8 +33,8 @@ export const DesktopEntityDatabase = () => {
   useEffect(() => {
     const sync = () => setEntityDbFolder(getCommonsUiBridge()?.entityDbFolder ?? null);
     sync();
-    window.addEventListener('ljbCommonsUiChanged', sync);
-    return () => window.removeEventListener('ljbCommonsUiChanged', sync);
+    window.addEventListener('grognardCommonsUiChanged', sync);
+    return () => window.removeEventListener('grognardCommonsUiChanged', sync);
   }, []);
 
   if (!bridge) return null;

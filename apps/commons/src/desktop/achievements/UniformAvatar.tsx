@@ -22,17 +22,17 @@ import {
 } from './sceneTone';
 import { MedalIcon, type MedalMetric, type MedalTier } from './MedalIcon';
 
-// Served at runtime by the desktop app's ljb-asset:// protocol handler
+// Served at runtime by the desktop app's grognard-asset:// protocol handler
 // (see apps/desktop/src/gameAssets.ts), which decrypts them from the
 // bundled, encrypted resources/game-assets/assets.bin. The source artwork
 // lives in the private visual_design repo, not this one.
-export const GAME_ASSET_PREFIX = 'ljb-asset://';
+export const GAME_ASSET_PREFIX = 'grognard-asset://';
 
-// Served by the desktop app's ljb-body:// protocol handler (see
+// Served by the desktop app's grognard-body:// protocol handler (see
 // apps/desktop/src/bodyAssets.ts), which composites one body/poseN SVG
 // (also read from the encrypted bundle) by toggling which rank/weapon
 // groups are visible - see buildBodyUrl below.
-export const BODY_SCHEME_PREFIX = 'ljb-body://compose?';
+export const BODY_SCHEME_PREFIX = 'grognard-body://compose?';
 /** Numeric compositor slot for the Rank 3 aircraft subject. This is kept
  * outside the reusable body namespace so body9 remains available for a
  * future normal body SVG. */
@@ -60,7 +60,7 @@ interface UniformAvatarProps {
    * it. */
   bodyBackImageUrl: string;
   bodyFrontImageUrl: string;
-  /** ljb-asset:// key of the backdrop to show, e.g. "bg/3b" - see
+  /** grognard-asset:// key of the backdrop to show, e.g. "bg/3b" - see
    * backgroundPoolForRank/pickBackgroundKey below for how callers choose one. */
   backgroundImageKey: string;
   /** Development-only alignment overlay for tuning portrait placement. */
@@ -333,7 +333,7 @@ export const pickWeapon = (
   return { rank, imageIds };
 };
 
-/** Builds the ljb-body:// URL for one resolved portrait's `back` or `front`
+/** Builds the grognard-body:// URL for one resolved portrait's `back` or `front`
  * layer: a fixed pose + bodyType + rank, plus whichever specific weapon
  * image ids (if any) were already resolved by pickWeapon - see
  * bodyAssets.ts's composeBodySvg for how these get turned into
@@ -1011,7 +1011,7 @@ export const UniformAvatar = ({
   // a leaderboard thumbnail) don't both define a <filter> under the same id -
   // see gradeFilterId. useId's own value contains ':', which isn't usable
   // inside a url(#...) reference without escaping, so strip it.
-  const filterIdPrefix = `ljb-scene-${useId().replace(/:/g, '')}`;
+  const filterIdPrefix = `grognard-scene-${useId().replace(/:/g, '')}`;
   const sceneTreatment = archiveTreatmentForBackground(backgroundImageKey);
   const scenePhotoFilter = sceneGradeFilter(sceneTreatment, filterIdPrefix);
   // QA's size-dependent tuning is anchored on the *rasterized* width, so the

@@ -181,7 +181,7 @@ describe('packResultUri round-trips through parseAuthorityUri', () => {
 
   it('strips an already-typed Norbert pack id when building the URN', () => {
     expect(packResultUri('norbert', 'office', 'office-42')).toBe(
-      'urn:ljb:authority:norbert:office:42',
+      'urn:grognard:authority:norbert:office:42',
     );
   });
 });
@@ -259,7 +259,7 @@ describe('office authority packs', () => {
     });
     expect(searchPackContent(`${row}\n`, 'norbert', 'office', '太守')[0]).toMatchObject({
       label: '太守',
-      uri: 'urn:ljb:authority:norbert:office:42',
+      uri: 'urn:grognard:authority:norbert:office:42',
     });
   });
 });

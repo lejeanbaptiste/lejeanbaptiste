@@ -2,7 +2,7 @@ import type { WrapperDisambiguationQuery } from './wrapperDisambiguationIndex';
 
 /**
  * Append-only log of person-wrapper combinations this project has actually
- * confirmed, stored as JSONL at `.ljb/wrapper-facts.jsonl` — the harvest
+ * confirmed, stored as JSONL at `.grognard/wrapper-facts.jsonl` — the harvest
  * half of "store what we find in the text, use that for tag bombing, then
  * look up the combination to disambiguate": once a wrapper's found
  * dynasty/office/title/origin/name combination resolves to a specific

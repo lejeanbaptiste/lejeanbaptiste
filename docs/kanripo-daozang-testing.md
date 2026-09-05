@@ -36,7 +36,7 @@ Open **Tools → Plugins** (or Settings → Plugins) and enable for the test pro
 
 Use a TEI All or TEI Lite project with a local schema. After schema-merge fixes, reopen the project and confirm the console does **not** show RelaxNG compile errors. In `schema/tei_all.rng` (or your wrapper), look for:
 
-`ljb-sanmiao-merge v14` (or later)
+`grognard-sanmiao-merge v14` (or later)
 
 and no duplicate `@type` on the Kanripo `<g type="kanripo">` branch.
 
@@ -85,7 +85,7 @@ PYTHONPATH=python python3 -m unittest discover -s python/tests -q
 ### 1.5 Kanripo plugin — Wikisource fetch (unit)
 
 ```bash
-npm run test:wikisource -w @ljb/plugin-kanripo-import
+npm run test:wikisource -w @grognard/plugin-kanripo-import
 ```
 
 **Expect:** MediaWiki URL parsing and chapter-page preference tests pass (no network required for unit tests).
@@ -104,7 +104,7 @@ Requires a cloned Kanripo work directory (e.g. from Kanripo.org) and network for
 
 ```bash
 # Wikisource + 荀子 (tape mode regression)
-npm run test:parallel-batch -w @ljb/plugin-kanripo-import -- \
+npm run test:parallel-batch -w @grognard/plugin-kanripo-import -- \
   --kanripo /path/to/KR3a0002 \
   --wikisource-url 'https://zh.wikisource.org/zh-hant/荀子/勸學篇'
 ```
@@ -295,7 +295,7 @@ Issues:
 | File → Import from Daozang does nothing               | Plugins enabled? Project open? Console `[plugins] Failed to load daozang-import`? Restart `dev:desktop`. |
 | Dialog opens but list duplicates / React key warnings | Refresh index in dialog or restart app (index v2 with hashed ids).                                       |
 | Python import error / mojibake                        | Daozang `.txt` GB decoding — rerun `plugin-daozang-import` python tests.                                 |
-| Schema compile error in console                       | Reopen project; confirm `ljb-sanmiao-merge v14+` in `schema/tei_all.rng`.                                |
+| Schema compile error in console                       | Reopen project; confirm `grognard-sanmiao-merge v14+` in `schema/tei_all.rng`.                                |
 | No Daozang match in Kanripo wizard                    | KR id in `kanripo_daozang_map.json`? Both plugins enabled? Parallel mode on?                             |
 | Punctuation wrong but import “succeeds”               | Check yellow quality warnings; try Wikisource or manual parallel for comparison.                         |
 

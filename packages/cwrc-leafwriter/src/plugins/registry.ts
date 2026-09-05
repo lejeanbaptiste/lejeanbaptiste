@@ -83,7 +83,7 @@ export async function refreshPluginRegistry(): Promise<PluginHostSnapshotView | 
   rebuildContributions(snapshot);
   await loadEnabledPluginModules(snapshot, previousEnabled);
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('ljbPluginRegistryChanged'));
+    window.dispatchEvent(new CustomEvent('grognardPluginRegistryChanged'));
   }
   return snapshot;
 }

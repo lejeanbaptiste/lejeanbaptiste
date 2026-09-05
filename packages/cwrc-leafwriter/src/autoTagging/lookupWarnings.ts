@@ -2,7 +2,7 @@ import type { EntityStore } from './entityStore';
 
 /**
  * Curation warnings filed by the entity lookup dialog (lookupResolve.ts),
- * stored as JSONL at `/.ljb/entity-warnings.jsonl`. The log is append-only,
+ * stored as JSONL at `/.grognard/entity-warnings.jsonl`. The log is append-only,
  * like the decision log: resolving a warning appends a `resolved` marker
  * rather than rewriting history, and readers filter markers out.
  *
@@ -104,12 +104,12 @@ export function appendResolution(
 
 /** Read the project's open lookup warnings (empty when the file doesn't exist). */
 export async function loadOpenWarnings(store: EntityStore): Promise<LookupWarning[]> {
-  const body = await store.readProjectLjbFile(WARNINGS_FILE);
+  const body = await store.readProjectGrognardFile(WARNINGS_FILE);
   return body ? parseWarnings(body) : [];
 }
 
 /** Persist the dismissal of `warning` by appending a resolution marker. */
 export async function resolveWarning(store: EntityStore, warning: LookupWarning): Promise<void> {
-  const existing = (await store.readProjectLjbFile(WARNINGS_FILE)) ?? '';
-  await store.writeProjectLjbFile(WARNINGS_FILE, appendResolution(existing, warning));
+  const existing = (await store.readProjectGrognardFile(WARNINGS_FILE)) ?? '';
+  await store.writeProjectGrognardFile(WARNINGS_FILE, appendResolution(existing, warning));
 }

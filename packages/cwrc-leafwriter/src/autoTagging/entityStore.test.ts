@@ -41,7 +41,7 @@ describe('resolveEntityStorePaths', () => {
       centralFolder: '/corpus',
     });
     expect(paths.entitiesPath).toBe('/corpus/entities.xml');
-    expect(paths.projectLjbDir).toBe('/proj/.ljb');
+    expect(paths.projectGrognardDir).toBe('/proj/.grognard');
     expect(paths.mode).toBe('central');
   });
 
@@ -51,7 +51,7 @@ describe('resolveEntityStorePaths', () => {
       entityStore: 'project',
     });
     expect(paths.entitiesPath).toBe('/proj/entities.xml');
-    expect(paths.projectLjbDir).toBe('/proj/.ljb');
+    expect(paths.projectGrognardDir).toBe('/proj/.grognard');
   });
 });
 
@@ -137,18 +137,18 @@ describe('EntityStore', () => {
     expect(fs.files.get('/proj/entities.xml')).toBe(xml);
   });
 
-  it('appends decision records under .ljb/', async () => {
+  it('appends decision records under .grognard/', async () => {
     const fs = new FakeFs();
     const store = EntityStore.fromPaths(fs, projectPaths());
 
     await store.appendDecisions([record()]);
     await store.appendDecisions([record({ action: 'rejected' }), record({ action: 'accepted' })]);
 
-    const body = fs.files.get('/proj/.ljb/entity-decisions.jsonl')!;
+    const body = fs.files.get('/proj/.grognard/entity-decisions.jsonl')!;
     expect(parseLog(body)).toHaveLength(3);
   });
 
-  it('appends and reads back harvested wrapper facts under .ljb/', async () => {
+  it('appends and reads back harvested wrapper facts under .grognard/', async () => {
     const fs = new FakeFs();
     const store = EntityStore.fromPaths(fs, projectPaths());
 
@@ -168,7 +168,7 @@ describe('EntityStore', () => {
     const facts = await store.readWrapperFacts();
     expect(facts).toHaveLength(2);
     expect(facts.map((f) => f.entityId)).toEqual(['p1', 'p2']);
-    expect(fs.files.get('/proj/.ljb/wrapper-facts.jsonl')).toBeDefined();
+    expect(fs.files.get('/proj/.grognard/wrapper-facts.jsonl')).toBeDefined();
   });
 
   it('uses the platform separator implied by the root', () => {
@@ -178,6 +178,6 @@ describe('EntityStore', () => {
     });
     const win = EntityStore.fromPaths(new FakeFs(), paths);
     expect(win.entitiesPath).toBe('C:\\proj\\entities.xml');
-    expect(win.decisionsPath).toBe('C:\\proj\\.ljb\\entity-decisions.jsonl');
+    expect(win.decisionsPath).toBe('C:\\proj\\.grognard\\entity-decisions.jsonl');
   });
 });

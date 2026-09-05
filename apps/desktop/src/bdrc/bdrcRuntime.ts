@@ -10,7 +10,7 @@ const resolveBdrcImportModule = (): string => {
     path.resolve(__dirname, '../src/bdrc/bdrcImport.mjs'),
   ];
   const hit = candidates.find((candidate) => existsSync(candidate));
-  if (!hit) throw new Error('bdrcImport.mjs not found in the LJB desktop bundle.');
+  if (!hit) throw new Error('bdrcImport.mjs not found in the Grognard desktop bundle.');
   return hit;
 };
 

@@ -54,7 +54,7 @@ Run before any UI testing. All green today.
 - [ ] **1.2** Typecheck: `npm run typecheck --workspaces --if-present` — no `error TS`.
 - [ ] **1.3** Lint/format: `npx prettier --check apps/desktop/src/bdrc` etc.
 - [ ] **1.4** Plugin manifest: `cd ../plugins && npm run validate` → `plugin-bdrc-import` ok.
-- [ ] **1.5** Plugin build: `npm run build -w @ljb/plugin-bdrc-import` → `dist/register.mjs`.
+- [ ] **1.5** Plugin build: `npm run build -w @grognard/plugin-bdrc-import` → `dist/register.mjs`.
 - [ ] **1.6** Live core smoke (hits purl.bdrc.io):
   ```bash
   node --input-type=module -e '
@@ -127,15 +127,15 @@ Open via **File → Import from BDRC…**.
 
 - [ ] Load `apps/browser-extension` unpacked in Brave/Chrome (Developer mode → Load unpacked).
 - [ ] `manifest.json` version is `0.3.0`; `library.bdrc.io` in host permissions.
-- [ ] Start LJB with a project open (writes the native-messaging manifest).
+- [ ] Start Grognard with a project open (writes the native-messaging manifest).
 - [ ] Open the reader URL above on `library.bdrc.io`. Click the extension → **Import**.
 - [ ] Popup intro/explainer text mentions BDRC.
-- [ ] LJB comes to the foreground and **Import from BDRC** opens with the ref pre-filled
+- [ ] Grognard comes to the foreground and **Import from BDRC** opens with the ref pre-filled
       and Inspect already run.
 - [ ] Confirm → volume imports as in Part 2.
 - [ ] On a non-etext BDRC page (a work landing page, search) → popup says the page
       can't be imported (no `openEtext`).
-- [ ] With LJB **not** running → popup says LJB is not running.
+- [ ] With Grognard **not** running → popup says Grognard is not running.
 - [ ] Reload a BDRC tab that was open before the extension was installed → Import
       still works (content script injected on reload).
 
@@ -143,7 +143,7 @@ Open via **File → Import from BDRC…**.
 
 ## Part 4 — Cache
 
-Cache dir: `<userData>/bdrc-cache/` (macOS: `~/Library/Application Support/Le Jean-Baptiste/bdrc-cache/`).
+Cache dir: `<userData>/bdrc-cache/` (macOS: `~/Library/Application Support/Grognard/bdrc-cache/`).
 
 - [ ] First import of a volume → a file `UT…__<40hex>.json` appears.
 - [ ] Second import (same volume, cache toggle **off**) → status says
@@ -164,6 +164,6 @@ Cache dir: `<userData>/bdrc-cache/` (macOS: `~/Library/Application Support/Le Je
 - [ ] `iiif.bdrc.io` unreachable but purl reachable → import still succeeds; `@facs`
       URLs are written (they just won't resolve).
 - [ ] A `UT…` that 404s on `Etext_base` → clear "HTTP 404" error.
-- [ ] Kill LJB mid-import → no partial `.xml` left in `imported/bdrc/`.
+- [ ] Kill Grognard mid-import → no partial `.xml` left in `imported/bdrc/`.
 - [ ] Very large volume (e.g. a full Kangyur volume, ~1MB text) → completes; editor
       opens it without hanging.

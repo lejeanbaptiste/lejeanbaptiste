@@ -1,8 +1,8 @@
 # Wikisource import
 
-**Status (2026-08-29):** Built-in desktop import plus a Brave/Chromium extension. LJB fetches wikitext and Wikidata; the extension only sends a page order.
+**Status (2026-08-29):** Built-in desktop import plus a Brave/Chromium extension. Grognard fetches wikitext and Wikidata; the extension only sends a page order.
 
-## In LJB
+## In Grognard
 
 1. Open a **TEI** project (not Orlando / jTEI).
 2. **File → Import from Wikisource…**
@@ -16,19 +16,19 @@ Metadata: Wikidata sitelink Q-id from the **work root** (authors P50, Ctext P451
 
 ## Browser extension (Brave)
 
-1. Start LJB once so it can write native-messaging manifests (Linux: `~/.config/BraveSoftware/Brave-Browser/NativeMessagingHosts/org.lejeanbaptiste.import.json`).
+1. Start Grognard once so it can write native-messaging manifests (Linux: `~/.config/BraveSoftware/Brave-Browser/NativeMessagingHosts/org.grognard.import.json`).
 2. Open `brave://extensions` → Developer mode → **Load unpacked** → `apps/browser-extension`.
-3. On a Wikisource page, click the extension → **Import**. Confirm in LJB.
+3. On a Wikisource page, click the extension → **Import**. Confirm in Grognard.
 
 The first-run explainer lives in the extension (`?` to show it again). Talk / `Index:` / `Page:` / author / portal pages are rejected in the popup.
 
-If LJB is not running, the popup says so. Node.js must be on `PATH` for the native host (`ljb-browser-host`).
+If Grognard is not running, the popup says so. Node.js must be on `PATH` for the native host (`grognard-browser-host`).
 
 Pinned extension id: `dddnkaleimllefhfolmhdfbidnjfojjh`.
 
 ## Kanripo via the same extension
 
-On [kanripo.org](https://www.kanripo.org), open a text whose URL hash names a KR id (e.g. `#KR1a0030_001` for one juan, or `#KR1a0030` for the whole work). Click **Import** in the extension. LJB opens **Import from Kanripo** with the work pre-selected and import scope set (single juan vs full GitHub clone). Confirm and run import in the dialog.
+On [kanripo.org](https://www.kanripo.org), open a text whose URL hash names a KR id (e.g. `#KR1a0030_001` for one juan, or `#KR1a0030` for the whole work). Click **Import** in the extension. Grognard opens **Import from Kanripo** with the work pre-selected and import scope set (single juan vs full GitHub clone). Confirm and run import in the dialog.
 
 The extension reads the hash, path, or `loc=` query parameter; it does not scrape page text.
 
@@ -46,11 +46,11 @@ Other language wikis use a generic fallback (strip templates, paragraphs).
 
 ## Kanripo parallel punctuation
 
-Kanripo still fetches Wikisource **HTML** for the tape engine. The shared module lives in LJB (`apps/desktop/src/wikisource/wikisource-parallel.mjs`); the plugin re-exports it.
+Kanripo still fetches Wikisource **HTML** for the tape engine. The shared module lives in Grognard (`apps/desktop/src/wikisource/wikisource-parallel.mjs`); the plugin re-exports it.
 
 ## Tests
 
 ```bash
 node --test apps/desktop/src/wikisource/*.test.mjs
-npm run test:wikisource -w @ljb/plugin-kanripo-import
+npm run test:wikisource -w @grognard/plugin-kanripo-import
 ```

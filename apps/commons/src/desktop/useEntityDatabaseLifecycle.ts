@@ -107,7 +107,7 @@ export const useEntityDatabaseLifecycle = () => {
       // Converge this project's central-database mappings against any
       // Absorb/delete that happened in the central database itself — a
       // duplicate merged there doesn't rewrite this PEDB's corpus keys (it
-      // never touches this id space), but the `ljb-central` mapping that
+      // never touches this id space), but the `grognard-central` mapping that
       // named the merged-away id would otherwise sit stale/"broken" until
       // someone opens the Bridge inbox by hand.
       if (!config?.syncToCentral) {

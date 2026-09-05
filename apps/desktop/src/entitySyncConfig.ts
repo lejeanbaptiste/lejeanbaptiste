@@ -26,7 +26,7 @@ export interface EntitySyncAuth {
 
 export interface EntitySyncConfig {
   enabled: boolean;
-  /** Base URL of the sync server, e.g. https://ljb-entity-sync.<sub>.workers.dev */
+  /** Base URL of the sync server, e.g. https://grognard-entity-sync.<sub>.workers.dev */
   endpoint: string;
   /** Auto-sync cadence while the app is running. */
   intervalMinutes: number;

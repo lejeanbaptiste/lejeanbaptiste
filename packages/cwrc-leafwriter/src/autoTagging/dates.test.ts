@@ -232,7 +232,7 @@ describe('createDateReviewRecalculator', () => {
     current[0]!.dateResolution!.selectedCandidateIndex = 1;
     current[0]!.dateResolution!.userLocked = true;
     current[0]!.attributes = {
-      resp: '#ljb-sanmiao',
+      resp: '#grognard-sanmiao',
       cert: 'high',
       era_id: '272',
       year: '1',
@@ -303,7 +303,7 @@ describe('createDateReviewRecalculator', () => {
     current[0]!.dateResolution!.selectedCandidateIndex = 1;
     current[0]!.dateResolution!.userLocked = true;
     current[0]!.attributes = {
-      resp: '#ljb-sanmiao',
+      resp: '#grognard-sanmiao',
       cert: 'high',
       era_id: '272',
       year: '1',
@@ -311,7 +311,7 @@ describe('createDateReviewRecalculator', () => {
     };
     current[1]!.status = 'accepted';
     current[1]!.attributes = {
-      resp: '#ljb-sanmiao',
+      resp: '#grognard-sanmiao',
       cert: 'high',
       era_id: '271',
       year: '4',
@@ -384,7 +384,7 @@ describe('createDateReviewRecalculator', () => {
     current[0]!.dateResolution!.selectedCandidateIndex = 1;
     current[0]!.dateResolution!.userLocked = true;
     current[0]!.attributes = {
-      resp: '#ljb-sanmiao',
+      resp: '#grognard-sanmiao',
       cert: 'high',
       era_id: '272',
       year: '1',
@@ -395,7 +395,7 @@ describe('createDateReviewRecalculator', () => {
     current[1]!.dateResolution!.selectedCandidateIndex = 1;
     current[1]!.dateResolution!.userLocked = true;
     current[1]!.attributes = {
-      resp: '#ljb-sanmiao',
+      resp: '#grognard-sanmiao',
       cert: 'high',
       era_id: '272',
       year: '2',

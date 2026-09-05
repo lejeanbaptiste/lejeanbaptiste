@@ -11,9 +11,9 @@ import {
 import { useActions } from '@src/overmind';
 import { useEffect, useState } from 'react';
 
-const PROJECT_URL = 'https://github.com/lejeanbaptiste/lejeanbaptiste';
+const PROJECT_URL = 'https://github.com/grognard/grognard';
 const BUG_REPORT_URL =
-  'https://github.com/lejeanbaptiste/lejeanbaptiste/issues/new?template=bug_report.md';
+  'https://github.com/grognard/grognard/issues/new?template=bug_report.md';
 
 interface AboutDialogProps {
   onClose: () => void;
@@ -44,7 +44,7 @@ export const AboutDialog = ({ onClose, open }: AboutDialogProps) => {
 
   return (
     <Dialog fullWidth maxWidth="xs" onClose={onClose} open={open}>
-      <DialogTitle>About Le Jean-Baptiste</DialogTitle>
+      <DialogTitle>About Grognard</DialogTitle>
       <DialogContent>
         <Stack spacing={2}>
           <Typography variant="body2">

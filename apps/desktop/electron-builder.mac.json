@@ -4,11 +4,11 @@
   "publish": [
     {
       "provider": "github",
-      "owner": "lejeanbaptiste",
-      "repo": "lejeanbaptiste"
+      "owner": "grognard",
+      "repo": "grognard"
     }
   ],
-  "artifactName": "Le-Jean-Baptiste-mac-${version}-${arch}.${ext}",
+  "artifactName": "Grognard-mac-${version}-${arch}.${ext}",
   "mac": {
     "icon": "resources/branding/icon.filled.png",
     "target": ["pkg", "zip"],

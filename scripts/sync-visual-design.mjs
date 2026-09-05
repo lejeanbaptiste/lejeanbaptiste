@@ -32,7 +32,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const VISUAL_DESIGN_REPO =
-  process.env.VISUAL_DESIGN_REPO ?? 'git@github.com:lejeanbaptiste/visual_design.git';
+  process.env.VISUAL_DESIGN_REPO ?? 'git@github.com:grognard/visual_design.git';
 const VISUAL_DESIGN_ROOT =
   process.env.VISUAL_DESIGN_ROOT ?? path.join(ROOT, '.cache', 'visual_design');
 

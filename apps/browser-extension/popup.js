@@ -1,4 +1,4 @@
-const HOST = 'org.lejeanbaptiste.import';
+const HOST = 'org.grognard.import';
 const statusEl = document.getElementById('status');
 const explainer = document.getElementById('explainer');
 const dontShow = document.getElementById('dont-show');
@@ -22,22 +22,22 @@ const siteKind = (href) => {
 
 const introFor = (kind) => {
   if (kind === 'kanripo') {
-    return 'Import this Kanripo work or juan into Le Jean-Baptiste. A juan URL (e.g. #KR1a0030_001) imports one 卷; a work id alone imports the full GitHub edition.';
+    return 'Import this Kanripo work or juan into Grognard. A juan URL (e.g. #KR1a0030_001) imports one 卷; a work id alone imports the full GitHub edition.';
   }
   if (kind === 'bdrc') {
-    return 'Import this BDRC etext volume into Le Jean-Baptiste. One import pulls the whole volume, with a page break per folio.';
+    return 'Import this BDRC etext volume into Grognard. One import pulls the whole volume, with a page break per folio.';
   }
-  return 'Import this Wikisource page into Le Jean-Baptiste. A chapter sends one file; a work root sends every chapter or juan.';
+  return 'Import this Wikisource page into Grognard. A chapter sends one file; a work root sends every chapter or juan.';
 };
 
 const explainerFor = (kind) => {
   if (kind === 'kanripo') {
-    return 'LJB must be running with a project open. The extension only names the KR id and juan; LJB fetches text and metadata. Confirm scope in the import dialog.';
+    return 'Grognard must be running with a project open. The extension only names the KR id and juan; Grognard fetches text and metadata. Confirm scope in the import dialog.';
   }
   if (kind === 'bdrc') {
-    return 'LJB must be running with a project open. The extension only names the etext volume; LJB fetches text and metadata from the BDRC Public Data Interface. Confirm in the import dialog.';
+    return 'Grognard must be running with a project open. The extension only names the etext volume; Grognard fetches text and metadata from the BDRC Public Data Interface. Confirm in the import dialog.';
   }
-  return 'LJB must be running with a project open. The extension only names the page; LJB fetches text and Wikidata metadata. If several editions exist, LJB asks which tree to import.';
+  return 'Grognard must be running with a project open. The extension only names the page; Grognard fetches text and Wikidata metadata. If several editions exist, Grognard asks which tree to import.';
 };
 
 chrome.storage.local.get(['hideExplainer'], (stored) => {
@@ -67,10 +67,10 @@ document.getElementById('import').addEventListener('click', async () => {
 
   const messageType =
     kind === 'kanripo'
-      ? 'ljb-kanripo-page-info'
+      ? 'grognard-kanripo-page-info'
       : kind === 'bdrc'
-        ? 'ljb-bdrc-page-info'
-        : 'ljb-page-info';
+        ? 'grognard-bdrc-page-info'
+        : 'grognard-page-info';
   let info;
   try {
     info = await chrome.tabs.sendMessage(tab.id, { type: messageType });
@@ -113,21 +113,21 @@ document.getElementById('import').addEventListener('click', async () => {
     };
   }
 
-  setStatus('Contacting LJB…');
+  setStatus('Contacting Grognard…');
   chrome.runtime.sendNativeMessage(HOST, order, (response) => {
     if (chrome.runtime.lastError) {
-      setStatus('LJB is not running (start the desktop app and try again).');
+      setStatus('Grognard is not running (start the desktop app and try again).');
       return;
     }
-    if (response?.error === 'LJB_NOT_RUNNING') {
-      setStatus('LJB is not running. Start it with a project open.');
+    if (response?.error === 'GROGNARD_NOT_RUNNING') {
+      setStatus('Grognard is not running. Start it with a project open.');
       return;
     }
     if (response?.ok) {
-      setStatus('Sent to LJB. Confirm the import in the app.');
+      setStatus('Sent to Grognard. Confirm the import in the app.');
       return;
     }
-    setStatus(response?.error || 'LJB did not accept the import.');
+    setStatus(response?.error || 'Grognard did not accept the import.');
   });
 });
 

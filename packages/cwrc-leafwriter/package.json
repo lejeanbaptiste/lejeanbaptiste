@@ -8,13 +8,13 @@
     "editor",
     "annotation"
   ],
-  "homepage": "https://github.com/lejeanbaptiste/lejeanbaptiste",
+  "homepage": "https://github.com/grognard/grognard",
   "bugs": {
-    "url": "https://github.com/lejeanbaptiste/lejeanbaptiste/issues"
+    "url": "https://github.com/grognard/grognard/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/lejeanbaptiste/lejeanbaptiste.git"
+    "url": "https://github.com/grognard/grognard.git"
   },
   "publishConfig": {
     "access": "public"

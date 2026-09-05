@@ -38,8 +38,8 @@ const deriveSchemaName = (rng?: string): string => {
   if (!rng) return '';
 
   try {
-    if (rng.startsWith('ljb://')) {
-      const path = decodeURIComponent(rng.slice('ljb://'.length));
+    if (rng.startsWith('grognard://')) {
+      const path = decodeURIComponent(rng.slice('grognard://'.length));
       return (
         path
           .split(/[/\\]/)
@@ -103,7 +103,7 @@ export const EditSchemaDialog = ({
     ? z
         .string()
         .min(1, { message: t('LW.Must be a valid URL').toString() })
-        .refine((val) => val.startsWith('ljb://') || val.startsWith('https://'), {
+        .refine((val) => val.startsWith('grognard://') || val.startsWith('https://'), {
           message: t('LW.URL must start with HTTPS secured connection').toString(),
         })
     : z.url({ message: t('LW.Must be a valid URL').toString() }).startsWith('https://', {
@@ -113,7 +113,7 @@ export const EditSchemaDialog = ({
   const cssValidation = isDesktop
     ? z
         .string()
-        .refine((val) => !val || val.startsWith('ljb://') || val.startsWith('https://'), {
+        .refine((val) => !val || val.startsWith('grognard://') || val.startsWith('https://'), {
           message: t('LW.URL must start with HTTPS secured connection').toString(),
         })
         .optional()

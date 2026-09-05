@@ -36,7 +36,7 @@ const panelFields = (snapshot: PanelSnapshot): EntityFields => ({
       lang: name.language,
       type: name.nameType,
     })),
-  authorities: snapshot.authorities.filter((a) => a.type !== 'ljb-central'),
+  authorities: snapshot.authorities.filter((a) => a.type !== 'grognard-central'),
   description: snapshot.description,
   familyName: snapshot.familyName,
   givenName: snapshot.givenName,

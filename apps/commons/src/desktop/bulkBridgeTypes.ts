@@ -6,7 +6,7 @@ import type {
 export interface BulkBridgeJobRequest {
   sourceEntitiesPath: string;
   centralEntitiesPath: string;
-  centralLjbDir: string;
+  centralGrognardDir: string;
   userStableId: string;
   chunkSize?: number;
 }

@@ -1,7 +1,7 @@
 # Sanmiao date markup — TEI schema extension
 
 **Status:** Implemented (TEI catalog schemas, 2026-07)  
-**Related:** `docs/Auto-tagging.md` (East Asian dates), `docs/sanmiao-ljb-integration.md`, `docs/project-schema-planning.md`
+**Related:** `docs/Auto-tagging.md` (East Asian dates), `docs/sanmiao-grognard-integration.md`, `docs/project-schema-planning.md`
 
 ---
 
@@ -12,7 +12,7 @@ Standard TEI `<date>` allows text, `model.phrase`, and datable attributes (`when
 - Sanmiao **parse children**: `dyn`, `ruler`, `era`, `year`, `month`, `day`, `gz`, `sexYear`, `int`, `rel`, `suffix`, `lp`, `nmdgz`, `filler`, `season`, `gy`
 - Sanmiao **resolution attributes**: `jdn`, `era_id`, `dyn_id`, `ruler_id`, `cal_stream`, `year`, `month`, `intercalary`, `day`, `gz`, `nmd_gz`, `lp`, …
 
-Without a schema patch, sanmiao output fails RelaxNG validation in LJB.
+Without a schema patch, sanmiao output fails RelaxNG validation in Grognard.
 
 ---
 
@@ -23,7 +23,7 @@ Without a schema patch, sanmiao output fails RelaxNG validation in LJB.
 Written after **tag apply** or when the user accepts an ambiguous span with structure only. Safe while calendar resolution is still open.
 
 ```xml
-<date cert="low" resp="#ljb-sanmiao">
+<date cert="low" resp="#grognard-sanmiao">
   <dyn>魏</dyn><era>太和</era><year>元年</year>
 </date>
 ```
@@ -42,7 +42,7 @@ Written only when the user confirms a candidate (or auto-accept on unique solve)
       month="2"
       calendar="#chinese"
       cert="high"
-      resp="#ljb-sanmiao">
+      resp="#grognard-sanmiao">
   <era>建安</era><year>十八年</year><month>二月</month>
 </date>
 ```
@@ -57,16 +57,16 @@ Optional later: flatten parse children to plain text once resolved; keep childre
 
 ---
 
-## LJB schema merge
+## Grognard schema merge
 
 On **TEI catalog schema install** (TEI All, TEI Lite, Simple Print, jTEI) and on **project open** (existing projects):
 
 1. Upstream TEI `.rng` is saved as `schema/<name>.tei.rng` (pristine copy for regeneration).
 2. A temporary wrapper is built: one `<include href="…tei.rng">` with a **`<define name="date">` override inside the include** (the spec-correct RelaxNG replacement mechanism — not `<except>`, which is invalid).
-3. Sanmiao helper defines (`ljb.sanmiao.*`) are inlined as siblings of that include in the wrapper.
-4. The wrapper is **flattened** into `schema/<name>.rng` — a single self-contained grammar with **no `<include>` tags** (~1 MB for TEI All). This is what LJB loads and validates against.
+3. Sanmiao helper defines (`grognard.sanmiao.*`) are inlined as siblings of that include in the wrapper.
+4. The wrapper is **flattened** into `schema/<name>.rng` — a single self-contained grammar with **no `<include>` tags** (~1 MB for TEI All). This is what Grognard loads and validates against.
 
-`SANMIAO_MERGE_VERSION` (marker `ljb-sanmiao-merge vN` in the schema documentation element) bumps when generated content changes; `ensureSanmiaoDatesSchemaMerged` regenerates outdated projects on open.
+`SANMIAO_MERGE_VERSION` (marker `grognard-sanmiao-merge vN` in the schema documentation element) bumps when generated content changes; `ensureSanmiaoDatesSchemaMerged` regenerates outdated projects on open.
 
 **Orlando** and non-TEI schemas are unchanged in v1.
 
@@ -107,7 +107,7 @@ Numeric attrs read/written on `<date>` by `dates_xml_to_df` / future `apply_reso
 
 `cal_stream`, `dyn_id`, `ruler_id`, `era_id`, `ind_year`, `year`, `sex_year`, `month`, `intercalary`, `day`, `gz`, `nmd_gz`, `lp`
 
-Plus LJB extensions: `jdn`, `jdnEnd`, optional `dila_id`.
+Plus Grognard extensions: `jdn`, `jdnEnd`, optional `dila_id`.
 
 ---
 
@@ -134,4 +134,4 @@ Project settings: `dateConversion.prolepticGregorian`, `gregorianStart`, `civ`, 
 | User confirmed               | `high`        | full             |
 | User rejected all candidates | `unknown`     | none             |
 
-Always `resp="#ljb-sanmiao"` (or project encoder) on machine-assisted dates.
+Always `resp="#grognard-sanmiao"` (or project encoder) on machine-assisted dates.

@@ -1,9 +1,9 @@
 /**
  * Propagates central-database (CEDB) merge/delete orders down into a linked
- * project database's (PEDB) `ljb-central` concordance rows.
+ * project database's (PEDB) `grognard-central` concordance rows.
  *
  * When you Absorb a duplicate in the central database, the survivor's id
- * lives on; the merged-away id is gone. Any PEDB entity whose `ljb-central`
+ * lives on; the merged-away id is gone. Any PEDB entity whose `grognard-central`
  * mapping named the merged-away id is now silently "broken" (see
  * `bridgeInbox.ts`) until something repoints it. This module is that
  * something: it reads the CEDB's own order log (the same durable log used
@@ -11,7 +11,7 @@
  * repoints — or clears, for an outright delete with no survivor — the
  * matching mapping.
  *
- * Deliberately narrow: this only ever rewrites `<idno type="ljb-central">`
+ * Deliberately narrow: this only ever rewrites `<idno type="grognard-central">`
  * rows. Corpus `@key`s are never touched — central ids never appear there
  * (see `concordance.ts`), so there is nothing else to rewrite.
  */
@@ -57,7 +57,7 @@ export function pendingCentralRemap(
 }
 
 /**
- * Repoint or clear this user's `ljb-central` mapping on every PEDB entity
+ * Repoint or clear this user's `grognard-central` mapping on every PEDB entity
  * whose mapped central id was merged or deleted upstream. Pure DOM mutation;
  * the caller decides whether/when to save.
  */

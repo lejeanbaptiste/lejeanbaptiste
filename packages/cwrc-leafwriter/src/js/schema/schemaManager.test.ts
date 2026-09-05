@@ -12,8 +12,8 @@ describe('SchemaManager.revisionFromRngContent', () => {
   });
 
   it('preserves explicit merge markers', () => {
-    expect(SchemaManager.revisionFromRngContent('foo ljb-sanmiao-merge v4 bar')).toBe(
-      'ljb-sanmiao-merge v4',
+    expect(SchemaManager.revisionFromRngContent('foo grognard-sanmiao-merge v4 bar')).toBe(
+      'grognard-sanmiao-merge v4',
     );
   });
 });

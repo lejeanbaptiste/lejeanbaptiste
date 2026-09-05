@@ -1,9 +1,9 @@
-pkgname=le-jean-baptiste-desktop
+pkgname=grognard-desktop
 pkgver=0.0.1
 pkgrel=1
-pkgdesc="Le Jean-Baptiste — desktop XML editor"
+pkgdesc="Grognard — desktop XML editor"
 arch=('x86_64' 'aarch64')
-url="https://github.com/lejeanbaptiste/lejeanbaptiste"
+url="https://github.com/grognard/grognard"
 license=('GPL2')
 # The bundled Electron binary and python-build-standalone interpreter are
 # prebuilt third-party artifacts, not compiled by this package. Running
@@ -61,8 +61,8 @@ package() {
   cp -a apps/desktop/release/linux-unpacked/. "$pkgdir/opt/$pkgname/"
 
   install -d "$pkgdir/usr/bin"
-  ln -s "/opt/$pkgname/le-jean-baptiste-desktop" "$pkgdir/usr/bin/le-jean-baptiste"
+  ln -s "/opt/$pkgname/grognard-desktop" "$pkgdir/usr/bin/grognard"
 
-  install -Dm644 packaging/arch/le-jean-baptiste.desktop "$pkgdir/usr/share/applications/$pkgname.desktop"
+  install -Dm644 packaging/arch/grognard.desktop "$pkgdir/usr/share/applications/$pkgname.desktop"
   install -Dm644 apps/desktop/resources/branding/icon.png "$pkgdir/usr/share/icons/hicolor/512x512/apps/$pkgname.png"
 }

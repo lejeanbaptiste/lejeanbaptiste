@@ -11,7 +11,7 @@ sources. Individual values may carry these attributes:
 
 Values without these attributes remain valid legacy data and are treated as
 user data, except for `<idno>`, authority-cache notes, and existing
-`#ljb-autotag` values, which are treated as authority data.
+`#grognard-autotag` values, which are treated as authority data.
 
 ## Curation lifecycle
 

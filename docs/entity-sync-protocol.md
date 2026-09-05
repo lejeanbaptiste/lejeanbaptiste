@@ -47,7 +47,7 @@ Base URL is the configured `endpoint` (no trailing slash). All bodies are
 
 ### `GET /` — health
 
-Unauthenticated. `200 → { "ok": true, "service": "ljb-entity-sync" }`. The
+Unauthenticated. `200 → { "ok": true, "service": "grognard-entity-sync" }`. The
 `service` string is informational.
 
 ### `GET /sync/pull?since=<int>&limit=<int>`

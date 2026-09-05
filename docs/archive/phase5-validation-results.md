@@ -221,7 +221,7 @@ confusions.
 ## Recommended next steps (updated 2026-07-04)
 
 1. ~~Prepare a short, completely hand-tagged gold passage~~ — **done:** `gold_test.xml`.
-2. ~~Run model comparison + wire AI suggest UI~~ — **done** (Groq Qwen3.6 + v3 leads; dialog wired; `.ljb/ai-cache/` live).
+2. ~~Run model comparison + wire AI suggest UI~~ — **done** (Groq Qwen3.6 + v3 leads; dialog wired; `.grognard/ai-cache/` live).
 3. **Immediate future — prompt profiles** — UI to edit/save per-model (and per-project) suggest prompts; cache key includes profile version. See [Auto-tagging.md](Auto-tagging.md) → AI mode → Immediate future **A**.
 4. **Immediate future — expandable tags** — schema-driven tag picker; `tag-definitions.json` for `roleName`, `orgName`, …; extend gold + harness. See **B** in same section.
 5. **Triage remaining errors** on current gold — Groq+v3: 21 FNs, 10 FPs.

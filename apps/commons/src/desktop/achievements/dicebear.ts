@@ -23,9 +23,9 @@ import {
   MOUTH_VARIANTS,
 } from './generatedAvatarParts';
 
-/** Registered in apps/desktop/src/main.ts alongside `ljb` and `ljb-asset`;
+/** Registered in apps/desktop/src/main.ts alongside `grognard` and `grognard-asset`;
  * served by apps/desktop/src/avatarAssets.ts. */
-export const AVATAR_SCHEME = 'ljb-avatar';
+export const AVATAR_SCHEME = 'grognard-avatar';
 
 export interface DiceBearAvatarOptions {
   seed: string;

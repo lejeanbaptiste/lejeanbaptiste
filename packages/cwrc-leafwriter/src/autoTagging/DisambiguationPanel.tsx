@@ -586,8 +586,8 @@ export const DisambiguationPanel = ({
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const onCommonsUiChanged = () => setCommonsUiRevision((value) => value + 1);
-    window.addEventListener('ljbCommonsUiChanged', onCommonsUiChanged);
-    return () => window.removeEventListener('ljbCommonsUiChanged', onCommonsUiChanged);
+    window.addEventListener('grognardCommonsUiChanged', onCommonsUiChanged);
+    return () => window.removeEventListener('grognardCommonsUiChanged', onCommonsUiChanged);
   }, []);
 
   useEffect(() => {

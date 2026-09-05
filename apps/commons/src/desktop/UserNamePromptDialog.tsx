@@ -97,8 +97,8 @@ export const UserNamePromptDialog = () => {
       if (bridge.entityDbFolder) setEntityDbFolder(bridge.entityDbFolder);
     };
     checkOpen();
-    window.addEventListener('ljbCommonsUiChanged', checkOpen);
-    return () => window.removeEventListener('ljbCommonsUiChanged', checkOpen);
+    window.addEventListener('grognardCommonsUiChanged', checkOpen);
+    return () => window.removeEventListener('grognardCommonsUiChanged', checkOpen);
   }, []);
 
   useEffect(() => {

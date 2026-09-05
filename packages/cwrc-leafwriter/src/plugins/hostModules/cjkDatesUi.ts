@@ -54,14 +54,14 @@ export function registerCjkDatesUi(context: PluginRegisterContext): void {
 
   context.onEnable = () => {
     window.dispatchEvent(
-      new CustomEvent('ljb:plugin-enabled', { detail: { id: context.pluginId } }),
+      new CustomEvent('grognard:plugin-enabled', { detail: { id: context.pluginId } }),
     );
     window.dispatchEvent(new CustomEvent('desktop:calendar-workflow-changed'));
   };
 
   context.onDisable = () => {
     window.dispatchEvent(
-      new CustomEvent('ljb:plugin-disabled', { detail: { id: context.pluginId } }),
+      new CustomEvent('grognard:plugin-disabled', { detail: { id: context.pluginId } }),
     );
     window.dispatchEvent(new CustomEvent('desktop:calendar-workflow-changed'));
   };

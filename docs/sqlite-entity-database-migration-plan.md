@@ -81,7 +81,7 @@ The SQLite foundation and several runtime slices are implemented in
   a build-time rewrite had incorrectly produced `require('sqlite')`, causing
   the main process to fail before startup.
 - The focused repository/read-service tests and desktop TypeScript check pass.
-- Pending central-order remaps (merge/delete survivors → PEDB `ljb-central`
+- Pending central-order remaps (merge/delete survivors → PEDB `grognard-central`
   mappings) use SQLite `central_mappings` when the project database is
   migrated; order JSONL and applied-id cursors remain file-based.
 - Synchronized mirror steady-state sync converges already-linked CEDB/PEDB
@@ -109,9 +109,9 @@ The SQLite foundation and several runtime slices are implemented in
   (`apps/commons/src-server/routes/pluginEntities.ts`) serves status/search/
   get-by-id from sibling `entities.sqlite` only (no XML fallback). The add-in
   in `/Users/daniel/Code/leJeanBaptiste/wordprocessor/` stays a thin client;
-  entity edits remain in LJB.
+  entity edits remain in Grognard.
 - **Wordprocessor writes:** Word content-control insertion, reflow, formatting,
-  and "Sync with LJB" are already separate Office-document writes; they use
+  and "Sync with Grognard" are already separate Office-document writes; they use
   SQLite-backed plugin reads and never write entity XML.
 - Single-field edits in the database sidebar re-read and patch only the
   changed SQLite entity row. Full list reloads are reserved for bulk jobs,
@@ -333,7 +333,7 @@ entity identity.
 - CEDB SQLite file: beside the existing CEDB `entities.xml`.
 - PEDB SQLite file: beside the project’s existing PEDB `entities.xml`.
 - Per-database metadata, migration markers, checkpoints, and conflict records:
-  adjacent `.ljb/` metadata.
+  adjacent `.grognard/` metadata.
 
 For the current installation the filename is fixed as `entities.sqlite`; no
 general relocation or database-discovery framework is required.
@@ -605,7 +605,7 @@ general-purpose migration automation is explicitly deferred.
 These do not change the architecture, but must be resolved during Phase 1:
 
 - Which SQLite Node binding is already best supported by the desktop build.
-- Exact filenames and `.ljb/` placement for CEDB and PEDB databases.
+- Exact filenames and `.grognard/` placement for CEDB and PEDB databases.
 - Whether authority-cache payloads remain JSON blobs or receive typed tables.
 - Whether conflict versions are stored as full row snapshots or change sets.
 - How external SQLite file changes are detected and debounced.

@@ -257,7 +257,7 @@ const buildSchemaFromFile = async (
   const cssMatch = content.match(/<\?xml-stylesheet\s+([^?]+)\?>/i);
   if (cssMatch) {
     const cssHref = parsePiAttributes(cssMatch[1]).href;
-    if (cssHref && cssUrl.startsWith('ljb://')) {
+    if (cssHref && cssUrl.startsWith('grognard://')) {
       updated = updated.replace(cssMatch[0], replacePiHref(cssMatch[0], cssHref, cssUrl));
     } else if (cssHref && cssHref !== cssUrl && cssUrl.startsWith('https://')) {
       updated = updated.replace(cssMatch[0], replacePiHref(cssMatch[0], cssHref, cssUrl));

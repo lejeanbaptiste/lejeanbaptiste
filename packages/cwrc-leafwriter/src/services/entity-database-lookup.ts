@@ -1,5 +1,5 @@
 /**
- * Entity-lookup service backed by the project's entities.xml (the LJB entity
+ * Entity-lookup service backed by the project's entities.xml (the Grognard entity
  * database). Registered on desktop and pinned above every external authority
  * so the user's own entities always appear first in the lookup dialog.
  */
@@ -17,7 +17,7 @@ export const ENTITY_DATABASE_SERVICE_ID = 'project-entities';
 export const ENTITY_DATABASE_SERVICE_NAME = 'Project entities';
 
 /** URI scheme for internal entity results (never written as @ref). */
-export const ENTITY_DATABASE_URI_SCHEME = 'ljb-entity';
+export const ENTITY_DATABASE_URI_SCHEME = 'grognard-entity';
 
 export function internalEntityUri(id: string): string {
   return `${ENTITY_DATABASE_URI_SCHEME}://${id}`;

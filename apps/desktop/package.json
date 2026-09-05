@@ -1,14 +1,14 @@
 {
-  "name": "le-jean-baptiste-desktop",
+  "name": "grognard-desktop",
   "version": "0.1.0-beta.13",
   "private": true,
-  "description": "Le Jean-Baptiste — desktop XML editor",
+  "description": "Grognard — desktop XML editor",
   "author": {
     "name": "Daniel Patrick Morgan",
     "email": "daniel.morgan@college-de-france.fr"
   },
-  "homepage": "https://github.com/lejeanbaptiste/lejeanbaptiste",
-  "desktopName": "le-jean-baptiste",
+  "homepage": "https://github.com/grognard/grognard",
+  "desktopName": "grognard",
   "main": "dist/main.js",
   "packageManager": "npm@12.0.0",
   "scripts": {

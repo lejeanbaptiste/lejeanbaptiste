@@ -4,7 +4,7 @@
 
 ## Summary
 
-LJB stores **local, dated backups of project files on every meaningful save** (content changed). Users recover mistakes via **File → History** (single file) or **Project → Rollback…** (restore many files to a point in time). Works **fully offline**; complements Git but does not replace it.
+Grognard stores **local, dated backups of project files on every meaningful save** (content changed). Users recover mistakes via **File → History** (single file) or **Project → Rollback…** (restore many files to a point in time). Works **fully offline**; complements Git but does not replace it.
 
 TEI/XML files are small; full-file snapshots with hash deduplication and retention limits are practical. This is **Time Machine for the project**, not version control (no branches, merge, or blame).
 
@@ -46,7 +46,7 @@ Time Machine / rollback UI gets a **second tab** for the **central entity databa
 - User can **delete individual snapshots** from within the Time Machine popup.
 - Prominent reminder: the entity database is valuable disambiguation work — back it up.
 
-Project-local `entities.xml` (when `entityStore: "project"`) follows the same snapshot rules but lives in the **Project** tab scope under that project's `.ljb/history/`.
+Project-local `entities.xml` (when `entityStore: "project"`) follows the same snapshot rules but lives in the **Project** tab scope under that project's `.grognard/history/`.
 
 See `docs/Auto-tagging.md` for database location, import-on-switch, and recovery flows.
 
@@ -56,7 +56,7 @@ See `docs/Auto-tagging.md` for database location, import-on-switch, and recovery
 my-edition/
   jean-baptiste.project.json
   documents/…/*.xml              ← live files
-  .ljb/
+  .grognard/
     history/
       manifest.jsonl             ← append-only index (one JSON object per line)
       files/
@@ -65,7 +65,7 @@ my-edition/
           …
 ```
 
-- **`.ljb/`** — hidden project metadata; portable with the project folder; recommend **`.gitignore`** entry (`/.ljb/`) when user uses Git (local safety net, not shared history).
+- **`.grognard/`** — hidden project metadata; portable with the project folder; recommend **`.gitignore`** entry (`/.grognard/`) when user uses Git (local safety net, not shared history).
 - Snapshot filenames: **ISO-8601 timestamp + short content hash** for uniqueness and debugging.
 - **Relative path** from project root preserved under `files/` (mirrors live tree).
 
@@ -79,7 +79,7 @@ export interface HistoryManifestEntry {
   relativePath: string;
   /** SHA-256 of file bytes at snapshot time */
   contentHash: string;
-  /** Path relative to project root, under .ljb/history/files/… */
+  /** Path relative to project root, under .grognard/history/files/… */
   snapshotPath: string;
   /** Optional: encoder name from app settings */
   savedBy?: string;
@@ -201,7 +201,7 @@ export interface ProjectFileConfig {
 | `apps/commons/src/dialogs/HistoryDialog.tsx` (new)         | Per-file history                   |
 | `apps/commons/src/dialogs/ProjectRollbackDialog.tsx` (new) | Project rollback                   |
 | `apps/commons/src/pages/project/NativeSettingsPage.tsx`    | History retention settings         |
-| `.ljb/history/manifest.jsonl`                              | Per-project index                  |
+| `.grognard/history/manifest.jsonl`                              | Per-project index                  |
 
 ---
 
@@ -229,7 +229,7 @@ export interface ProjectFileConfig {
 | Temp untitled tab              | No snapshots until Save As                   |
 | History disabled in Settings   | Save works; no snapshots                     |
 | File outside project           | Not snapshotted                              |
-| Open project on second machine | History travels with `.ljb/` folder copy     |
+| Open project on second machine | History travels with `.grognard/` folder copy     |
 
 ---
 

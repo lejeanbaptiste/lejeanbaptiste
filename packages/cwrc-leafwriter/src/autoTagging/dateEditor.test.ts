@@ -23,7 +23,7 @@ const suggestion = (): Suggestion => ({
     contextAfter: '',
     nodeHash: 'n1',
   },
-  attributes: { resp: '#ljb-sanmiao', cert: 'low' },
+  attributes: { resp: '#grognard-sanmiao', cert: 'low' },
   status: 'pending',
   dateResolution: {
     status: 'ambiguous',

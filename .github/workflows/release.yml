@@ -337,8 +337,8 @@ jobs:
         with:
           name: browser-extension
           path: |
-            apps/desktop/release/ljb-browser-extension-chromium-*.zip
-            apps/desktop/release/ljb-browser-extension-firefox-*.zip
+            apps/desktop/release/grognard-browser-extension-chromium-*.zip
+            apps/desktop/release/grognard-browser-extension-firefox-*.zip
           if-no-files-found: error
 
   windows:
@@ -446,8 +446,8 @@ jobs:
           # x64, which would make download-python-runtime.mjs silently
           # bundle the wrong-arch Python/sanmiao build. Pin explicitly to
           # what this job is actually packaging for.
-          LJB_PYTHON_PLATFORM: win32
-          LJB_PYTHON_ARCH: ${{ matrix.arch }}
+          GROGNARD_PYTHON_PLATFORM: win32
+          GROGNARD_PYTHON_ARCH: ${{ matrix.arch }}
         run: |
           $ErrorActionPreference = 'Stop'
           $attempts = 3

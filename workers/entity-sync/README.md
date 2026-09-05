@@ -1,4 +1,4 @@
-# ljb-entity-sync
+# grognard-entity-sync
 
 The **reference implementation** of the entity-sync wire protocol
 ([`docs/entity-sync-protocol.md`](../../docs/entity-sync-protocol.md)) — a
@@ -62,10 +62,10 @@ cp wrangler.toml.example wrangler.toml
 # GitHub numeric id: curl -s https://api.github.com/user -H "authorization: Bearer <token>" | jq .id
 
 # 1. Create the D1 database, then paste its id into wrangler.toml.
-npx wrangler d1 create ljb-entity-sync
+npx wrangler d1 create grognard-entity-sync
 
 # 2. Apply migrations to the remote database.
-npx wrangler d1 migrations apply ljb-entity-sync --remote
+npx wrangler d1 migrations apply grognard-entity-sync --remote
 
 # 3. Ship it.
 npx wrangler deploy
@@ -91,7 +91,7 @@ that. Options:
   node ../../apps/desktop/scripts/generate-entity-sync-seed.mjs \
     --owner <github-id> --db /path/to/entities.sqlite
   # writes workers/entity-sync/seed/seed-NNN.sql; run from THIS dir:
-  npx wrangler d1 import ljb-entity-sync --remote --file=seed/seed-001.sql
+  npx wrangler d1 import grognard-entity-sync --remote --file=seed/seed-001.sql
   # …one per day…
   ```
   `d1 import` batches and retries (`d1 execute --file` can choke on the size).

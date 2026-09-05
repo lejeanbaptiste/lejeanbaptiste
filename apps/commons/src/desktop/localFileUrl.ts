@@ -1,26 +1,26 @@
-export const LJB_PREFIX = 'ljb://';
+export const GROGNARD_PREFIX = 'grognard://';
 
-// Chromium parses `ljb:` as a "special" scheme (registerSchemesAsPrivileged sets
+// Chromium parses `grognard:` as a "special" scheme (registerSchemesAsPrivileged sets
 // standard:true), so its host goes through domain/IDNA parsing. Cramming the whole
-// percent-encoded path into the host (old `ljb://${encodeURIComponent(path)}` shape)
+// percent-encoded path into the host (old `grognard://${encodeURIComponent(path)}` shape)
 // makes that parsing fail whenever the decoded path contains "/" or " " — which is
 // every absolute path — and dynamic import() of such a URL throws "Failed to resolve
 // module specifier" instead of loading. Keep a fixed host and put the path in
 // pathname segments instead, where those characters are unrestricted.
-const LJB_HOST = 'local/';
+const GROGNARD_HOST = 'local/';
 
-/** Maps an absolute filesystem path to a URL served by Electron's ljb:// protocol. */
+/** Maps an absolute filesystem path to a URL served by Electron's grognard:// protocol. */
 export const toLocalFileUrl = (absolutePath: string): string => {
   const segments = absolutePath.split(/[\\/]+/).filter(Boolean);
-  return `${LJB_PREFIX}${LJB_HOST}${segments.map(encodeURIComponent).join('/')}`;
+  return `${GROGNARD_PREFIX}${GROGNARD_HOST}${segments.map(encodeURIComponent).join('/')}`;
 };
 
-export const isLocalFileUrl = (url: string): boolean => url.startsWith(LJB_PREFIX);
+export const isLocalFileUrl = (url: string): boolean => url.startsWith(GROGNARD_PREFIX);
 
 export const fromLocalFileUrl = (url: string): string | null => {
   if (!isLocalFileUrl(url)) return null;
   try {
-    const rest = url.slice(LJB_PREFIX.length + LJB_HOST.length);
+    const rest = url.slice(GROGNARD_PREFIX.length + GROGNARD_HOST.length);
     if (!rest) return null;
     const segments = rest.split('/').map(decodeURIComponent);
     const isWindowsDrive = /^[A-Za-z]:$/.test(segments[0]);

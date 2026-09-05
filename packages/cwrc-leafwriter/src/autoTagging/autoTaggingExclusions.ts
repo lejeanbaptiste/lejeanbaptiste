@@ -30,7 +30,7 @@ export const emptyExclusions = (): AutoTaggingExclusions => ({
   surfacesByTag: {},
 });
 
-const STORAGE_KEY = 'ljb:autoTaggingExclusions';
+const STORAGE_KEY = 'grognard:autoTaggingExclusions';
 
 /** Parse `//ancestor//child` (optional whitespace) into a UserRule. */
 export function parseNestingPath(line: string): UserRule | null {

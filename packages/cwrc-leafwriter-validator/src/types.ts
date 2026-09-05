@@ -15,7 +15,7 @@ export type EventName =
 
 export interface InitializeParameters {
   id: string;
-  /** Stable schema locator (http(s) URL or ljb:// path). Used for cache keys and change detection. */
+  /** Stable schema locator (http(s) URL or grognard:// path). Used for cache keys and change detection. */
   url: string;
   shouldCache?: boolean;
   /** On-disk content fingerprint (e.g. sanmiao merge version). */

@@ -6,7 +6,7 @@ import { readAuthorityPackFile } from './authorityPacks';
 
 describe('readAuthorityPackFile date chunks', () => {
   it('reads intersecting chunks plus a two-block guard band, before IPC', async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ljb-pack-chunks-'));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'grognard-pack-chunks-'));
     try {
       const dir = path.join(root, 'authority-packs', 'cbdb');
       await fs.mkdir(path.join(dir, 'persons'), { recursive: true });

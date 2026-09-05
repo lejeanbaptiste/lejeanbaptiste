@@ -6,7 +6,7 @@ import { getEntitySqlite, searchEntitySqlite } from './readService';
 
 describe('entity SQLite read service', () => {
   it('opens a SQLite database once and serves typed search/detail reads', async () => {
-    const directory = mkdtempSync(path.join(tmpdir(), 'ljb-entity-read-'));
+    const directory = mkdtempSync(path.join(tmpdir(), 'grognard-entity-read-'));
     const databasePath = path.join(directory, 'entities.sqlite');
     const repository = new EntitySqliteRepository(databasePath);
     repository.createEntity({ id: 'person-read-1', kind: 'person', description: 'Description' });

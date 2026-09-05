@@ -49,7 +49,7 @@ const parseKanripoPage = () => {
 };
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type !== 'ljb-kanripo-page-info') return;
+  if (message?.type !== 'grognard-kanripo-page-info') return;
   const parsed = parseKanripoPage();
   if (!parsed) {
     sendResponse({

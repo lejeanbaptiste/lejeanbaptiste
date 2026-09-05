@@ -40,7 +40,7 @@ import { protocol } from 'electron';
 
 import { getGameAssetBuffer } from './gameAssets';
 
-export const BODY_SCHEME = 'ljb-body';
+export const BODY_SCHEME = 'grognard-body';
 
 const RANKS = [1, 2, 3, 4, 5, 6, 7] as const;
 

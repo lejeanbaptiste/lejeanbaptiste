@@ -60,7 +60,7 @@ const confirmEntityRename = (): Promise<boolean> =>
     writer.dialogManager.confirm({
       title: 'Remove entity link?',
       msg: 'Renaming this tag will remove the associated entity annotation. Continue?',
-      showConfirmKey: 'confirm-ljb-rename-entity-tag',
+      showConfirmKey: 'confirm-grognard-rename-entity-tag',
       type: 'info',
       callback: (confirmed: boolean) => resolve(confirmed),
     });

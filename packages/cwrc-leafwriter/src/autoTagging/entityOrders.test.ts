@@ -123,12 +123,12 @@ describe('order log + cursor persistence', () => {
 
   it('round-trips the applied-id cursor', async () => {
     const fs = new FakeFs();
-    await writeAppliedOrderIds(fs, '/proj/.ljb', new Set(['x', 'y']));
-    expect(await readAppliedOrderIds(fs, '/proj/.ljb')).toEqual(new Set(['x', 'y']));
+    await writeAppliedOrderIds(fs, '/proj/.grognard', new Set(['x', 'y']));
+    expect(await readAppliedOrderIds(fs, '/proj/.grognard')).toEqual(new Set(['x', 'y']));
   });
 
   it('returns an empty applied set before any cursor is written', async () => {
     const fs = new FakeFs();
-    expect(await readAppliedOrderIds(fs, '/proj/.ljb')).toEqual(new Set());
+    expect(await readAppliedOrderIds(fs, '/proj/.grognard')).toEqual(new Set());
   });
 });

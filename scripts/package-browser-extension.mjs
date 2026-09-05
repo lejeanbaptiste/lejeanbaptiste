@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Build release zips for the LJB corpus-import browser extension.
+ * Build release zips for the Grognard corpus-import browser extension.
  *
  * Output (under apps/desktop/release/ by default):
- *   ljb-browser-extension-chromium-<version>.zip
- *   ljb-browser-extension-firefox-<version>.zip
+ *   grognard-browser-extension-chromium-<version>.zip
+ *   grognard-browser-extension-firefox-<version>.zip
  *
  * Each zip unpacks to a single top-level folder ready for "Load unpacked"
  * (Chromium) or "Load Temporary Add-on" (Firefox).
@@ -98,12 +98,12 @@ const main = async () => {
     throw new Error('Could not determine extension release version');
   }
 
-  const outDir = path.resolve(process.env.LJB_BROWSER_EXTENSION_OUT_DIR ?? defaultOutDir);
+  const outDir = path.resolve(process.env.GROGNARD_BROWSER_EXTENSION_OUT_DIR ?? defaultOutDir);
   const workDir = path.join(outDir, `.browser-extension-staging-${version}`);
-  const chromiumDir = path.join(workDir, `ljb-browser-extension-chromium-${version}`);
-  const firefoxDir = path.join(workDir, `ljb-browser-extension-firefox-${version}`);
-  const chromiumZip = path.join(outDir, `ljb-browser-extension-chromium-${version}.zip`);
-  const firefoxZip = path.join(outDir, `ljb-browser-extension-firefox-${version}.zip`);
+  const chromiumDir = path.join(workDir, `grognard-browser-extension-chromium-${version}`);
+  const firefoxDir = path.join(workDir, `grognard-browser-extension-firefox-${version}`);
+  const chromiumZip = path.join(outDir, `grognard-browser-extension-chromium-${version}.zip`);
+  const firefoxZip = path.join(outDir, `grognard-browser-extension-firefox-${version}.zip`);
 
   await fsp.rm(workDir, { recursive: true, force: true });
   await fsp.mkdir(workDir, { recursive: true });

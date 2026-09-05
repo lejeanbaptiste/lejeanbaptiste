@@ -7,7 +7,7 @@ describe('writeFileAtomic', () => {
   let dir: string;
 
   beforeEach(async () => {
-    dir = await fs.mkdtemp(path.join(os.tmpdir(), 'ljb-atomic-'));
+    dir = await fs.mkdtemp(path.join(os.tmpdir(), 'grognard-atomic-'));
   });
 
   afterEach(async () => {
@@ -34,7 +34,7 @@ describe('recoverFromFailedAtomicWrite', () => {
   let dir: string;
 
   beforeEach(async () => {
-    dir = await fs.mkdtemp(path.join(os.tmpdir(), 'ljb-atomic-recover-'));
+    dir = await fs.mkdtemp(path.join(os.tmpdir(), 'grognard-atomic-recover-'));
   });
 
   afterEach(async () => {

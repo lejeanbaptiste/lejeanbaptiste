@@ -84,7 +84,7 @@ process.on(
         },
       });
 
-      const proposalPath = path.join(request.centralLjbDir, 'bulk-import-proposals.jsonl');
+      const proposalPath = path.join(request.centralGrognardDir, 'bulk-import-proposals.jsonl');
       const proposalText = result.proposals.map((proposal) => JSON.stringify(proposal)).join('\n');
       await atomicWrite(proposalPath, proposalText ? `${proposalText}\n` : '', jobId);
 

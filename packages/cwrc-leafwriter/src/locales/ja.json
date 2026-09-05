@@ -95,7 +95,7 @@
         "always_on_help": "実行ごとの AI チェックボックス（例：曖昧性解消）を省略し、設定済みの場合は常に AI キュレーションを使用します。"
       },
       "github": {
-        "description": "GitHub アカウントを接続してリーダーボードの統計を公開します。LJB はこの接続を課題、プルリクエスト、コミットの統計にも使用します。",
+        "description": "GitHub アカウントを接続してリーダーボードの統計を公開します。Grognard はこの接続を課題、プルリクエスト、コミットの統計にも使用します。",
         "connect": "GitHub に接続",
         "reconnect": "GitHub に再接続",
         "connecting": "接続しています…",
@@ -105,7 +105,7 @@
         "disconnected": "GitHub から切断しました。",
         "connect_failed": "GitHub に接続できませんでした。",
         "disconnect_failed": "GitHub から切断できませんでした。",
-        "browser_code": "GitHub をブラウザーで開きました。LJB を認証するにはコード {{code}} を入力してください。"
+        "browser_code": "GitHub をブラウザーで開きました。Grognard を認証するにはコード {{code}} を入力してください。"
       },
       "map_tiles": {
         "title": "オフライン地図タイル（任意）",
@@ -174,7 +174,7 @@
         "match_across_line_breaks_description": "空の <lb>、<pb> などのマイルストーンをまたいでタグ爆弾のマッチを探します。適用したタグ内にマーカーを保持します。既定ではオフ。",
         "match_across_line_breaks_enable": "このプロジェクトで有効にする",
         "asset_packs_note": "オフライン権限パックと地図タイルはアセットパックタブにあります。",
-        "bdrc_closed_note": "BDRC（BUDA）は閉鎖型カタログで、サイトのスクレイピングを禁じています。Le Jean-Baptiste は library.bdrc.io を検索しません。アクセスはチベット語ウィキデータパックに既にある識別子（プロパティ P2477）経由です。リンクは公式 BUDA ページを開きます。",
+        "bdrc_closed_note": "BDRC（BUDA）は閉鎖型カタログで、サイトのスクレイピングを禁じています。Grognard は library.bdrc.io を検索しません。アクセスはチベット語ウィキデータパックに既にある識別子（プロパティ P2477）経由です。リンクは公式 BUDA ページを開きます。",
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>権限データ </0><1>{{name}}</1><2> を削除しますか？</2>",
           "Authority deleted successfully": "権限データを削除しました",
@@ -260,13 +260,13 @@
         "not_saved": "未確認",
         "java_ok": "Java の準備完了（{{version}}）",
         "java_missing": "LanguageTool には Java 17 以上が必要です。下からダウンロードするか、Temurin / Homebrew openjdk@17 をインストールしてから更新してください。",
-        "java_managed": "LJB 管理",
+        "java_managed": "Grognard 管理",
         "java_download": "LanguageTool 用 Java をダウンロード",
         "java_downloading": "Java をダウンロード中…",
         "java_install_ok": "Java をインストールしました。",
         "java_install_failed": "Java のインストールに失敗しました。",
         "java_refresh": "更新",
-        "not_installed": "LJB に LanguageTool はまだインストールされていません。",
+        "not_installed": "Grognard に LanguageTool はまだインストールされていません。",
         "installed_version": "LanguageTool {{version}} をインストール済み",
         "install": "ダウンロードしてインストール",
         "reinstall": "再インストール",
@@ -276,7 +276,7 @@
         "install_failed": "LanguageTool のインストールに失敗しました。",
         "removed": "管理対象の LanguageTool を削除しました。",
         "remove_failed": "LanguageTool を削除できませんでした。",
-        "use_managed": "LJB 管理のローカルサーバーを使用",
+        "use_managed": "Grognard 管理のローカルサーバーを使用",
         "use_ngrams": "英語 n-gram モデルを使用（ダウンロード済みの場合）",
         "ngrams_download": "英語 n-gram をダウンロード",
         "ngrams_installed": "英語 n-gram を使用できます",
@@ -312,13 +312,13 @@
         "map_tiles": "オフライン地図タイル"
       },
       "privacy": {
-        "description": "Le Jean-Baptiste がローカルに保存する情報と、ネットワーク機能の利用を選択した場合にのみ送信する情報です。",
-        "summary": "通常のデスクトップ利用では、Le Jean-Baptiste はほぼローカル優先で動作します。別のサービスと明示的に通信する機能を使わない限り、ファイル、データベース、設定はコンピューター内に保持されます。",
+        "description": "Grognard がローカルに保存する情報と、ネットワーク機能の利用を選択した場合にのみ送信する情報です。",
+        "summary": "通常のデスクトップ利用では、Grognard はほぼローカル優先で動作します。別のサービスと明示的に通信する機能を使わない限り、ファイル、データベース、設定はコンピューター内に保持されます。",
         "local_first": "通常の編集、ローカルのエンティティデータベース、オフラインパック、大部分の設定はコンピューターに残ります。",
         "documents_title": "文書メタデータ",
         "documents_body": "設定で入力したユーザー名は、プロジェクト／文書メタデータとして文書に書き込まれることがあります。アプリが自動的にアップロードするからではなく、文書そのものの一部になるため、その名前はファイルとともに移動します。",
         "leaderboard_title": "リーダーボードへの送信",
-        "leaderboard_body": "サービス記録をリーダーボードに送信することを選択した場合、Le Jean-Baptiste は確認用の GitHub 識別トークン、表示名と順位の情報、実績指標の件数、任意のアバター画像をリーダーボードサービスへ送信します。",
+        "leaderboard_body": "サービス記録をリーダーボードに送信することを選択した場合、Grognard は確認用の GitHub 識別トークン、表示名と順位の情報、実績指標の件数、任意のアバター画像をリーダーボードサービスへ送信します。",
         "telemetry_title": "クラッシュとエラーの報告",
         "telemetry_body": "エディターコードは、ビルドで有効化されている場合に Sentry によるクラッシュ／エラー報告（任意）をサポートします。通常の編集に必須ではなく、ビルド設定によって決まります。",
         "web_title": "Web 専用の計測 Cookie",

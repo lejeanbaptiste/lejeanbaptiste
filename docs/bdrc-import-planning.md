@@ -17,7 +17,7 @@ see §1. Ship: after CBETA's first importer, gated on reading the
 |             | CBETA plugin                                                                      | **BDRC plugin**                                                                                                           |
 | ----------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | Corpus      | `DILA-edu/cbeta-xml-p5` git tree, bundled under `data/`, **no network at import** | No bundleable tree. **Live fetch from the PDI at import time**                                                            |
-| Delivery    | work id / juan URL in the LJB dialog                                              | **Browser extension** on the BUDA reader, native messaging → LJB, same path as [Wikisource/Kanripo](wikisource-import.md) |
+| Delivery    | work id / juan URL in the Grognard dialog                                              | **Browser extension** on the BUDA reader, native messaging → Grognard, same path as [Wikisource/Kanripo](wikisource-import.md) |
 | Unit        | one juan, or full work                                                            | **one `UT` etext volume**, `<pb/>` markers throughout; the page the user was reading is only the entry point              |
 | Language    | Literary Chinese (Buddhist)                                                       | Tibetan (`bo`), pecha folio pagination                                                                                    |
 | Schema work | translate rich CBETA P5 markup down to TEI-ALL (§5 of that doc)                   | almost no source markup — the work is **building** `<div>`/`<pb>` structure, not translating it                           |
@@ -57,7 +57,7 @@ on-disk cache keyed by `UT` id + revision (§7), so a re-import is offline.
    a "what's new" panel.
 
 No API key today; be a good citizen (rate-limit, cache, `User-Agent`
-identifying LJB). Confirm current terms before ship.
+identifying Grognard). Confirm current terms before ship.
 
 ### 2.1 The etext model
 
@@ -101,7 +101,7 @@ instance `MW4CZ5369`, image group `I1KG9127`, `AccessOpen`, 81 folios
 
 | #             | Decision                                                                                                                                                                                                                                                                                                                                           |
 | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Delivery      | Browser extension (Brave/Chromium), native messaging → LJB **Import from BDRC…**, mirroring [wikisource-import.md](wikisource-import.md). The extension reads the BUDA reader URL and resolves the `UT`/`W`+volume id; **it does not scrape page text** (same as the Kanripo path).                                                                |
+| Delivery      | Browser extension (Brave/Chromium), native messaging → Grognard **Import from BDRC…**, mirroring [wikisource-import.md](wikisource-import.md). The extension reads the BUDA reader URL and resolves the `UT`/`W`+volume id; **it does not scrape page text** (same as the Kanripo path).                                                                |
 | Trigger       | The BUDA reader URL the user is on → resolve to one `UT` etext + its `W`/`MW` instance and `I` volume. A work-level URL with no volume selected → volume picker in the dialog.                                                                                                                                                                     |
 | Import unit   | **One `UT` etext volume per import.** "Less clicking" — a real transcription job pulls the whole volume, not folio by folio.                                                                                                                                                                                                                       |
 | Fetch         | Live from the PDI at import. Not bundled. Local cache for re-import (§7).                                                                                                                                                                                                                                                                          |
@@ -112,7 +112,7 @@ instance `MW4CZ5369`, image group `I1KG9127`, `AccessOpen`, 81 folios
 | Authority     | Persons `bdr:P…`, places `bdr:G…`, roles `bdr:R…` emitted as `@ref="http://purl.bdrc.io/resource/…"`; **names not resolved at import.** A later pass uses the Wikidata crosswalk (P2477, 23,266 `bdrc` pairs in the 2026-08 authority extract). No bundled BDRC person/place pack. See [authority-data-lifecycle.md](authority-data-lifecycle.md). |
 | Names         | Keep the Tibetan (Uchen) form as the element content / `<persName>`; carry Wylie (`bo-x-ewts`) and phonetic forms as `<persName type="alt">` when present.                                                                                                                                                                                         |
 | Output path   | `imported/bdrc/<W-or-MW-id>/<UT-id>.xml` — one file per etext volume.                                                                                                                                                                                                                                                                              |
-| Target schema | TEI-ALL (or the open project's family). No BDRC-specific schema — there is almost nothing to preserve. LJB tagging inventory (`persName`, `placeName`, … + Sanmiao `date`) admitted in the body content model exactly as for other imports ([ljb-tei-extensions.md](ljb-tei-extensions.md)).                                                       |
+| Target schema | TEI-ALL (or the open project's family). No BDRC-specific schema — there is almost nothing to preserve. Grognard tagging inventory (`persName`, `placeName`, … + Sanmiao `date`) admitted in the body content model exactly as for other imports ([grognard-tei-extensions.md](grognard-tei-extensions.md)).                                                       |
 | Access        | `AccessRestrictedByTbrc` / restricted-in-region → the dialog shows a clear error and links the BUDA reader; **never** a silent partial import. Open-metadata + restricted-content is a valid state: import the metadata-only stub with a `<note type="extraction">` explaining the gap.                                                            |
 | Round-trip    | Out of scope. Record enough provenance (§8) to re-fetch and cite; no reverse mapping.                                                                                                                                                                                                                                                              |
 
@@ -163,17 +163,17 @@ non-Unicode marker (uncommon in etext). NFC on emit.
 Mirrors [wikisource-import.md](wikisource-import.md) "Browser extension" +
 "Kanripo via the same extension":
 
-1. LJB run once writes the native-messaging manifest
-   (`org.lejeanbaptiste.import.json`). `ljb-browser-host` on `PATH`.
+1. Grognard run once writes the native-messaging manifest
+   (`org.grognard.import.json`). `grognard-browser-host` on `PATH`.
 2. On a BUDA reader page (`library.bdrc.io/show/bdr:…` — exact URL / hash /
    query patterns for the etext reader to be confirmed, §9), the extension
    resolves the `UT` id (and `W`/`MW`, volume) from the URL. It does **not**
    read page text.
-3. Click **Import** → LJB opens **Import from BDRC** with the volume
+3. Click **Import** → Grognard opens **Import from BDRC** with the volume
    pre-selected. Work-level URL → volume picker.
-4. Confirm → LJB fetches the etext graph + metadata from the PDI, emits the
+4. Confirm → Grognard fetches the etext graph + metadata from the PDI, emits the
    file, runs the validator, writes `imported/bdrc/<W|MW>/<UT>.xml`.
-5. If LJB is not running, the popup says so (same as the other adapters).
+5. If Grognard is not running, the popup says so (same as the other adapters).
    Reader pages that are not a text (person, place, outline, search) are
    rejected in the popup.
 

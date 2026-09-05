@@ -4,7 +4,7 @@ import os from 'os';
 import path from 'path';
 
 /**
- * Bridges LJB's Electron main process (which knows the active project) and
+ * Bridges Grognard's Electron main process (which knows the active project) and
  * the commons server child process (which serves the external Word plugin's
  * HTTP API) without relying on fork() IPC — that channel only exists in
  * production, where main.ts forks the server; in dev the server is started
@@ -12,7 +12,7 @@ import path from 'path';
  * small state file works identically in both cases.
  */
 
-const APP_NAME = 'Le Jean-Baptiste';
+const APP_NAME = 'Grognard';
 
 /** Mirrors Electron's default `app.getPath('userData')` without depending on the `electron` module. */
 const resolveDefaultUserDataDir = (): string => {

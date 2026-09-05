@@ -117,7 +117,7 @@ const pythonCandidatesForPlugin = (pluginId: string): PythonCommand[] => {
   const fromEnv =
     pluginId === 'cjk-dates'
       ? process.env.SANMIAO_PYTHON?.trim()
-      : process.env.LJB_PLUGIN_PYTHON?.trim();
+      : process.env.GROGNARD_PLUGIN_PYTHON?.trim();
   if (fromEnv) return [{ bin: fromEnv, args: [] }];
 
   const candidates: PythonCommand[] = [];
@@ -233,13 +233,13 @@ const SANMIAO_IMPORT_CHECK = [
 ].join('; ');
 
 const KANRIPO_IMPORT_CHECK = [
-  'from kanripo_import.ljb_bridge import cli_main',
+  'from kanripo_import.grognard_bridge import cli_main',
   'from kanripo_import.kanripo_tei import convert_kanripo_txt',
   'import kanripo',
 ].join('; ');
 
 const DAOZANG_IMPORT_CHECK = [
-  'from daozang_import.ljb_bridge import cli_main',
+  'from daozang_import.grognard_bridge import cli_main',
   'from daozang_import.daozang_tei import convert_daozang_txt',
 ].join('; ');
 
@@ -448,12 +448,12 @@ const pythonEnvForPlugin = (pluginId: string): NodeJS.ProcessEnv => {
   const env: NodeJS.ProcessEnv = { ...process.env };
   const installRoot = pluginInstallRootForPython(pluginId);
   if (installRoot) {
-    env.LJB_PLUGIN_INSTALL_PATH = installRoot;
+    env.GROGNARD_PLUGIN_INSTALL_PATH = installRoot;
   }
   // Scratch dir for rebuilt catalog indexes. The xml-p5 checkout lives under
-  // LJB_PLUGIN_INSTALL_PATH/data/corpus/ (cloned on plugin install / enable).
+  // GROGNARD_PLUGIN_INSTALL_PATH/data/corpus/ (cloned on plugin install / enable).
   try {
-    env.LJB_PLUGIN_CACHE_PATH = path.join(app.getPath('userData'), 'plugin-cache', pluginId);
+    env.GROGNARD_PLUGIN_CACHE_PATH = path.join(app.getPath('userData'), 'plugin-cache', pluginId);
   } catch {
     // app not ready / non-electron context — Python falls back to its data dir
   }

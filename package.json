@@ -9,13 +9,13 @@
     "editor",
     "annotation"
   ],
-  "homepage": "https://github.com/lejeanbaptiste/lejeanbaptiste",
+  "homepage": "https://github.com/grognard/grognard",
   "bugs": {
-    "url": "https://github.com/lejeanbaptiste/lejeanbaptiste/issues"
+    "url": "https://github.com/grognard/grognard/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/lejeanbaptiste/lejeanbaptiste.git"
+    "url": "https://github.com/grognard/grognard.git"
   },
   "author": {
     "name": "Daniel Patrick Morgan",
@@ -42,15 +42,15 @@
     "dev": "npm run dev -w @cwrc/leafwriter-storage-service & npm run dev -w leafwriter-commons",
     "dev-worker": "npm run dev -w @cwrc/leafwriter-storage-service & npm run dev-worker -w leafwriter-commons",
     "build-commons": "npm run build -w @cwrc/leafwriter-storage-service && npm run build -w @cwrc/leafwriter-validator && npm run build -w leafwriter-commons",
-    "dev:desktop": "npm run dev -w leafwriter-commons & npm run dev -w le-jean-baptiste-desktop",
-    "build:desktop": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package -w le-jean-baptiste-desktop",
-    "build:desktop:mac:release": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package:mac:release -w le-jean-baptiste-desktop",
-    "build:desktop:linux": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package:linux -w le-jean-baptiste-desktop",
-    "build:desktop:linux:amd64": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package:linux:amd64 -w le-jean-baptiste-desktop",
-    "build:desktop:linux:arm64": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package:linux:arm64 -w le-jean-baptiste-desktop",
-    "build:desktop:flatpak": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package:linux:flatpak -w le-jean-baptiste-desktop",
-    "build:desktop:flatpak:ci": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package:linux:flatpak:ci -w le-jean-baptiste-desktop",
-    "build:desktop:arch": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package:dir -w le-jean-baptiste-desktop",
+    "dev:desktop": "npm run dev -w leafwriter-commons & npm run dev -w grognard-desktop",
+    "build:desktop": "npm run build-commons && npm run build -w grognard-desktop && npm run package -w grognard-desktop",
+    "build:desktop:mac:release": "npm run build-commons && npm run build -w grognard-desktop && npm run package:mac:release -w grognard-desktop",
+    "build:desktop:linux": "npm run build-commons && npm run build -w grognard-desktop && npm run package:linux -w grognard-desktop",
+    "build:desktop:linux:amd64": "npm run build-commons && npm run build -w grognard-desktop && npm run package:linux:amd64 -w grognard-desktop",
+    "build:desktop:linux:arm64": "npm run build-commons && npm run build -w grognard-desktop && npm run package:linux:arm64 -w grognard-desktop",
+    "build:desktop:flatpak": "npm run build-commons && npm run build -w grognard-desktop && npm run package:linux:flatpak -w grognard-desktop",
+    "build:desktop:flatpak:ci": "npm run build-commons && npm run build -w grognard-desktop && npm run package:linux:flatpak:ci -w grognard-desktop",
+    "build:desktop:arch": "npm run build-commons && npm run build -w grognard-desktop && npm run package:dir -w grognard-desktop",
     "package:browser-extension": "node scripts/package-browser-extension.mjs",
     "icon:export": "node scripts/export-icon.mjs",
     "visual-design:sync": "node scripts/sync-visual-design.mjs",

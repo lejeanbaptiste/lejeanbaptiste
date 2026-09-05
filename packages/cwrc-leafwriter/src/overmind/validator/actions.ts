@@ -203,7 +203,7 @@ const resolveSchemaForWorker = async (
   if (isLocalFileUrl(schemaURL)) {
     const schemaText = await fetchResourceText(schemaURL);
     if (!schemaText) return null;
-    // Pass text to the worker; keep ljb URL as the stable identity key.
+    // Pass text to the worker; keep grognard URL as the stable identity key.
     return { url: schemaURL, schemaText };
   }
   return { url: schemaURL };

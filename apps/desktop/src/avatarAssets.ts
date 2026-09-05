@@ -2,7 +2,7 @@
  * Composites the Adventurer character-avatar layers (base, eyes, eyebrows,
  * mouth, glasses, hair) into a single SVG, entirely locally: no network
  * request, no dependency on api.dicebear.com. Served to the renderer over
- * the `ljb-avatar://` scheme so callers keep using `fetch(url).then(r =>
+ * the `grognard-avatar://` scheme so callers keep using `fetch(url).then(r =>
  * r.text())` exactly as they did against the old live-API URL - only
  * dicebear.ts's URL-building changed (see diceBearAvatarUrl).
  *
@@ -17,7 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { app, protocol } from 'electron';
 
-export const AVATAR_SCHEME = 'ljb-avatar';
+export const AVATAR_SCHEME = 'grognard-avatar';
 
 // The real Adventurer canvas is 762x762 (see visual_style/manifest.json).
 // Some hair variants draw outside it, which the browser clips at the

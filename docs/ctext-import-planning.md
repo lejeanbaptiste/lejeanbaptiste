@@ -3,7 +3,7 @@
 **Status (2026-08-28):** **Not started** (full import path) — **wiki fetch for parallel punctuation is done** via the Kanripo plugin (`fetch-ctext-parallel.mjs`, segmented mode in `parallel_punct.py`). A standalone **File → Import from Ctext…** path remains deferred.  
 **Related:** [kanripo-import-plugin-planning.md](kanripo-import-plugin-planning.md) (Kanripo clone + parallel punct; ctext wiki as parallel source), [daozang-import-planning.md](daozang-import-planning.md) (bundled Dao parallels), [import-planning.md](import-planning.md) (generic document import), [corpus-extraction-planning.md](corpus-extraction-planning.md) (web extract patterns).
 
-Ctext (Chinese Text Project) is a major pre-modern Chinese corpus. LJB already uses ctext **wiki pages** as punctuated parallels when importing Kanripo texts (李善-style inline commentary). This document plans a future **direct import** path: pull text from ctext into project TEI without going through Kanripo first.
+Ctext (Chinese Text Project) is a major pre-modern Chinese corpus. Grognard already uses ctext **wiki pages** as punctuated parallels when importing Kanripo texts (李善-style inline commentary). This document plans a future **direct import** path: pull text from ctext into project TEI without going through Kanripo first.
 
 ---
 
@@ -67,7 +67,7 @@ Pass a **CTP URN** (opaque identifier, e.g. `ctp:analects/xue-er`). Do not parse
 
 Errors to handle in UI: `ERR_REQUIRES_AUTHENTICATION`, `ERR_REQUEST_LIMIT`, `ERR_INVALID_URN`, `ERR_UNDEFINED_URN`.
 
-API keys are set once per session (`setapikey`) and sent with subsequent calls. LJB should store an optional key in **project or app settings** (same pattern as AI / LanguageTool), never in committed files.
+API keys are set once per session (`setapikey`) and sent with subsequent calls. Grognard should store an optional key in **project or app settings** (same pattern as AI / LanguageTool), never in committed files.
 
 ### What the API does _not_ give us (today)
 
@@ -142,9 +142,9 @@ User query / URL
 | -------------------------------------- | ----------------------------------------------------------------------------- |
 | Manifest, optional bundled title index | `plugins/packages/plugin-ctext-import/`                                       |
 | Python: API client thin wrapper        | plugin Python (wrap `ctext` PyPI or raw `api.ctext.org` JSON)                 |
-| JSON bridge                            | extend pattern of `ljb_bridge.py` (`op: "ctext_gettext"`, etc.)               |
+| JSON bridge                            | extend pattern of `grognard_bridge.py` (`op: "ctext_gettext"`, etc.)               |
 | Wiki parallel fetch                    | **Reuse** `scripts/ctext-wiki-parallel.mjs` + `ctextWikiParallel.ts` IPC      |
-| Wizard UI                              | LJB host module (like `kanripoImportUi`)                                      |
+| Wizard UI                              | Grognard host module (like `kanripoImportUi`)                                      |
 | HTTP to API                            | **Main process** (no CORS; centralise rate limiting and API key)              |
 | TEI wrap                               | Reuse `buildSkeletonForCatalog` / `kanripoImportXml`-style provenance helpers |
 
@@ -195,7 +195,7 @@ Import writes **files on disk**; no TinyMCE round-trip.
 - Optional field: wiki chapter URL + section.
 - After TEI body built, run **segmented** parallel punct if user enabled (reuse Kanripo engine; map body to same segment structure or import as plain text first).
 
-**Acceptance:** Import unpunctuated API chapter + wiki 李善 section → overlapping stretch gets punctuation stamps (`ana="ljb:parallel-punct"`).
+**Acceptance:** Import unpunctuated API chapter + wiki 李善 section → overlapping stretch gets punctuation stamps (`ana="grognard:parallel-punct"`).
 
 ### Phase 4 — Polish
 

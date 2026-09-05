@@ -7,7 +7,7 @@ import {
   normalizeSourceLanguageCode,
 } from '../utilities/languageCodes';
 
-const DATES_PASS_STORAGE_KEY = 'ljb:autoTagging:datesPass';
+const DATES_PASS_STORAGE_KEY = 'grognard:autoTagging:datesPass';
 const PROJECT_LANGUAGE_FIELD = 'profileDesc/langUsage/language';
 const DEFAULT_METADATA_REL = 'schema/project-metadata.json';
 const PROJECT_FILE_NAME = 'jean-baptiste.project.json';

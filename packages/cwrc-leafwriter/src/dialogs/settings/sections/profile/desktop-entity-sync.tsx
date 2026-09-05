@@ -298,7 +298,7 @@ export const DesktopEntitySync = () => {
           fullWidth
           label={t('LW.desktop.settings.entity_sync.endpoint')}
           onChange={(event) => setEndpoint(event.target.value)}
-          placeholder="https://ljb-entity-sync.<subdomain>.workers.dev"
+          placeholder="https://grognard-entity-sync.<subdomain>.workers.dev"
           size="small"
           value={endpoint}
         />

@@ -13,7 +13,7 @@ This plugin clones a Kanseki Repository (Kanripo) work from GitHub, converts eac
 When the plugin is enabled:
 
 1. **File → Import from Kanripo…** opens a wizard.
-2. The user searches by **text number** (`KR1a0145`) or **title**, selects a work, and LJB clones that GitHub repo.
+2. The user searches by **text number** (`KR1a0145`) or **title**, selects a work, and Grognard clones that GitHub repo.
 3. Each Kanripo `.txt` (one **juan**) becomes one **TEI XML** file in the open project.
 4. Conversion always: TEI skeleton for the current project schema, Kanripo metadata in the header, `<pb/>` milestones, `(…)` → `<note type="comm">`.
 5. Optional: character normalisation (user picks a table).
@@ -87,7 +87,7 @@ search index (bundled) ──► pick KR_ID
 | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Manifest, work index, normalisation CSVs, Python conversion | `plugins/packages/plugin-kanripo-import/` (name TBD)                                       |
 | Thin `register.mjs`                                         | plugin package                                                                             |
-| Wizard + coverage UI                                        | LJB host module (`loadHostModule`), so the plugin does not bundle React                    |
+| Wizard + coverage UI                                        | Grognard host module (`loadHostModule`), so the plugin does not bundle React                    |
 | File menu injection, git clone IPC, fetch URL, write files  | desktop main process                                                                       |
 | Python IPC                                                  | existing `plugins:invokePython` (needs a longer timeout and non-Sanmiao-specific resolver) |
 
@@ -95,7 +95,7 @@ Import writes **files on disk** (like `documentImport.ts`). It does not round-tr
 
 ---
 
-## Host changes (lejeanbaptiste)
+## Host changes (grognard)
 
 Plugins today may declare `contributions.toolsMenu` only. The Electron **File** menu is hard-coded. Tool actions can be _dispatched_ if a menu click sends them, but plugin items are not inserted into File.
 
@@ -208,7 +208,7 @@ Alignment fixes shipped since first Phase 2 cut:
 - `_sticker_to_tape_map` — per-character opcode map (replaces broken linear origin tracking).
 - `strip_wikisource_commentary` — drop `〈…〉` gloss spans before comparing Han.
 
-**Wikisource URL resolution** (`lejeanbaptiste/apps/desktop/src/wikisource/wikisource-parallel.mjs`; plugin re-exports `scripts/wikisource-parallel.mjs`):
+**Wikisource URL resolution** (`grognard/apps/desktop/src/wikisource/wikisource-parallel.mjs`; plugin re-exports `scripts/wikisource-parallel.mjs`):
 
 1. User pastes a work index (e.g. `https://zh.wikisource.org/zh-hant/荀子`).
 2. `resolveEditionRoot` prefers **chapter pages** (`荀子/勸學篇`, …) over scanned **四庫全書本** 卷 pages (often unpunctuated).
@@ -243,7 +243,7 @@ Behaviour:
 - Caption: `covered 12,400 / 18,200 characters (68%)`.
 - Whole work: **stack of bars** (one per juan).
 
-Preview **before** Apply. After Apply, stamp punctuated stretches so the editor can redraw the bar later, e.g. `ana="ljb:parallel-punct"` on those `<p>`s (or a wrapping `div`), and list source URLs/paths in `revisionDesc` / `sourceDesc`.
+Preview **before** Apply. After Apply, stamp punctuated stretches so the editor can redraw the bar later, e.g. `ana="grognard:parallel-punct"` on those `<p>`s (or a wrapping `div`), and list source URLs/paths in `revisionDesc` / `sourceDesc`.
 
 AI can use the same bar as a second layer (e.g. blue = AI-proposed).
 
@@ -417,7 +417,7 @@ Use the **Daozang import** plugin’s bundled 方瞳子 UTF-8 corpus as an offli
 | Daozang `index.json` + search (import dialog)     | **Done** — see [daozang-import-planning.md](daozang-import-planning.md)                                                                                                                         |
 | Bundled concordance (`data/concordance/`)         | **Done** — `krp_dz_collation.csv`, `kanripo_org_concordance.csv`, `dz_corpus_works.csv`, `duren_jing_index.csv`, `kanripo_daozang_overrides.csv`                                                |
 | `kanripo_daozang_map.json` (KR id → `rel_path`)   | **Done** — 1,483 entries; built by `scripts/build-concordance-data.py` (`npm run build:concordance`) from `chinese_corpus_metadata` + Daozang corpus index + optional `dz_krp` Duren jing index |
-| Python lookup + bridge                            | **Done** — `concordance.lookup_daozang_rel_path(kr_id)`; `ljb_bridge` op `concordance_lookup`                                                                                                   |
+| Python lookup + bridge                            | **Done** — `concordance.lookup_daozang_rel_path(kr_id)`; `grognard_bridge` op `concordance_lookup`                                                                                                   |
 | Load `.txt` as parallel tape in Kanripo import UI | **Done** — auto on work select when Daozang plugin enabled + map hit                                                                                                                            |
 | Import UI “Use bundled Daozang punctuation”       | **Partial** — auto-load + reload button; manual search picker still open                                                                                                                        |
 
@@ -463,8 +463,8 @@ Keep samples out of git if they are large; small fixtures in the plugin or `docs
 
 ```bash
 pytest plugins/packages/plugin-kanripo-import/python/tests/test_parallel_punct.py -q
-npm run test:wikisource -w @ljb/plugin-kanripo-import
-npm run test:parallel-batch -w @ljb/plugin-kanripo-import -- \
+npm run test:wikisource -w @grognard/plugin-kanripo-import
+npm run test:parallel-batch -w @grognard/plugin-kanripo-import -- \
   --kanripo /tmp/KR3a0002 --wikisource-url 'https://zh.wikisource.org/zh-hant/荀子'
 ```
 

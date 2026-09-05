@@ -52,7 +52,7 @@ export async function debugValidator(options?: {
   };
 
   if (!writer) {
-    console.warn('[ljbDebugValidator] window.writer is not set yet.');
+    console.warn('[grognardDebugValidator] window.writer is not set yet.');
     console.log(report);
     return report;
   }
@@ -87,7 +87,7 @@ export async function debugValidator(options?: {
         report.schemaFile.readable = true;
         report.schemaFile.byteLength = text.length;
         report.schemaFile.hasInclude = /<include[\s>]/i.test(text);
-        report.schemaFile.mergeMarker = text.match(/ljb-sanmiao-merge v\d+/i)?.[0] ?? null;
+        report.schemaFile.mergeMarker = text.match(/grognard-sanmiao-merge v\d+/i)?.[0] ?? null;
       } catch (error) {
         report.schemaFile.readable = false;
         report.schemaFile.error = String(error);
@@ -96,7 +96,7 @@ export async function debugValidator(options?: {
 
     try {
       const blobUrl = await (async () => {
-        if (!currentSchemaUrl.startsWith('ljb://')) return null;
+        if (!currentSchemaUrl.startsWith('grognard://')) return null;
         const text = await fetchResourceText(currentSchemaUrl);
         return text ? `[${text.length} chars ready for worker]` : null;
       })();
@@ -107,7 +107,7 @@ export async function debugValidator(options?: {
     }
   }
 
-  console.group('[ljbDebugValidator] schema / validator state');
+  console.group('[grognardDebugValidator] schema / validator state');
   console.table(report.editorSchema);
   console.table(report.validator);
   if (report.schemaFile) console.log('schema file', report.schemaFile);
@@ -129,7 +129,7 @@ export async function debugValidator(options?: {
           const schemaId =
             sm.schemaId ?? sm.getCurrentSchema()?.id ?? sm.getSchemaIdFromUrl(currentSchemaUrl);
           const schemaRevision = sm.getSchemaRevision();
-          const isLjBResource = currentSchemaUrl.startsWith('ljb://');
+          const isLjBResource = currentSchemaUrl.startsWith('grognard://');
           const schemaText = isLjBResource ? await fetchResourceText(currentSchemaUrl) : undefined;
           if (schemaId && (schemaText || !isLjBResource)) {
             const init = await window.leafwriterValidator.initialize({

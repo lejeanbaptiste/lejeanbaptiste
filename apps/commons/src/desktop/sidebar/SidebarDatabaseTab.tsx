@@ -893,7 +893,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     setCentralStore(resolvedCentralStore);
     if (resolvedCentralStore) {
       const api = desktopEntityFileApi();
-      const proposalPath = `${resolvedCentralStore.projectLjbDir}/bulk-import-proposals.jsonl`;
+      const proposalPath = `${resolvedCentralStore.projectGrognardDir}/bulk-import-proposals.jsonl`;
       if (api && (await api.pathExists(proposalPath))) {
         const rows = (await api.readFile(proposalPath)).split(/\r?\n/).filter(Boolean);
         setBulkProposals(
@@ -1013,7 +1013,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                         jobId = await start({
                           sourceEntitiesPath: currentStore.entitiesPath,
                           centralEntitiesPath: resolvedCentralStore.entitiesPath,
-                          centralLjbDir: resolvedCentralStore.projectLjbDir,
+                          centralGrognardDir: resolvedCentralStore.projectGrognardDir,
                           userStableId,
                           chunkSize: 250,
                         });
@@ -1190,8 +1190,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       // changed in the separate project window.
       if (active) void reload();
     };
-    window.addEventListener('ljb-project-config-saved', handleConfigSaved);
-    return () => window.removeEventListener('ljb-project-config-saved', handleConfigSaved);
+    window.addEventListener('grognard-project-config-saved', handleConfigSaved);
+    return () => window.removeEventListener('grognard-project-config-saved', handleConfigSaved);
   }, [active, reload]);
 
   useEffect(() => {
@@ -3313,7 +3313,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       setBulkProposals(remaining);
       const api = desktopEntityFileApi();
       if (api && centralStore) {
-        const proposalPath = `${centralStore.projectLjbDir}/bulk-import-proposals.jsonl`;
+        const proposalPath = `${centralStore.projectGrognardDir}/bulk-import-proposals.jsonl`;
         const text = remaining.map((proposal) => JSON.stringify(proposal)).join('\n');
         await api.writeFile(proposalPath, text ? `${text}\n` : '');
       }

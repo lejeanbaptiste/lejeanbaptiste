@@ -8,7 +8,7 @@ describe('scaffoldEntityDatabaseInFolder', () => {
   let root = '';
 
   beforeEach(async () => {
-    root = await fs.mkdtemp(path.join(os.tmpdir(), 'ljb-entity-db-scaffold-'));
+    root = await fs.mkdtemp(path.join(os.tmpdir(), 'grognard-entity-db-scaffold-'));
   });
 
   afterEach(async () => {

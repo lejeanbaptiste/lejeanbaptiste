@@ -115,8 +115,8 @@ export const DesktopOfflineAuthorities = () => {
   useEffect(() => {
     const sync = () => setStatus(getBridge()?.authorityLifecycleStatus ?? null);
     sync();
-    window.addEventListener('ljbCommonsUiChanged', sync);
-    return () => window.removeEventListener('ljbCommonsUiChanged', sync);
+    window.addEventListener('grognardCommonsUiChanged', sync);
+    return () => window.removeEventListener('grognardCommonsUiChanged', sync);
   }, []);
 
   useEffect(() => {

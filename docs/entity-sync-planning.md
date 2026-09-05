@@ -22,7 +22,7 @@ file-level sync with (0) an off-machine backup and (1+) row-level logical sync.
 Decisions locked:
 
 - **Central store:** Cloudflare D1 + a Worker (matches the existing R2 usage,
-  the `ljb-leaderboard` Worker, and the GitHub OAuth device-flow identity in
+  the `grognard-leaderboard` Worker, and the GitHub OAuth device-flow identity in
   `leaderboardAuth.ts`).
 - **Collaboration model:** one owner, several devices. No per-user roles.
 - **Conflict unit:** whole entity, manual resolution (matches the unused
@@ -187,7 +187,7 @@ Drive it from the DevTools console until the panel lands:
 ```js
 await window.electronAPI.entitySyncSetConfig({
   enabled: true,
-  endpoint: 'https://ljb-entity-sync.<your-subdomain>.workers.dev',
+  endpoint: 'https://grognard-entity-sync.<your-subdomain>.workers.dev',
 });
 await window.electronAPI.entitySyncRunNow();
 await window.electronAPI.entitySyncGetStatus();

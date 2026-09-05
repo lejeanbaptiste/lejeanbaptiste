@@ -8,7 +8,7 @@ Implementation notes: [entity-sync-planning.md](entity-sync-planning.md).
 [entity-db-multi-machine-setup.md](entity-db-multi-machine-setup.md) (type C
 users). This page covers **R2 backup only**.
 
-Le Jean-Baptiste can copy your entity database (`entities.sqlite`) and, when
+Grognard can copy your entity database (`entities.sqlite`) and, when
 present, the paired `achievements.json` file to
 [Cloudflare R2](https://developers.cloudflare.com/r2/) on a timer and once more
 when you quit. Each backup is a consistent, compressed, integrity-checked
@@ -25,7 +25,7 @@ restore the newest snapshot in one step.
   _replaces_ B's database with A's. Day-to-day sync between machines uses D1
   ([entity-db-multi-machine-setup.md](entity-db-multi-machine-setup.md)).
 - R2 is object storage, not a database service. Nothing runs "in the cloud" —
-  LJB just uploads and downloads snapshot files. (The Cloudflare **D1**
+  Grognard just uploads and downloads snapshot files. (The Cloudflare **D1**
   database used by the future sync work is separate and not needed here.)
 
 ---
@@ -41,7 +41,7 @@ restore the newest snapshot in one step.
 ## 2. Create a bucket
 
 1. **R2 → Overview → Create bucket**.
-2. Name it, e.g. `ljb-entity-backups`. (Bucket names are account-global and
+2. Name it, e.g. `grognard-entity-backups`. (Bucket names are account-global and
    can't be renamed.)
 3. Location: **Automatic** is fine. Storage class: **Standard**.
 4. Create. Leave public access **off** — backups must stay private.
@@ -52,7 +52,7 @@ On the bucket's **Settings** tab (or the R2 **Overview** page) find the
 **S3 API** URL. It looks like:
 
 ```
-https://<ACCOUNT_ID>.r2.cloudflarestorage.com/ljb-entity-backups
+https://<ACCOUNT_ID>.r2.cloudflarestorage.com/grognard-entity-backups
 ```
 
 You need the origin part only — copy:
@@ -67,10 +67,10 @@ https://<ACCOUNT_ID>.r2.cloudflarestorage.com
 
 1. **R2 → Overview → Manage R2 API Tokens → Create API token** (or **Create
    Account API token** on newer dashboards).
-2. **Token name:** something like `ljb-entity-backup`.
+2. **Token name:** something like `grognard-entity-backup`.
 3. **Permissions:** **Object Read & Write** — _not_ Admin Read & Write.
 4. **Specify bucket(s):** **Apply to specific buckets only** → select
-   `ljb-entity-backups`. Don't grant account-wide access.
+   `grognard-entity-backups`. Don't grant account-wide access.
 5. **TTL:** leave as "Forever", or set an expiry and rotate later.
 6. **Create API Token.** The next screen shows, once only:
    - **Access Key ID**
@@ -80,7 +80,7 @@ https://<ACCOUNT_ID>.r2.cloudflarestorage.com
    Copy the Access Key ID and Secret Access Key now. The secret is not shown
    again — if you lose it, delete the token and make a new one.
 
-## 5. Configure Le Jean-Baptiste
+## 5. Configure Grognard
 
 Open **Settings → Profil → Cloud backup**. Paste the endpoint, bucket, access
 key ID and secret from step 4, set the interval, tick **Back up
@@ -90,8 +90,8 @@ the first snapshot. Restore is the **Restore…** button in the same panel.
 <details>
 <summary>Alternative: the DevTools console</summary>
 
-1. Launch LJB (a development build, or a packaged build started with
-   `LJB_OPEN_DEVTOOLS=1`).
+1. Launch Grognard (a development build, or a packaged build started with
+   `GROGNARD_OPEN_DEVTOOLS=1`).
 2. Open DevTools (**View → Toggle Developer Tools** in a dev build) and pick
    the **Console** tab.
 3. Paste, with your values filled in:
@@ -102,7 +102,7 @@ the first snapshot. Restore is the **Restore…** button in the same panel.
      endpoint: 'https://<ACCOUNT_ID>.r2.cloudflarestorage.com',
      accessKeyId: '<ACCESS_KEY_ID>',
      secretAccessKey: '<SECRET_ACCESS_KEY>',
-     bucket: 'ljb-entity-backups',
+     bucket: 'grognard-entity-backups',
      prefix: 'entity-db-backups/', // optional; where snapshots are keyed
      intervalMinutes: 15, // optional; 5–1440, default 15
    });
@@ -139,7 +139,7 @@ written to `project-prefs.json` and the secret is never sent to the renderer.
 ## 6. What gets stored
 
 ```
-s3://ljb-entity-backups/
+s3://grognard-entity-backups/
   entity-db-backups/snapshots/
     entities-20260901T203015Z-manual.sqlite.gz
     entities-20260901T204512Z-timer.sqlite.gz
@@ -156,7 +156,7 @@ Steady state is ~38 objects, ~1.1 GB.
 
 ## 7. Restore
 
-1. Quit all but one LJB window.
+1. Quit all but one Grognard window.
 2. In the console:
 
    ```js
@@ -167,7 +167,7 @@ Steady state is ~38 objects, ~1.1 GB.
    // → { ok: true, restoredFromKey: '…', previousCopyDir: '…/pre-restore-<UTC>' }
    ```
 
-3. **Restart LJB.** The restored database is now live.
+3. **Restart Grognard.** The restored database is now live.
 
 Restore downloads the snapshot, verifies its sha256 and runs
 `PRAGMA integrity_check`, moves the current `entities.sqlite` (and any

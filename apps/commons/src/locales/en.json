@@ -461,7 +461,7 @@
           "import_report_title": "Import report",
           "import_report_with_issues_message": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}} with {{problemCount}} failed file{{problemCount, plural, one {} other {s}}} and/or {{schemaInvalidCount}} schema warning{{schemaInvalidCount, plural, one {} other {s}}}.",
           "import_xml_continue_button": "Import",
-          "import_xml_warning_detail": "Foreign entity keys (@key) will be moved to a backup token on @ana (ljb-former-key:…) so they do not point at this project's entity catalogue. Compatible header fields stay in the file; project edition metadata is merged in; the project's schema is attached. Element remapping between different schemas is not done yet.",
+          "import_xml_warning_detail": "Foreign entity keys (@key) will be moved to a backup token on @ana (grognard-former-key:…) so they do not point at this project's entity catalogue. Compatible header fields stay in the file; project edition metadata is merged in; the project's schema is attached. Element remapping between different schemas is not done yet.",
           "import_xml_warning_message": "{{documentCount}} XML file{{documentCount, plural, one {} other {s}}} will be imported into this project.",
           "import_xml_warning_title": "Import XML documents",
           "imported_documents_with_problems": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}} with {{problemCount}} problem file{{problemCount, plural, one {} other {s}}}.",
@@ -669,7 +669,7 @@
       },
       "entity_database_changed": {
         "title": "Entity database changed",
-        "message": "entities.xml was modified outside Le Jean-Baptiste. Reload before writing entity changes?",
+        "message": "entities.xml was modified outside Grognard. Reload before writing entity changes?",
         "reload": "Reload database",
         "keep": "Keep current copy"
       },
@@ -699,7 +699,7 @@
         "folder_label": "Database folder",
         "folder_placeholder": "Using the built-in default…",
         "choose": "Choose a cloud-synced folder…",
-        "note": "Optional. A blank folder is fine — Le Jean-Baptiste will set the database up. Already have a database from another machine? Choose that folder to use it.",
+        "note": "Optional. A blank folder is fine — Grognard will set the database up. Already have a database from another machine? Choose that folder to use it.",
         "done": "Done"
       },
       "explorer": {
@@ -1027,16 +1027,16 @@
       },
       "entity_db_setup": {
         "cancel": "Cancel",
-        "create_db_failed_message": "Le Jean-Baptiste could not set up the entity database in this folder.",
+        "create_db_failed_message": "Grognard could not set up the entity database in this folder.",
         "create_db_failed_title": "Could not create entity database",
         "create_here": "Create here",
         "create_here_title": "Create a database in this folder?",
-        "folder_is_project_message": "This folder is already a Le Jean-Baptiste project. Choose a different folder for your entity database — you can keep it as the parent of your projects, just not a project folder itself.",
+        "folder_is_project_message": "This folder is already a Grognard project. Choose a different folder for your entity database — you can keep it as the parent of your projects, just not a project folder itself.",
         "folder_is_project_title": "That folder is a project",
         "ok": "OK",
-        "parent_has_db_detail": "If you meant that shared database, choose the parent instead. Otherwise Le Jean-Baptiste can create a new empty database in:",
+        "parent_has_db_detail": "If you meant that shared database, choose the parent instead. Otherwise Grognard can create a new empty database in:",
         "parent_has_db_intro": "The parent folder already has an entity database:",
-        "save_folder_failed_session": "The folder was set for this session, but saving it failed and it may not persist. Try again, or check that Le Jean-Baptiste can write to its app data folder.",
+        "save_folder_failed_session": "The folder was set for this session, but saving it failed and it may not persist. Try again, or check that Grognard can write to its app data folder.",
         "save_folder_failed_title": "Could not save entity database folder",
         "save_parent_folder_failed": "Saving the parent folder failed.",
         "use_parent_folder": "Use parent folder"

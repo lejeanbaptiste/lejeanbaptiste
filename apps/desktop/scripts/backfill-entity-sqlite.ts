@@ -12,7 +12,7 @@
  *
  * Defaults:
  *   database → /Users/daniel/ShareDocs/@Home/ljb_test_root
- *   packs    → ~/Library/Application Support/Le Jean-Baptiste/authority-assets
+ *   packs    → ~/Library/Application Support/Grognard/authority-assets
  *   live Wikidata off (pack + concordance only; much faster)
  */
 import fs from 'node:fs';
@@ -43,7 +43,7 @@ import {
 const DEFAULT_DB_ROOT = '/Users/daniel/ShareDocs/@Home/ljb_test_root';
 const DEFAULT_PACKS_ROOT = path.join(
   os.homedir(),
-  'Library/Application Support/Le Jean-Baptiste/authority-assets',
+  'Library/Application Support/Grognard/authority-assets',
 );
 
 const argValue = (flag: string): string | undefined => {
@@ -124,7 +124,7 @@ const main = async () => {
   const store = EntityStore.fromPaths(api, {
     mode: 'central',
     entitiesPath: path.join(root, 'entities.xml'),
-    projectLjbDir: root,
+    projectGrognardDir: root,
     projectRoot: root,
     centralFolder: root,
   });

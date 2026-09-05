@@ -157,7 +157,7 @@ export const CBETA_NS = 'http://www.cbeta.org/ns/1.0';
 /**
  * CBETA P5 skeleton. `xmlns:cb` is declared so native CBETA markup (`<cb:div>`,
  * `<cb:tt>`, …) spliced in by the importer resolves; the placeholder body
- * division is a plain `<div>` — the LJB-loosened schema (`ljb-cbeta-loosen v2`)
+ * division is a plain `<div>` — the Grognard-loosened schema (`ljb-cbeta-loosen v2`)
  * accepts `<div>` and `<cb:div>` interchangeably wherever a division is allowed,
  * so this same skeleton is a valid target for the Daozang / Kanripo / Wikisource
  * / BDRC importers too.

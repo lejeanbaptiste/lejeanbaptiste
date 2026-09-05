@@ -43,7 +43,7 @@ describe('entity XML codec', () => {
 
   it('structures date ranges, name roles, office data, relations, and extension data', () => {
     const xml = `<?xml version="1.0"?><TEI xmlns="http://www.tei-c.org/ns/1.0">
-      <teiHeader><fileDesc><titleStmt><title>Test</title></titleStmt><publicationStmt><idno type="ljb-entity-database">test-db</idno></publicationStmt><sourceDesc><p>Source</p></sourceDesc></fileDesc></teiHeader>
+      <teiHeader><fileDesc><titleStmt><title>Test</title></titleStmt><publicationStmt><idno type="grognard-entity-database">test-db</idno></publicationStmt><sourceDesc><p>Source</p></sourceDesc></fileDesc></teiHeader>
       <standOff>
         <listPerson><person xml:id="person-a"><persName type="primary">甲</persName><note type="familyName">甲氏</note><note type="dates" from="0479" to="0502" fromCirca="true" notAfter="0503" dateSystem="sanmiao" calendarPayload="{&quot;era&quot;:&quot;永明&quot;}">era text</note><affiliation ref="#office-a">尚書令</affiliation><note type="authority-cache" source="CBDB" when="2026-01-01">{&quot;x&quot;:1}</note><note type="duplicate-ok">reviewed</note></person></listPerson>
         <listOrg type="offices"><org xml:id="office-a"><orgName type="primary">尚書令</orgName><state type="office-classification" ref="CBDB:1">civil</state></org></listOrg>
@@ -105,7 +105,7 @@ describe('entity XML codec', () => {
 
   it('extracts and backfills decision target refs from sibling XML', () => {
     const xml = `<?xml version="1.0"?><TEI xmlns="http://www.tei-c.org/ns/1.0">
-      <teiHeader><fileDesc><titleStmt><title>Test</title></titleStmt><publicationStmt><idno type="ljb-entity-database">test-db</idno></publicationStmt><sourceDesc><p>Source</p></sourceDesc></fileDesc></teiHeader>
+      <teiHeader><fileDesc><titleStmt><title>Test</title></titleStmt><publicationStmt><idno type="grognard-entity-database">test-db</idno></publicationStmt><sourceDesc><p>Source</p></sourceDesc></fileDesc></teiHeader>
       <standOff>
         <listPerson>
           <person xml:id="person-a"><persName>甲</persName><note type="duplicate-ok" target="#person-a #person-b">ok</note></person>

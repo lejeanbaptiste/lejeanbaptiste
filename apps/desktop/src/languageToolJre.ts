@@ -14,7 +14,7 @@ export interface LanguageToolJavaStatus {
   major?: number;
   error?: string;
   javaPath?: string;
-  /** True when the runtime lives under LJB-managed userData (ljb-java). */
+  /** True when the runtime lives under Grognard-managed userData (grognard-java). */
   managed?: boolean;
 }
 
@@ -89,7 +89,7 @@ export type LanguageToolJreProgressCallback = (progress: {
   message?: string;
 }) => void;
 
-export const getManagedJreRoot = (): string => path.join(app.getPath('userData'), 'ljb-java');
+export const getManagedJreRoot = (): string => path.join(app.getPath('userData'), 'grognard-java');
 
 export const getManagedJreRuntimeDir = (): string => path.join(getManagedJreRoot(), 'runtime');
 

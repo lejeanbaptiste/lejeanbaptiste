@@ -4,7 +4,7 @@
  */
 
 export const FETCH_HEADERS = {
-  'User-Agent': 'Le-Jean-Baptiste/0.1 (+https://github.com/lejeanbaptiste/lejeanbaptiste)',
+  'User-Agent': 'Grognard/0.1 (+https://github.com/grognard/grognard)',
 };
 
 const WIKISOURCE_HOST_RE = /^(?:[a-z-]+\.)?wikisource\.org$/i;

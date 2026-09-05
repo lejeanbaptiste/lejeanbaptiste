@@ -1,7 +1,7 @@
 /**
  * Loads the encrypted game-asset bundle (rank uniforms, battle-scene sheets)
  * shipped in resources/game-assets/assets.bin, decrypts it into memory, and
- * serves it to the renderer over the `ljb-asset://` scheme. Nothing is ever
+ * serves it to the renderer over the `grognard-asset://` scheme. Nothing is ever
  * written back to disk decrypted.
  *
  * This exists to keep unlock-progression artwork out of the public repo's
@@ -16,7 +16,7 @@ import { app, protocol } from 'electron';
 
 import { getGameAssetKey } from './generated/gameAssetKey';
 
-export const GAME_ASSET_SCHEME = 'ljb-asset';
+export const GAME_ASSET_SCHEME = 'grognard-asset';
 
 export interface AssetColorStats {
   lightness: number;
@@ -114,7 +114,7 @@ export function getGameAssetColorStats(key: string): AssetColorStats | null {
 /** Raw decrypted bytes for one bundled asset - used by bodyAssets.ts, which
  * needs the actual body/poseN SVG source text to rewrite (toggling which
  * rank/weapon groups are visible) before serving it, unlike the other
- * `ljb-asset://` consumers that just display the bytes as-is. */
+ * `grognard-asset://` consumers that just display the bytes as-is. */
 export function getGameAssetBuffer(key: string): Buffer | null {
   try {
     return loadAssetMap().get(key)?.buffer ?? null;

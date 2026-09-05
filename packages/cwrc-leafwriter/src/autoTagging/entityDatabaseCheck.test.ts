@@ -89,7 +89,7 @@ describe('entityDatabaseCheck', () => {
     const count = await purgeEntityKeysInProject(api, '/proj');
     expect(count).toBe(1);
     expect(files['/proj/doc.xml']).not.toContain('key=');
-    expect(files['/proj/entities.xml']).toContain('ljb-entity-database');
+    expect(files['/proj/entities.xml']).toContain('grognard-entity-database');
   });
 });
 

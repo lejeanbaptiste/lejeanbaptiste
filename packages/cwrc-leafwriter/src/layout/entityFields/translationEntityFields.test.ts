@@ -54,7 +54,7 @@ const italicText = (field: Element): string =>
     .join('');
 
 describe('translationEntityFields', () => {
-  test('createEntityFieldElement builds an atomic ljb-entity ref', () => {
+  test('createEntityFieldElement builds an atomic grognard-entity ref', () => {
     const field = createEntityFieldElement(person(), 1);
     expect(field.tagName.toLowerCase()).toBe('ref');
     expect(field.getAttribute('type')).toBe(ENTITY_REF_TYPE);

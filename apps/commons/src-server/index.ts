@@ -28,7 +28,7 @@ if (process.send) {
 // Separate HTTPS listener for the Word add-in's /api/plugins/* routes (see
 // routes/plugins.ts) — its task pane runs over HTTPS and can't fetch a plain
 // http:// origin without the browser treating it as mixed content.
-const pluginHttpsPort = process.env.LJB_PLUGIN_HTTPS_PORT ?? '3848';
+const pluginHttpsPort = process.env.GROGNARD_PLUGIN_HTTPS_PORT ?? '3848';
 
 void (async () => {
   try {

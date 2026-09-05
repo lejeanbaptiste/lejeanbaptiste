@@ -1,5 +1,5 @@
 /**
- * Atomic date fields in the translation pane — parallel to ljb-entity refs.
+ * Atomic date fields in the translation pane — parallel to grognard-entity refs.
  * Stores Sanmiao structure on the element so the gloss can be recomputed.
  */
 
@@ -17,7 +17,7 @@ import {
   getDateWesternDisplayMode,
 } from './scholarlyConventions';
 
-export const DATE_REF_TYPE = 'ljb-date';
+export const DATE_REF_TYPE = 'grognard-date';
 export const DATE_FIELD_ATTR = 'data-leaf-date-field';
 /** JSON-serialized {@link DateGlossInput} for recalculation. */
 export const DATE_PARTS_ATTR = 'data-date-parts';

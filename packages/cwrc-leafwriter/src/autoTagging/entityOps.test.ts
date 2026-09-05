@@ -68,7 +68,7 @@ describe('listEntities', () => {
     expect(entities[1]).toMatchObject({ kind: 'place', names: ['建康'] });
   });
 
-  it('excludes the per-user ljb-central concordance row from authorities', () => {
+  it('excludes the per-user grognard-central concordance row from authorities', () => {
     const doc = makeDoc();
     const { element } = addEntity(doc, 'person', {
       name: '王導',
@@ -658,7 +658,7 @@ describe('mergeEntities', () => {
     expect(listEntities(doc)[0]!.names).toEqual(['A', 'B', 'C']);
   });
 
-  it('returns no central conflicts when neither side has a ljb-central mapping', () => {
+  it('returns no central conflicts when neither side has a grognard-central mapping', () => {
     const doc = makeDoc();
     const keep = addEntity(doc, 'person', { name: 'A' }).id;
     const drop = addEntity(doc, 'person', { name: 'B' }).id;
@@ -666,7 +666,7 @@ describe('mergeEntities', () => {
     expect(centralConflicts).toEqual([]);
   });
 
-  it('transfers a ljb-central mapping the keeper lacks from the dropped entity', () => {
+  it('transfers a grognard-central mapping the keeper lacks from the dropped entity', () => {
     const doc = makeDoc();
     const keepEl = addEntity(doc, 'person', { name: 'A' });
     const dropEl = addEntity(doc, 'person', { name: 'B' });
@@ -697,7 +697,7 @@ describe('mergeEntities', () => {
     expect(getCentralId(keeper, 'user-a')).toBe('person-central-1');
   });
 
-  it('does not duplicate a ljb-central mapping when both sides already agree', () => {
+  it('does not duplicate a grognard-central mapping when both sides already agree', () => {
     const doc = makeDoc();
     const keepEl = addEntity(doc, 'person', { name: 'A' });
     const dropEl = addEntity(doc, 'person', { name: 'B' });
@@ -731,14 +731,14 @@ describe('mergeEntities', () => {
     expect(getCentralId(keeper, 'user-b')).toBe('person-central-9');
   });
 
-  it('never copies the ljb-central row as a generic authority idno', () => {
+  it('never copies the grognard-central row as a generic authority idno', () => {
     const doc = makeDoc();
     const keepEl = addEntity(doc, 'person', { name: 'A' });
     const dropEl = addEntity(doc, 'person', { name: 'B' });
     setCentralMapping(dropEl.element, 'user-a', 'person-central-1');
 
     mergeEntities(doc, keepEl.id, [dropEl.id]);
-    // authorities() already excludes ljb-central (see the listEntities test below);
+    // authorities() already excludes grognard-central (see the listEntities test below);
     // this asserts the merge path never routes it through attachAuthority either.
     expect(listEntities(doc)[0]!.authorities).toEqual([]);
   });

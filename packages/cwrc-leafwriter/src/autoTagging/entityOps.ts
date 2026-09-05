@@ -347,7 +347,7 @@ export function summarizeEntity(
       new Set(
         Array.from(item.children)
           .filter(
-            (child) => child.localName !== 'note' || child.getAttribute('type') !== 'ljb-changed',
+            (child) => child.localName !== 'note' || child.getAttribute('type') !== 'grognard-changed',
           )
           .filter((child) => readEntityValueProvenance(child).status === 'active')
           .map((child) => readEntityValueProvenance(child).origin),
@@ -371,7 +371,7 @@ export function summarizeEntity(
       allRejections,
     ),
     assertions: Array.from(item.children)
-      .filter((child) => child.localName !== 'note' || child.getAttribute('type') !== 'ljb-changed')
+      .filter((child) => child.localName !== 'note' || child.getAttribute('type') !== 'grognard-changed')
       .map((child) => ({
         key: entityValueKey(child),
         element: child.localName,
@@ -406,7 +406,7 @@ export interface EntityAssertionSummary {
 export function listEntityAssertions(doc: Document, id: string): EntityAssertionSummary[] {
   const item = requireEntity(doc, id);
   return Array.from(item.children)
-    .filter((child) => child.localName !== 'note' || child.getAttribute('type') !== 'ljb-changed')
+    .filter((child) => child.localName !== 'note' || child.getAttribute('type') !== 'grognard-changed')
     .map((child) => {
       const provenance = readEntityValueProvenance(child);
       return {
@@ -1369,7 +1369,7 @@ export interface MergeResult {
   /** Old id → surviving id, for rewriting `@key` across documents. */
   remap: Record<string, string>;
   /**
-   * Per-user `ljb-central` mappings that disagreed between keeper and a
+   * Per-user `grognard-central` mappings that disagreed between keeper and a
    * dropped entity (both non-empty, naming different central ids). Neither
    * side is overwritten; the caller surfaces these as a "these two central
    * entities might be duplicates too" suggestion instead of silently picking
@@ -1383,7 +1383,7 @@ export interface MergeResult {
  * (keeper's description wins; a dropped description is kept only when the
  * keeper has none). Dropped elements are removed from the document.
  *
- * The per-user `ljb-central` concordance row is handled separately from
+ * The per-user `grognard-central` concordance row is handled separately from
  * ordinary authority idnos (never blindly copied — it would silently lose its
  * `subtype`/user id via the generic idno-copy path): a mapping the keeper
  * lacks is transferred from the dropped entity; a mapping only the keeper has
@@ -1419,7 +1419,7 @@ export function mergeEntities(doc: Document, keepId: string, dropIds: string[]):
     for (const idno of idnoElements(dropped)) {
       const type = idno.getAttribute('type');
       const value = idno.textContent?.trim();
-      // The ljb-central row is per-user metadata, not a shared authority id —
+      // The grognard-central row is per-user metadata, not a shared authority id —
       // handled below, where the subtype (user id) is preserved correctly.
       if (type && value && type !== CENTRAL_IDNO_TYPE)
         attachAuthority(doc, keepId, { type, value });

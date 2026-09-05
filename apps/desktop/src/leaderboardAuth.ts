@@ -3,7 +3,7 @@
  * cached access token so a player only does this once. The token only
  * ever proves identity (scope is empty - just enough for GET /user); it
  * cannot access the org, its repos, or anything else. The Worker at
- * ljb-leaderboard.lejeanbaptiste.workers.dev re-verifies it against
+ * grognard-leaderboard.grognard.workers.dev re-verifies it against
  * GitHub itself on every submission rather than trusting the cache blindly.
  */
 

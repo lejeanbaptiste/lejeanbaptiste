@@ -16,19 +16,19 @@ const DEFAULT_SEARCH_LIMIT = 20;
 const MAX_SEARCH_LIMIT = 100;
 
 /**
- * Read-only API for the Word add-in ("connecting to the entity database via LJB").
+ * Read-only API for the Word add-in ("connecting to the entity database via Grognard").
  * Reads sibling `entities.sqlite` only — no `entities.xml` fallback.
- * No mutation endpoints exist here on purpose — all entity edits stay in LJB.
+ * No mutation endpoints exist here on purpose — all entity edits stay in Grognard.
  */
 export const pluginsApi = Router();
 
 // Defaults to the word-plugin project's own dev server origin so it works
 // out of the box; overridable once the add-in has a real hosted/sideloaded
-// origin (LJB_PLUGIN_ADDIN_ORIGIN env var).
+// origin (GROGNARD_PLUGIN_ADDIN_ORIGIN env var).
 const DEFAULT_ADDIN_ORIGIN = 'https://localhost:3100';
 
 pluginsApi.use((req: Request, res: Response, next: NextFunction) => {
-  const allowedOrigin = process.env.LJB_PLUGIN_ADDIN_ORIGIN ?? DEFAULT_ADDIN_ORIGIN;
+  const allowedOrigin = process.env.GROGNARD_PLUGIN_ADDIN_ORIGIN ?? DEFAULT_ADDIN_ORIGIN;
   res.header('Access-Control-Allow-Origin', allowedOrigin);
   res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type');
   res.header('Access-Control-Allow-Methods', 'GET');

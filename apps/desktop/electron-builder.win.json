@@ -3,11 +3,11 @@
   "publish": [
     {
       "provider": "github",
-      "owner": "lejeanbaptiste",
-      "repo": "lejeanbaptiste"
+      "owner": "grognard",
+      "repo": "grognard"
     }
   ],
-  "artifactName": "Le-Jean-Baptiste-win-Setup-${version}-${arch}.${ext}",
+  "artifactName": "Grognard-win-Setup-${version}-${arch}.${ext}",
   "beforePack": "./scripts/stage-game-assets.mjs",
   "nsis": {
     "oneClick": false,

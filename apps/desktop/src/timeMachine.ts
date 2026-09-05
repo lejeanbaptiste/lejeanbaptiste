@@ -10,7 +10,7 @@ const FILES_DIR_NAME = 'files';
 const MANIFEST_FILE_NAME = 'manifest.json';
 
 export interface TimeMachineSnapshotManifest {
-  app: 'le-jean-baptiste';
+  app: 'grognard';
   createdAt: string;
   fileCount: number;
   id: string;
@@ -194,7 +194,7 @@ export const createTimeMachineSnapshot = async (
   );
 
   const manifest: TimeMachineSnapshotManifest = {
-    app: 'le-jean-baptiste',
+    app: 'grognard',
     createdAt: new Date().toISOString(),
     fileCount,
     id,

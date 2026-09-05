@@ -1,23 +1,23 @@
-# Kaeriten encoding — planning standards for LJB
+# Kaeriten encoding — planning standards for Grognard
 
 **Status:** Proposed — discovery and design guide. This document sets the
-standards LJB should use while deciding how to support Japanese _kundoku_
+standards Grognard should use while deciding how to support Japanese _kundoku_
 (訓読) annotations, especially _kaeriten_ (返り点). It does not yet add a
 schema extension, editor control, or import behaviour.
 
 ## Purpose
 
-LJB needs to preserve what an edition displays, without confusing that
+Grognard needs to preserve what an edition displays, without confusing that
 diplomatic evidence with an interpretation of the Japanese reading order.
 Kaeriten are marks placed with a Chinese text to direct a Japanese reading;
-they are not normally words in the base Chinese string. A useful LJB model
+they are not normally words in the base Chinese string. A useful Grognard model
 therefore has two separable products:
 
 1. a transcription of the source order and its visible marks; and
 2. optionally, an explicit, inspectable kundoku reading order.
 
 The first is the minimum viable standard. The second is research data and
-must be opt-in. LJB must never silently derive or rewrite a reading order
+must be opt-in. Grognard must never silently derive or rewrite a reading order
 merely because it sees a return mark.
 
 This policy is particularly important for historical editions, where the
@@ -30,10 +30,10 @@ The NIJL–NW / TEI-C SIG EA/JP Japanese classical-text guide recommends using
 dedicated Unicode characters for kaeriten where possible. Its illustrative
 model also uses linked `<w>` elements (`@prev` / `@next`) when a kundoku text
 is retained, and notes that `anchor` plus `metamark` can be a simpler option.
-That is a valuable project precedent, not a universal TEI profile or an LJB
+That is a valuable project precedent, not a universal TEI profile or an Grognard
 schema requirement.
 
-LJB should use standard TEI semantics first. `<metamark>` is appropriate for
+Grognard should use standard TEI semantics first. `<metamark>` is appropriate for
 a graphic/written signal that affects how a document is read rather than the
 base content; it is an optional representation, not a replacement for the
 actual character when a Unicode form exists.
@@ -69,7 +69,7 @@ must specify UTF-8. Entity references may be accepted on import but should be
 normalised to the Unicode characters on save, except where a project needs to
 preserve a literal source transcription convention.
 
-## Proposed LJB encoding policy
+## Proposed Grognard encoding policy
 
 ### Level K1 — diplomatic marks (initial support)
 
@@ -86,7 +86,7 @@ This is searchable, copyable, Unicode-valid, and compatible with the cited
 Japanese guideline. It records no claim about token boundaries or the exact
 resolved kundoku sequence.
 
-K1 is LJB's recommended default for import, transcription, and editing.
+K1 is Grognard's recommended default for import, transcription, and editing.
 It should be possible to enter the dedicated marks from an editor palette or
 keyboard shortcut, but the editor must not replace a user's literal text
 without an explicit command.
@@ -99,7 +99,7 @@ non-Unicode mark. `anchor` may identify a position in the base sequence;
 `metamark` can carry the signal and, where applicable, identify its function
 and target. Link to a facsimile zone with `@facs` when exact position matters.
 
-The exact K2 pattern should be adopted only after testing it against LJB's
+The exact K2 pattern should be adopted only after testing it against Grognard's
 current schema and editor serializer. An illustrative pattern is:
 
 ```xml
@@ -144,7 +144,7 @@ appropriate). It is not a safe automatic consequence of K1.
 1. **Scope:** Is the first release limited to kaeriten, or does it include
    okurigana, kana glosses, punctuation, and reading aids collectively known
    as _kunten_ (訓点)?
-2. **Editorial target:** Does LJB preserve a particular printed edition,
+2. **Editorial target:** Does Grognard preserve a particular printed edition,
    represent a normalised scholarly text, or support both in parallel?
 3. **Association rule:** For K1, specify precisely whether the mark follows
    the governed graph in logical XML order (the default proposed above), and
@@ -164,7 +164,7 @@ appropriate). It is not a safe automatic consequence of K1.
 
 - Confirm that the project TEI schema accepts the dedicated characters in
   normal text and, before K2, that `metamark` and `anchor` are available in
-  the intended inline contexts. Add no new LJB element merely for kaeriten.
+  the intended inline contexts. Add no new Grognard element merely for kaeriten.
 - Provide a discoverable input palette with labels, glyph, and code point;
   include compound common entries such as `㆒㆑` only as convenient insertion
   macros, not separate invented characters.
@@ -207,11 +207,11 @@ the user.
 | 1. K1               | UTF-8 preservation, palette/input, tests, font/export checks.                       | Dedicated characters round-trip losslessly.                                  |
 | 2. K2               | Schema-confirmed source-position pattern, facsimile linkage, inspector support.     | Complex placements can be encoded without a local ad-hoc element.            |
 | 3. K3               | Reviewed tokenisation/linking workflow and validation.                              | A verified kundoku sequence is navigable and exportable without altering K1. |
-| 4. Interchange      | Import/export mapping and public profile documentation.                             | A partner can create valid LJB kaeriten data without relying on the UI.      |
+| 4. Interchange      | Import/export mapping and public profile documentation.                             | A partner can create valid Grognard kaeriten data without relying on the UI.      |
 
 ## Initial recommendation
 
-Adopt **K1 as the LJB baseline now**: dedicated Unicode Kanbun characters in
+Adopt **K1 as the Grognard baseline now**: dedicated Unicode Kanbun characters in
 source order, faithfully preserved and documented in `encodingDesc`.
 Defer `<metamark>`/`anchor` and reading-order links until the project has a
 representative corpus and a stated research use for them. This keeps the

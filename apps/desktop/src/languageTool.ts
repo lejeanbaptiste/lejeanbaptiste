@@ -12,7 +12,7 @@ export interface LanguageToolSettings {
   verifiedBaseUrl: string;
   /** onDemand = Check button only; live = debounce while typing. */
   checkMode: 'onDemand' | 'live';
-  /** Prefer the LJB-managed server under userData when installed. */
+  /** Prefer the Grognard-managed server under userData when installed. */
   managedInstall: boolean;
   /** Pass --languageModel when English n-grams are installed. */
   ngramsEnabled: boolean;

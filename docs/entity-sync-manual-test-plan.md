@@ -17,7 +17,7 @@ idea whether the two folders are really on different hardware.
 
 1. Build/launch the desktop app.
 2. In App Settings, note (or set) your **central entity database folder** —
-   call this `~/ljb-central-test/` for this run. Use a scratch folder, not your
+   call this `~/grognard-central-test/` for this run. Use a scratch folder, not your
    real one, so you can delete it afterward.
 3. Create **two separate project folders**, e.g. `~/test-proj-a/` and
    `~/test-proj-b/`, each with a couple of TEI chapter files containing the
@@ -28,7 +28,7 @@ idea whether the two folders are really on different hardware.
    separate** entity — you now have an intentional duplicate, one entity per
    project, both linked to the same central database.
 
-Keep a Finder/Explorer window open on `~/ljb-central-test/` throughout — you'll
+Keep a Finder/Explorer window open on `~/grognard-central-test/` throughout — you'll
 be peeking at `entities.xml`, `entity-orders.jsonl`, and
 `entity-projects.json` as you go.
 
@@ -41,7 +41,7 @@ it also leaves a permanent record.
 
 1. With Project A open, go to the database sidebar tab.
 2. Select both "Zhang Heng" entities, click Merge, confirm.
-3. **Check:** `~/ljb-central-test/entity-orders.jsonl` now exists and has one
+3. **Check:** `~/grognard-central-test/entity-orders.jsonl` now exists and has one
    new line (open it in any text editor — it's one JSON object per line).
 4. **Check:** the chapter files in Project A that mentioned the dropped entity
    now show the surviving entity's id in their `key="…"` attribute.
@@ -100,7 +100,7 @@ personal central-database index.
    conflicts · 0 broken."
 5. Click **Promote**. **Check:** the count moves to "1 in sync," and if you
    open your central database folder's `entities.xml`, the person now appears
-   there too, with a note (`<idno type="ljb-central" subtype="…">` inside the
+   there too, with a note (`<idno type="grognard-central" subtype="…">` inside the
    project's `entities.xml`, if you want to peek at the raw XML) linking the
    two.
 6. Now edit that person's description **in the central database** (via the

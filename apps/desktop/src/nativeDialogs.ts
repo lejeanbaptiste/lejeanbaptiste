@@ -131,7 +131,7 @@ const createDialogWindow = (
     height: config.height,
     minWidth: config.minWidth,
     minHeight: config.minHeight,
-    title: 'Le Jean-Baptiste',
+    title: 'Grognard',
     icon: getAppIcon(),
     parent,
     modal: config.modal,
@@ -213,7 +213,7 @@ const openPooledNativeDialog = async (payload: {
     window: dialogWindow,
   });
 
-  dialogWindow.setTitle(payload.title ?? 'Le Jean-Baptiste');
+  dialogWindow.setTitle(payload.title ?? 'Grognard');
   dialogWindow.webContents.send('native-dialog:open', {
     dialogId: payload.id,
     title: payload.title,
@@ -240,7 +240,7 @@ const openEphemeralNativeDialog = async (payload: {
   const url = await getAppUrl(config.route);
 
   const dialogWindow = createDialogWindow(payload.type, config, parent);
-  dialogWindow.setTitle(payload.title ?? 'Le Jean-Baptiste');
+  dialogWindow.setTitle(payload.title ?? 'Grognard');
 
   nativeDialogWindows.set(payload.id, {
     id: payload.id,

@@ -239,7 +239,7 @@ describe('applySuggestions', () => {
       tag: 'date',
       anchor: anchor!,
       status: 'pending',
-      attributes: { resp: '#ljb-sanmiao', cert: 'high' },
+      attributes: { resp: '#grognard-sanmiao', cert: 'high' },
       dateResolution: {
         status: 'unique',
         displaySurface: '魏文帝',
@@ -464,7 +464,7 @@ describe('applySuggestions', () => {
       tag: 'date',
       anchor: anchor!,
       status: 'pending',
-      attributes: { resp: '#ljb-sanmiao', cert: 'high', when: '221-08-05' },
+      attributes: { resp: '#grognard-sanmiao', cert: 'high', when: '221-08-05' },
       dateResolution: {
         status: 'unique',
         displaySurface: '魏文帝黃初二年',
@@ -494,7 +494,7 @@ describe('applySuggestions', () => {
       anchor: anchor!,
       status: 'pending',
       attributes: {
-        resp: '#ljb-sanmiao',
+        resp: '#grognard-sanmiao',
         cert: 'high',
         when: '<era xmlns="http://www.tei-c.org/ns/1.0">永元</era><year xmlns="http://www.tei-c.org/ns/1.0">',
       },
@@ -516,7 +516,7 @@ describe('applySuggestions', () => {
     expect(applied).toBe(1);
     expect(results[0]!.outcome).toBe('applied');
     expect(dateEl.hasAttribute('when')).toBe(false);
-    expect(dateEl.getAttribute('resp')).toBe('#ljb-sanmiao');
+    expect(dateEl.getAttribute('resp')).toBe('#grognard-sanmiao');
     expect(dateEl.getAttribute('cert')).toBe('high');
   });
 });

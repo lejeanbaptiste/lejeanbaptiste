@@ -1,4 +1,4 @@
-/** Mirrors ljb/plugins plugin.manifest.json (manifestVersion 1.0.0). */
+/** Mirrors grognard/plugins plugin.manifest.json (manifestVersion 1.0.0). */
 
 export const PLUGIN_MANIFEST_FILENAME = 'plugin.manifest.json';
 
@@ -60,7 +60,7 @@ export interface PluginManifest {
   author?: string;
   homepage?: string;
   license: string;
-  ljb: { minVersion: string; maxVersion?: string };
+  grognard: { minVersion: string; maxVersion?: string };
   languages?: string[];
   regions?: string[];
   languagePrompt?: { message: string; documentLanguages?: string[] };

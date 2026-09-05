@@ -239,7 +239,7 @@ downstream. Huckbot5000 is another track of the same kind, alongside `packs/norb
 ### CBDB reference-tier-first (decided 2026-08-06)
 
 Agreed architecture: **do not re-package CBDB office translations into our GitHub pack assets.**
-Users install CBDB's official database locally; LJB reads office glosses from that install at
+Users install CBDB's official database locally; Grognard reads office glosses from that install at
 lookup time. Huckbot5000 only generates candidates for offices that still lack a gloss in our
 publishable packs (true gaps).
 
@@ -372,7 +372,7 @@ piecemeal, and not automatically (publish action on shared state).
    (`downloadNorbertReferenceBundle`, renamed but otherwise unchanged — no redistribution concern
    there, it's our own reduced-authority export, not third-party copyrighted content); CBDB and
    Norbert are no longer treated as one shared download group in `authorityLifecycle.ts`.
-   Decision made 2026-08-06: user chose "strip locally in LJB" over "keep the full 550MB file" —
+   Decision made 2026-08-06: user chose "strip locally in Grognard" over "keep the full 550MB file" —
    full official CBDB sqlite is 550MB vs. the 231MB stripped result; each install downloads the
    full file once, strips it, discards the original. Typecheck clean, existing test suites
    (`authorityDatabases.test.ts`, `authorityLifecycle.test.ts`, 11 tests) pass unmodified.
@@ -381,7 +381,7 @@ piecemeal, and not automatically (publish action on shared state).
    `authority-reference-norbert-{version}.zip`. Publishable CBDB tagging packs omit
    `(Hucker)`-cited `OFFICE_CODES` translations via `compileRecords.mjs`. The local install path
    (`stripReferenceDb.mjs` / `downloadCbdbDirect`) keeps CBDB's official office translations as
-   published — LJB displays what the user's CBDB install contains; we do not re-package those
+   published — Grognard displays what the user's CBDB install contains; we do not re-package those
    strings into GitHub pack assets. Deleted two stale local artifacts that predated the pack-side
    omit (`dist/reference/cbdb-person.sqlite3`, `release/authority-reference-person-*.zip`) —
    both gitignored, never committed.

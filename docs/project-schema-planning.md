@@ -8,7 +8,7 @@
 
 After the user picks a schema (first-time setup only), a **Project settings** dialog appears (renamed from "Project metadata" / "Edition metadata"). Fields are defined by the schema catalog entry; the user can add custom fields at the bottom. Values are stored in **`schema/project-metadata.json`** (portable with the schema folder). Blanks stay blank — they are not written into defaults and are omitted from new files until set per document.
 
-**First-run (install):** before any project work, the user chooses a **central entity database folder** (see `docs/Auto-tagging.md`). LJB explains the folder holds `entities.xml` and suggests keeping projects as subfolders; layout is optional.
+**First-run (install):** before any project work, the user chooses a **central entity database folder** (see `docs/Auto-tagging.md`). Grognard explains the folder holds `entities.xml` and suggests keeping projects as subfolders; layout is optional.
 
 **App Settings** includes the user's **encoder name** (pre-filled in Project settings on new projects), **entity database folder path**, and other global prefs. Changing Settings does not rewrite existing projects.
 
@@ -381,7 +381,7 @@ Current built-in catalog entries:
 **Shipped (June 2026).** Manual checklist: `docs/smoke_test.md` section N.
 
 - Manual **Check for schema updates…** menu item (bypasses throttle)
-- Per-file last-saved stamp on save (`encodingDesc/appInfo` for TEI; Orlando `RESPONSIBILITY[@RESP="Le Jean-Baptiste"]`) — separate from scholarly `revisionDesc`
+- Per-file last-saved stamp on save (`encodingDesc/appInfo` for TEI; Orlando `RESPONSIBILITY[@RESP="Grognard"]`) — separate from scholarly `revisionDesc`
 - Override tracking before bulk apply via `lastApplied` snapshot in `project-metadata.json`
 
 ---

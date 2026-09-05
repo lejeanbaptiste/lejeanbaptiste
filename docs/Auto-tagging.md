@@ -92,9 +92,9 @@ Priority _across_ methods (dictionary vs. AI vs. NER on overlapping spans) is se
 
 Uses the [sanmiao](https://pypi.org/project/sanmiao/) Python package (tag → solve → report).
 
-**Desktop setup:** for day-to-day hacking, use an [editable install](docs/sanmiao-ljb-integration.md#editable-dev-install-tweak-sanmiao--ljb-together) in a sibling `sanmiao` repo. For a fixed release only: `pip install sanmiao`. LJB calls `python -m sanmiao.tei_bridge` via Electron IPC.
+**Desktop setup:** for day-to-day hacking, use an [editable install](docs/sanmiao-grognard-integration.md#editable-dev-install-tweak-sanmiao--grognard-together) in a sibling `sanmiao` repo. For a fixed release only: `pip install sanmiao`. Grognard calls `python -m sanmiao.tei_bridge` via Electron IPC.
 
-Dates follow a **different workflow** from `persName` dictionary tagging or entity disambiguation. See **`docs/sanmiao-dates-schema.md`** for schema extension details and **`docs/sanmiao-ljb-integration.md`** for sanmiao source-code / namespace notes.
+Dates follow a **different workflow** from `persName` dictionary tagging or entity disambiguation. See **`docs/sanmiao-dates-schema.md`** for schema extension details and **`docs/sanmiao-grognard-integration.md`** for sanmiao source-code / namespace notes.
 
 ### Why dates are not “tag now, disambiguate later”
 
@@ -157,7 +157,7 @@ Resolve UI shows **sanmiao match lines** (not CBDB-style authority cards). No `@
 
 ### Workflow gate (Chinese / Japanese)
 
-For **Chinese** (`zh*`, `lzh`) and **Japanese** (`ja`) source documents, LJB enforces **dates first**:
+For **Chinese** (`zh*`, `lzh`) and **Japanese** (`ja`) source documents, Grognard enforces **dates first**:
 
 1. Auto-tagging opens with **East Asian dates** at the top; dictionary, authority packs, and AI stay disabled until the dates pass completes.
 2. **Unlock** when: sanmiao has run on this document in this session (even if zero spans found), or the user applies date tags. Pre-existing `<date>` markup alone does **not** unlock — you must run the dates pass.
@@ -196,7 +196,7 @@ Requirements:
 - **Structural, non-overlapping chunking** (`autoTagging/chunk.ts`), not fixed-size-with-overlap: cut only at block-element boundaries (`p`/`div`/`l`/`lg`/`head`/`ab`/`item`), so chunks never split mid-sentence and occurrence counting stays unambiguous (every document offset belongs to exactly one chunk). A read-only context margin surrounds each chunk for disambiguation but is never itself taggable.
 - **One pass, multiple tag types**: a single pass should be able to request several tag types at once — this shapes the JSON response format and keeps costs down. Multi-turn refinement (second pass for a tag type) remains possible but is not the default. Suggest, audit, and (later) translation stay **separate prompts/requests** rather than one stacked prompt — a small local model degrades on multi-objective instructions, the output shapes genuinely differ per task, and stacking would invalidate the whole cache whenever any one task's instructions change. They share only a preamble prompt module.
 - **Confidence scoring** on every suggestion, filterable by threshold in the review UI.
-- **Economy**: cache responses keyed on (chunk hash, tag set, model, prompt version) so re-runs on unchanged text cost nothing (`autoTagging/llmCache.ts`, `.ljb/ai-cache/`, 30-day TTL); batch requests; only send chunks that changed since the last run.
+- **Economy**: cache responses keyed on (chunk hash, tag set, model, prompt version) so re-runs on unchanged text cost nothing (`autoTagging/llmCache.ts`, `.grognard/ai-cache/`, 30-day TTL); batch requests; only send chunks that changed since the last run.
 - **Two-layer validation** before anything becomes a suggestion: schema/field validation (`autoTagging/llmParse.ts`: tag/action must be one requested, confidence in [0,1]) and anchor verification against the live document (surface + occurrence must actually resolve). Either failing drops the item silently — never applied, always counted.
 
 **AI audit**: take a dumb-tagged document, identify mistakes with a one-sentence rationale, and walk the user through keep/add/correct decisions:
@@ -211,7 +211,7 @@ These are just suggestion objects with different `action` values, reviewed in th
 
 ### Immediate future (post–first UI wiring, 2026-07)
 
-AI suggest is wired in the desktop app (dialog → review panel → `.ljb/ai-cache/`). Two gaps surfaced immediately after the first live runs: **prompt control for different models**, and **tag types beyond the bootstrap pair**. Both are engine-ready; what is missing is UI, definitions, and harness coverage.
+AI suggest is wired in the desktop app (dialog → review panel → `.grognard/ai-cache/`). Two gaps surfaced immediately after the first live runs: **prompt control for different models**, and **tag types beyond the bootstrap pair**. Both are engine-ready; what is missing is UI, definitions, and harness coverage.
 
 #### A. Prompt profiles — edit, save, and match models
 
@@ -228,13 +228,13 @@ AI suggest is wired in the desktop app (dialog → review panel → `.ljb/ai-cac
 
 **What to build (v1 prompt UI):**
 
-1. **Prompt profile storage** — e.g. `.ljb/ai-prompt-profiles.json` (project-scoped) and/or app-level defaults beside AI API settings. Each profile: `{ id, label, modelPattern?, suggestSuffix?, tagGuideOverrides?, version }`.
+1. **Prompt profile storage** — e.g. `.grognard/ai-prompt-profiles.json` (project-scoped) and/or app-level defaults beside AI API settings. Each profile: `{ id, label, modelPattern?, suggestSuffix?, tagGuideOverrides?, version }`.
 2. **Profile selection** — on the AI suggest step (and later audit): show active profile; “Edit prompt…” opens an editor. Auto-select profile when `modelPattern` matches the configured model id (e.g. `*qwen3.6*` → “Groq classical biography”).
 3. **Layered assembly** (do not let users break the contract):
    - **Locked in code:** locator rules, JSON shape, chunk/context boundaries (`preamble.txt`).
    - **Editable per profile:** task wording, recall/precision bias, corpus genre note (`suggest.system.txt` body or suffix).
    - **Editable per tag:** one-line definitions (`tag-definitions.json` or UI equivalent).
-4. **Version bump on save** — any semantic profile change bumps effective `SUGGEST_PROMPT_VERSION` (or a profile-specific suffix in the cache key) so `.ljb/ai-cache/` does not serve stale chunks.
+4. **Version bump on save** — any semantic profile change bumps effective `SUGGEST_PROMPT_VERSION` (or a profile-specific suffix in the cache key) so `.grognard/ai-cache/` does not serve stale chunks.
 5. **Harness loop** — re-run `validationHarness.live.test` after profile edits; document P/R/F1 in `archive/phase5-validation-results.md` per profile/model pair.
 
 **Out of scope for v1 prompt UI:** stacking suggest + audit in one request; user-editable JSON schema; sharing profiles across projects (export/import can come later).
@@ -310,14 +310,14 @@ Not an SQL server. The entity database is a TEI standoff file: `<standOff>` / pe
 | --------------------------------------------- | ----------------------------------- | ---------------------------- |
 | Central entity database                       | `{user-chosen folder}/entities.xml` | Yes — open in any TEI editor |
 | Project entity database (opt-in)              | `<projectRoot>/entities.xml`        | Yes                          |
-| Decision log, pending caches, project backups | `<projectRoot>/.ljb/`               | Hidden                       |
+| Decision log, pending caches, project backups | `<projectRoot>/.grognard/`               | Hidden                       |
 | App prefs (central DB folder path, etc.)      | Electron userData                   | Hidden                       |
 
-**Central database folder** — chosen at **first-run / install** (folder picker, not file). LJB explains: this folder holds your **entity database** (`entities.xml`); we **suggest** keeping your projects as subfolders here, but that layout is optional. Changeable in **App Settings → Entity database location**. Pointer-only on move (no automatic file migration) + strong warning.
+**Central database folder** — chosen at **first-run / install** (folder picker, not file). Grognard explains: this folder holds your **entity database** (`entities.xml`); we **suggest** keeping your projects as subfolders here, but that layout is optional. Changeable in **App Settings → Entity database location**. Pointer-only on move (no automatic file migration) + strong warning.
 
 **Project-specific database** — opt-in at new-project setup or in **Project → Project settings** (renamed from "Edition metadata"). Writes `<projectRoot>/entities.xml`.
 
-**Decision log** — always per-project at `<projectRoot>/.ljb/entity-decisions.jsonl`. Not shared (projects differ in scope, period, etc.). Other LJB-internal clutter (pending suggestion cache, import run logs, project Time Machine snapshots) also lives under `.ljb/`. No LEAF / `.leaf` branding anywhere in this stack.
+**Decision log** — always per-project at `<projectRoot>/.grognard/entity-decisions.jsonl`. Not shared (projects differ in scope, period, etc.). Other Grognard-internal clutter (pending suggestion cache, import run logs, project Time Machine snapshots) also lives under `.grognard/`. No LEAF / `.leaf` branding anywhere in this stack.
 
 ### Example layout (optional, user-defined)
 
@@ -326,14 +326,14 @@ Not an SQL server. The entity database is a TEI standoff file: `<standOff>` / pe
 ├── entities.xml                  ← central database (visible)
 ├── my-han-texts/                 ← project using central database
 │   ├── jean-baptiste.project.json
-│   ├── .ljb/
+│   ├── .grognard/
 │   │   ├── entity-decisions.jsonl
 │   │   └── time-machine/         ← project snapshots (planned)
 │   └── chapter1.xml
 └── teaching-sandbox/             ← project with its own database
     ├── jean-baptiste.project.json
     ├── entities.xml
-    ├── .ljb/
+    ├── .grognard/
     └── exercise1.xml
 ```
 
@@ -352,18 +352,18 @@ Mentions use bare local ids (`key="person-000001"`). Which file holds that id is
 
 ### Database identity & mismatch warnings
 
-Each `entities.xml` carries a stable **database id** in its TEI header (e.g. `<idno type="ljb-entity-database">` with a UUID, set at creation). The project JSON stores `entityDatabaseId` — the id of the database this project was last linked to.
+Each `entities.xml` carries a stable **database id** in its TEI header (e.g. `<idno type="grognard-entity-database">` with a UUID, set at creation). The project JSON stores `entityDatabaseId` — the id of the database this project was last linked to.
 
-On open (and before any entity write), LJB compares the resolved database file's id to the project's stored id. **Mismatch → warn:** the corpus `@key` values were created against a different database; ids will not match. Default action: **Cancel** (stay disconnected until resolved).
+On open (and before any entity write), Grognard compares the resolved database file's id to the project's stored id. **Mismatch → warn:** the corpus `@key` values were created against a different database; ids will not match. Default action: **Cancel** (stay disconnected until resolved).
 
 When the user changes App Settings to point at a different folder, or switches `entityStore` mode, treat it as a potential mismatch and run the same check.
 
 ### Database file validation (safety)
 
-Before reading or writing, LJB verifies the target file is an entity database:
+Before reading or writing, Grognard verifies the target file is an entity database:
 
 - TEI standoff with expected structure (`<standOff>`, entity lists), **and**
-- A hard-coded marker in the file (subtype / `idno type="ljb-entity-database"`) that LJB sets in the scaffold.
+- A hard-coded marker in the file (subtype / `idno type="grognard-entity-database"`) that Grognard sets in the scaffold.
 
 If the user points App Settings at an ordinary TEI text file, refuse and warn. This prevents corrupting corpus XML by mistake.
 
@@ -386,7 +386,7 @@ Use **reconstitute** when the database file is lost but the XML still has keys. 
 
 ### Voluntary database switch (central ↔ project, or different central path)
 
-What matters is **not** preserving LJB local ids (`person-000001`) — those are disposable handles. What matters is preserving **relationships and authority links**:
+What matters is **not** preserving Grognard local ids (`person-000001`) — those are disposable handles. What matters is preserving **relationships and authority links**:
 
 - these mentions pointed at the same entity (shared old `@key`);
 - that entity's names, descriptions, and **`<idno>` authority links** (CBDB, Wikidata, your own database ids, etc.).
@@ -400,7 +400,7 @@ What matters is **not** preserving LJB local ids (`person-000001`) — those are
 3. **Rewrite corpus `@key` values** using the remap table so every mention still points at the correct imported entity.
 4. Update `entityDatabaseId` in the project JSON.
 
-After import, old LJB ids are gone from both the database and the corpus; authority links and mention↔entity groupings are preserved.
+After import, old Grognard ids are gone from both the database and the corpus; authority links and mention↔entity groupings are preserved.
 
 **Mismatch dialog options:**
 
@@ -416,7 +416,7 @@ Do **not** silently keep stale keys. **Reconstitute** (stub entities from corpus
 
 ### External edits & reload
 
-A file watcher on the active `entities.xml` detects changes made outside LJB. Prompt: **"Database changed externally — reload?"** Reload before the next entity operation if the user confirms.
+A file watcher on the active `entities.xml` detects changes made outside Grognard. Prompt: **"Database changed externally — reload?"** Reload before the next entity operation if the user confirms.
 
 ### Incremental ids (SQL-equivalent behaviour)
 
@@ -429,28 +429,28 @@ Local ids (`person-000001`, `place-000002`, …) are generated by scanning all e
 
 The only way ids "break" is attaching a corpus to a different database (handled by mismatch warnings) or manual hand-editing that reuses an id for a different person (same risk as editing an SQL table by hand — rare, user-owned).
 
-Machine provenance on auto-linked mentions: `resp="#ljb-autotag"` (replacing `#leafwriter-autotag`). Authority-cache notes: `resp="le-jean-baptiste"`.
+Machine provenance on auto-linked mentions: `resp="#grognard-autotag"` (replacing `#leafwriter-autotag`). Authority-cache notes: `resp="grognard"`.
 
 ### Time Machine backups
 
 Time Machine gains a **second tab** for the **central entity database**:
 
-- **Project tab** — corpus snapshots under `<project>/.ljb/history/` (unchanged).
+- **Project tab** — corpus snapshots under `<project>/.grognard/history/` (unchanged).
 - **Entity database tab** — snapshots of `entities.xml` stored in the **hidden app folder** (Electron userData, alongside cache and settings). Same hash-dedup rules as corpus saves.
 - The Time Machine popup lets the user **delete individual snapshots** (both tabs).
-- Project-local `entities.xml` (when `entityStore: "project"`) uses the Project tab scope under that project's `.ljb/history/`.
+- Project-local `entities.xml` (when `entityStore: "project"`) uses the Project tab scope under that project's `.grognard/history/`.
 
 Strong reminder in UI: back up your entity database; it is the disambiguation work of a lifetime.
 
 ### Corpus operations & exclusion
 
-Project-local `entities.xml` must be excluded from find/replace, auto-tag crawls, and validation. Hidden `.ljb/` is excluded by the reserved-path mechanism. The central database lives outside the project tree and is never enumerated.
+Project-local `entities.xml` must be excluded from find/replace, auto-tag crawls, and validation. Hidden `.grognard/` is excluded by the reserved-path mechanism. The central database lives outside the project tree and is never enumerated.
 
 ### Deferred (not v1)
 
 - **Standalone database merge** — combine two entity files without an attached project/corpus (same import logic as voluntary switch; lower priority if project switch covers the main use case).
 - **SQLite runtime index** for very large central files (XML remains source of truth).
-- **Multi-machine sync** — two LJB instances editing the same `entities.xml` concurrently.
+- **Multi-machine sync** — two Grognard instances editing the same `entities.xml` concurrently.
 - **Migration tooling** from early `.leaf/entities.xml` prototype paths in test projects.
 - **Move-file wizard** when changing central DB folder (v1 = pointer update + warning only).
 - **Entity database viewer/editor** UI beyond opening the XML externally.
@@ -483,7 +483,7 @@ Each item provides basic details to help disambiguate. Button to open the author
 - accept for this occurrence;
 - accept for all identical strings **in this document** (default bulk — never corpus-wide);
 - create new entity;
-- mark unresolved (`cert="unknown"`, no `@key`, red styling — candidates kept in `.ljb/`);
+- mark unresolved (`cert="unknown"`, no `@key`, red styling — candidates kept in `.grognard/`);
 - ignore (X on the tree, moves to the bottom of the list);
 - split group.
 
@@ -497,7 +497,7 @@ When the author accepts and the entity has no custom description, a popup offers
 
 **v1 strategy:** reuse the **LINCS reconcile API** (already in the app) for VIAF, Wikidata, DBpedia, GeoNames, Getty, GND. **Offline only** for CBDB, DILA, CHGIS, and personal SQL/CSV exports.
 
-**Politeness:** cache in `<project>/.ljb/authority-cache/`; query when a string is opened, not on every keystroke; ~1 request/second max; 30-day TTL + manual refresh; User-Agent identifies Le Jean-Baptiste. See `Auto-tagging-phases.md` Phase 4b for the full authority matrix.
+**Politeness:** cache in `<project>/.grognard/authority-cache/`; query when a string is opened, not on every keystroke; ~1 request/second max; 30-day TTL + manual refresh; User-Agent identifies Grognard. See `Auto-tagging-phases.md` Phase 4b for the full authority matrix.
 
 Technical:
 
@@ -526,4 +526,4 @@ Disambiguation choices are suggestion objects too, using the same anchor scheme.
 
 # Database
 
-Entity database viewer/editing tools deferred (see **Deferred** in `Auto-tagging.md`). Users open `entities.xml` directly in LJB or any TEI editor.
+Entity database viewer/editing tools deferred (see **Deferred** in `Auto-tagging.md`). Users open `entities.xml` directly in Grognard or any TEI editor.

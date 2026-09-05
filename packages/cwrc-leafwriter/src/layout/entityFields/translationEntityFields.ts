@@ -30,7 +30,7 @@ import {
 } from './fileWideOccurrence';
 import type { MentionRenderPart } from './mentionRender';
 
-export const ENTITY_REF_TYPE = 'ljb-entity';
+export const ENTITY_REF_TYPE = 'grognard-entity';
 export const MENTION_SURFACE_ATTR = 'data-mention-surface';
 export const MENTION_ROLE_ATTR = 'data-mention-role';
 export const ENTITY_FIELD_ATTR = 'data-leaf-entity-field';

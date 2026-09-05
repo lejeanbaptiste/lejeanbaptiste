@@ -2,7 +2,7 @@
  * Stamp each corpus TEI file with the fingerprint of the project database
  * (PEDB) its `@key`s belong to:
  *
- *   <idno type="ljb-project-database">{pedbFingerprint}</idno>
+ *   <idno type="grognard-project-database">{pedbFingerprint}</idno>
  *
  * placed in the file's `<publicationStmt>`. This lets the orphan sweep tell two
  * very different situations apart before it ever strips a key: a file *copied
@@ -15,7 +15,7 @@
  */
 
 /** `<idno type>` value that stamps a corpus file with its owning PEDB fingerprint. */
-export const PROJECT_DB_IDNO_TYPE = 'ljb-project-database';
+export const PROJECT_DB_IDNO_TYPE = 'grognard-project-database';
 
 const STAMP_RE = new RegExp(
   `<idno\\b[^>]*\\btype=(["'])${PROJECT_DB_IDNO_TYPE}\\1[^>]*>([\\s\\S]*?)<\\/idno>`,

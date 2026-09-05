@@ -117,7 +117,7 @@ export const ensureDatePrepositionsInText = (
 
 /**
  * After date fields are substituted, rewrite In/On (En/Le) in the text node
- * immediately preceding each `ref[type="ljb-date"]` using that field's parts.
+ * immediately preceding each `ref[type="grognard-date"]` using that field's parts.
  */
 export const adjustDatePrepositionsBeforeDateFields = (
   root: ParentNode,
@@ -130,7 +130,7 @@ export const adjustDatePrepositionsBeforeDateFields = (
   const fields = Array.from(
     (
       root as ParentNode & { querySelectorAll: typeof Element.prototype.querySelectorAll }
-    ).querySelectorAll?.('ref[type="ljb-date"]') ?? [],
+    ).querySelectorAll?.('ref[type="grognard-date"]') ?? [],
   );
 
   for (const field of fields) {
@@ -162,7 +162,7 @@ export const ensureDatePrepositionsBeforeDateFields = (
   const fields = Array.from(
     (
       root as ParentNode & { querySelectorAll: typeof Element.prototype.querySelectorAll }
-    ).querySelectorAll?.('ref[type="ljb-date"]') ?? [],
+    ).querySelectorAll?.('ref[type="grognard-date"]') ?? [],
   );
   const doc = (root as Node).ownerDocument ?? document;
 

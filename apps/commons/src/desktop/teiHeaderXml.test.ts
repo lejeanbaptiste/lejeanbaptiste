@@ -65,7 +65,7 @@ describe('mergeStoredHeaderForValidation', () => {
   test('strips encodingDesc from merged validation xml', () => {
     const withEncoding = skeleton.replace(
       '</fileDesc>',
-      '</fileDesc><encodingDesc><appInfo><application ident="le-jean-baptiste"><label>App</label></application></appInfo></encodingDesc>',
+      '</fileDesc><encodingDesc><appInfo><application ident="grognard"><label>App</label></application></appInfo></encodingDesc>',
     );
     const editorOnly = stripTeiHeaderForVisualEditor(withEncoding);
     const merged = mergeStoredHeaderForValidation(editorOnly, withEncoding);

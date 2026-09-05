@@ -1,6 +1,6 @@
 # Documentation
 
-Working notes and specs for **Le Jean-Baptiste** (desktop LEAF-Writer).  
+Working notes and specs for **Grognard** (desktop LEAF-Writer).  
 User install / build instructions live in the [root readme](../readme.md) and [apps/desktop/README.md](../apps/desktop/README.md).
 
 Active product TODOs live in the root [`readme.md`](../readme.md) (`## Waiting` / `## Future`). Plan/phases docs below carry a **Status** line at the top — start there before reading the body. Keep plan status lines current when behaviour ships.
@@ -29,7 +29,7 @@ Active product TODOs live in the root [`readme.md`](../readme.md) (`## Waiting` 
 | [Auto-tagging.md](Auto-tagging.md)                                           | Auto-tagging / disambiguation architecture           |
 | [Auto-tagging-phases.md](Auto-tagging-phases.md)                             | Phase checklist (companion to above)                 |
 | [schema_handling.md](schema_handling.md)                                     | Project schema behaviour (phases 1–6)                |
-| [ljb-tei-extensions.md](ljb-tei-extensions.md)                               | TEI extensions used by the app                       |
+| [grognard-tei-extensions.md](grognard-tei-extensions.md)                               | TEI extensions used by the app                       |
 | [sanmiao-dates-schema.md](sanmiao-dates-schema.md)                           | East Asian date schema                               |
 | [entity-data-provenance.md](entity-data-provenance.md)                       | Entity `origin` / `source` / `status`                |
 | [entity-registry-merges-and-splits.md](entity-registry-merges-and-splits.md) | Merge / split behaviour                              |
@@ -74,7 +74,7 @@ Supporting / deeper:
 | [live-passage-citation-planning.md](live-passage-citation-planning.md)                                                  | Future Word/LO live passage citations (dream)                                               |
 | [tagging-planning.md](tagging-planning.md)                                                                              | Keyboard tagging (mostly shipped — historical plan)                                         |
 | [project-schema-planning.md](project-schema-planning.md)                                                                | Schema onboarding plan (mostly shipped — see schema_handling)                               |
-| [sanmiao-ljb-integration.md](sanmiao-ljb-integration.md)                                                                | Sanmiao bridge design notes                                                                 |
+| [sanmiao-grognard-integration.md](sanmiao-grognard-integration.md)                                                                | Sanmiao bridge design notes                                                                 |
 | [versioning-planning.md](versioning-planning.md)                                                                        | Local history / time machine                                                                |
 | [performance-planning.md](performance-planning.md) / [bundle-size-warning-planning.md](bundle-size-warning-planning.md) | Perf / first-load size                                                                      |
 | [wikisource-import.md](wikisource-import.md)                                                                            | Wikisource browser extension + built-in TEI import                                          |

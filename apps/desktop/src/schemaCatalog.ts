@@ -95,10 +95,10 @@ export const SCHEMA_CATALOG: Record<string, SchemaCatalogEntry> = {
     // Fallback only (web build / manual re-download); the desktop app installs
     // the bundled copy below. Kept pointing at the committed plugin artifact.
     rngUrls: [
-      'https://raw.githubusercontent.com/lejeanbaptiste/plugins/main/packages/plugin-cbeta-import/data/schema/cbeta_p5.rng',
+      'https://raw.githubusercontent.com/grognard/plugins/main/packages/plugin-cbeta-import/data/schema/cbeta_p5.rng',
     ],
     cssUrls: [
-      'https://raw.githubusercontent.com/lejeanbaptiste/leaf-writer/main/apps/desktop/resources/schema/cbeta.css',
+      'https://raw.githubusercontent.com/grognard/leaf-writer/main/apps/desktop/resources/schema/cbeta.css',
     ],
     localRngName: 'cbeta_p5.rng',
     localCssName: 'cbeta.css',

@@ -8,7 +8,7 @@ interface PageProps {
 }
 
 const WEB_PAGE_TITLE = 'LEAF-Writer Commons';
-const DESKTOP_PAGE_TITLE = 'Le Jean-Baptiste';
+const DESKTOP_PAGE_TITLE = 'Grognard';
 
 export const Page = forwardRef<PageProps, any>(({ children, title, ...rest }, ref) => {
   const { resource } = useAppState().editor;

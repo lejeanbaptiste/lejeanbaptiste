@@ -21,7 +21,7 @@ Methodology and full first-run numbers for the validation harness specifically a
   instructions change.
 - **Structural, non-overlapping chunking** — cut only at block-element boundaries, never
   fixed-size-with-overlap, so occurrence counting stays unambiguous.
-- **Cache key:** `(chunk hash, tag set, model, prompt version)`, `.ljb/ai-cache/`, mirrors the
+- **Cache key:** `(chunk hash, tag set, model, prompt version)`, `.grognard/ai-cache/`, mirrors the
   Phase 4b authority cache.
 - **Two-layer validation** on every model claim: schema/field validation, then anchor
   verification against the live document. Anything failing either is dropped and counted,
@@ -171,7 +171,7 @@ Hosted Mistral `ministral-8b-2512` is fine when you need Mistral-family output. 
 ## Next steps (updated 2026-07-04)
 
 1. ~~Gold passage + model comparison~~ — **done** (four models; Qwen3.6 + v3 leads).
-2. ~~Dialog wiring + `.ljb/ai-cache/`~~ — **done** (desktop AI suggest path).
+2. ~~Dialog wiring + `.grognard/ai-cache/`~~ — **done** (desktop AI suggest path).
 3. **Prompt profiles UI** — edit/save per-model suggest text; version in cache key. Spec: [Auto-tagging.md](Auto-tagging.md) → Immediate future **A**.
 4. **Expandable tag types** — schema-driven picker; definitions + gold for `roleName`/`orgName`. Spec: **B** in same section.
 5. Triage FNs/FPs on `gold_test.xml` (Groq+v3 baseline).

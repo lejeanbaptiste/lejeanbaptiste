@@ -24,7 +24,7 @@ const resolveWikisourceModule = (): string => {
   ];
   const hit = candidates.find((candidate) => fs.existsSync(candidate));
   if (!hit) {
-    throw new Error('wikisource-parallel.mjs not found in the LJB desktop bundle.');
+    throw new Error('wikisource-parallel.mjs not found in the Grognard desktop bundle.');
   }
   return hit;
 };

@@ -6,11 +6,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { app, BrowserWindow } from 'electron';
 
-export const NATIVE_HOST_NAME = 'org.lejeanbaptiste.import';
+export const NATIVE_HOST_NAME = 'org.grognard.import';
 /** Pinned unpacked-extension id (see apps/browser-extension/manifest.json key). */
 export const BROWSER_EXTENSION_ID = 'dddnkaleimllefhfolmhdfbidnjfojjh';
 /** Firefox add-on id (see apps/browser-extension/manifest.firefox.json). */
-export const BROWSER_EXTENSION_GECKO_ID = 'ljb-corpus-import@lejeanbaptiste.org';
+export const BROWSER_EXTENSION_GECKO_ID = 'grognard-corpus-import@grognard.org';
 
 export interface WikisourceImportOrder {
   v?: number;
@@ -52,7 +52,7 @@ const isBdrcOrder = (payload: BrowserImportOrder): payload is BdrcImportOrder =>
   payload?.action === 'import-bdrc';
 
 const pointerPath = (): string =>
-  path.join(os.homedir(), '.config', 'lejeanbaptiste', 'browser-bridge.json');
+  path.join(os.homedir(), '.config', 'grognard', 'browser-bridge.json');
 
 const nativeMessagingDirs = (): string[] => {
   const home = os.homedir();
@@ -144,9 +144,9 @@ const resolveNativeHostFile = (basename: string): string => {
   return candidates.find((p) => fs.existsSync(p)) ?? candidates[1];
 };
 
-export const resolveNativeHostScript = (): string => resolveNativeHostFile('ljb-browser-host.mjs');
+export const resolveNativeHostScript = (): string => resolveNativeHostFile('grognard-browser-host.mjs');
 
-export const resolveNativeHostLauncher = (): string => resolveNativeHostFile('ljb-browser-host');
+export const resolveNativeHostLauncher = (): string => resolveNativeHostFile('grognard-browser-host');
 
 const shSingleQuote = (value: string): string => `'${value.replace(/'/g, `'\\''`)}'`;
 
@@ -154,14 +154,14 @@ const shSingleQuote = (value: string): string => `'${value.replace(/'/g, `'\\''`
  * Write a launcher that runs the native host through **this app's own Node**
  * (`ELECTRON_RUN_AS_NODE`), so it works when the browser spawns it with a bare
  * PATH that has no `node` (the common macOS / nvm case, and every Windows
- * install). Falls back to the static `ljb-browser-host` bash script if the file
+ * install). Falls back to the static `grognard-browser-host` bash script if the file
  * can't be written. On Windows the browser can only spawn `.exe`/`.bat`/`.cmd`,
  * so the launcher is a `.bat` wrapper around the app exe (the form both the
  * Chrome and Firefox native-messaging docs use for script hosts).
  */
 const ensureGeneratedLauncher = (): string => {
   if (process.platform === 'win32') {
-    const bat = path.join(app.getPath('userData'), 'native-host', 'ljb-browser-host.bat');
+    const bat = path.join(app.getPath('userData'), 'native-host', 'grognard-browser-host.bat');
     try {
       fs.mkdirSync(path.dirname(bat), { recursive: true });
       fs.writeFileSync(
@@ -178,7 +178,7 @@ const ensureGeneratedLauncher = (): string => {
       return resolveNativeHostLauncher();
     }
   }
-  const launcher = path.join(app.getPath('userData'), 'native-host', 'ljb-browser-host');
+  const launcher = path.join(app.getPath('userData'), 'native-host', 'grognard-browser-host');
   try {
     fs.mkdirSync(path.dirname(launcher), { recursive: true });
     fs.writeFileSync(
@@ -197,7 +197,7 @@ const ensureGeneratedLauncher = (): string => {
 const writeNativeManifests = (hostPath: string): void => {
   const base = {
     name: NATIVE_HOST_NAME,
-    description: 'Le Jean-Baptiste browser import (Wikisource, Kanripo, BDRC)',
+    description: 'Grognard browser import (Wikisource, Kanripo, BDRC)',
     path: hostPath,
     type: 'stdio' as const,
   };
@@ -273,7 +273,7 @@ export const startBrowserImportBridge = (getWindow: () => BrowserWindow | null):
         const win = getWindow();
         if (!win || win.isDestroyed()) {
           res.writeHead(503);
-          res.end(JSON.stringify({ error: 'LJB_NOT_RUNNING' }));
+          res.end(JSON.stringify({ error: 'GROGNARD_NOT_RUNNING' }));
           return;
         }
         if (win.isMinimized()) win.restore();

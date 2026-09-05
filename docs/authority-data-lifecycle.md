@@ -33,8 +33,8 @@ GitHub Actions
 Tagging: authority-packs-*.tar.gz + packs-index.json
 Reference: authority-reference-person-*.zip + reference-index.json
         ↓
-LJB → authority-packs/          ← tag bomb + shortlist
-LJB → authority-databases/      ← cbdb-person.sqlite3, norbert.sqlite3, dila-*.xml
+Grognard → authority-packs/          ← tag bomb + shortlist
+Grognard → authority-databases/      ← cbdb-person.sqlite3, norbert.sqlite3, dila-*.xml
         ↓
 authorityRef:lookup(source, id) ← A6
         ↓
@@ -50,7 +50,7 @@ User entity SQLite (names, nationality, origin, appointments, noble titles)
 | Link / backfill enrichment           | Prefer `authorityRef:lookup` when reference installed; else pack metadata; Wikidata may enrich live |
 | Online reconcile (VIAF, Wikidata, …) | LINCS / live APIs — separate from both tiers                                                        |
 
-### What LJB reads when
+### What Grognard reads when
 
 | Need                             | Pack NDJSON                                     | Reference DB | Live Wikidata     |
 | -------------------------------- | ----------------------------------------------- | ------------ | ----------------- |
@@ -67,7 +67,7 @@ User entity SQLite (names, nationality, origin, appointments, noble titles)
 | ----------- | --------------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | **CBDB**    | [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) | **OK** — attribute CBDB; release derivatives under NC-SA | **Stripped person sqlite** in `authority-reference-person-*.zip` (not full HuggingFace dump)                                                  |
 | **Norbert** | internal-derived-public                                               | **OK** — attribution in manifest                         | Same reference zip (`norbert.sqlite3`)                                                                                                        |
-| **DILA**    | CC-BY-SA 3.0                                                          | **OK** — attribute DILA                                  | Browse [Open Content Downloads](https://authority.dila.edu.tw/docs/open_content/download.php); LJB fetches the GitHub TEI mirror of that data |
+| **DILA**    | CC-BY-SA 3.0                                                          | **OK** — attribute DILA                                  | Browse [Open Content Downloads](https://authority.dila.edu.tw/docs/open_content/download.php); Grognard fetches the GitHub TEI mirror of that data |
 | **CHGIS**   | Academic EULA — no standalone redistribution                          | **OK as bundled derivative** in chinese pack             | Local Dataverse compile only                                                                                                                  |
 
 Pack manifests must record `license` accurately (CBDB: `CC-BY-NC-SA-4.0`, not vague “academic terms”). Settings UI shows attribution strings.
@@ -120,7 +120,7 @@ Pack manifests must record `license` accurately (CBDB: `CC-BY-NC-SA-4.0`, not va
     dila-districts.xml
 ```
 
-`lifecycle.json` stays under `authority-databases/` (or move to `.ljb/` later if reference tier is omitted).
+`lifecycle.json` stays under `authority-databases/` (or move to `.grognard/` later if reference tier is omitted).
 
 ---
 
@@ -203,9 +203,9 @@ Same as before: stop checks; confirm **Delete files** (both tiers) vs **Keep fil
 1. Trigger: release tag, or manual pipeline when upstream pin / `policy.version` changes.
 2. Job: `npm run compile:cbdb && npm run compile:dila` in `authority extraction`.
 3. Artifact: `authority-packs-{version}.tar.gz` + root `packs-index.json` (version, policy, per-file sha256, licenses, attribution).
-4. Publish: commit generated `dist/` to the `authoritypacks` repo or attach GitHub Release assets with stable URLs for LJB manifest check.
+4. Publish: commit generated `dist/` to the `authoritypacks` repo or attach GitHub Release assets with stable URLs for Grognard manifest check.
 
-LJB desktop app **only downloads** this artifact for tier 1. Compile scripts remain in `authority extraction` for CI and local dev.
+Grognard desktop app **only downloads** this artifact for tier 1. Compile scripts remain in `authority extraction` for CI and local dev.
 
 ---
 
@@ -254,7 +254,7 @@ Historical China **places** — complements CBDB places and DILA. See [authority
 | ---- | ----- | ------------------------------------------------------------------ | ------------------------ |
 | 1    | A5    | This spec; lifecycle IPC + Settings UI (spike)                     | partial                  |
 | 2    | C3/D3 | GitHub Actions → publish pack bundle + `packs-index.json`          | done                     |
-| 3    | A5    | LJB: fetch packs from GitHub contents (`authorityPackRegistry.ts`) | done                     |
+| 3    | A5    | Grognard: fetch packs from GitHub contents (`authorityPackRegistry.ts`) | done                     |
 | 4    | A5    | Reference-data checkbox + keep A1 fetcher for tier 2               | done / in use            |
 | 5    | A6    | `authorityRef:lookup` for disambiguation / entity enrichment       | done (person enrichment) |
 | 6    | D1    | DILA recompile (D0 `<note>`/`<add>` variants); bump policy         | planned                  |

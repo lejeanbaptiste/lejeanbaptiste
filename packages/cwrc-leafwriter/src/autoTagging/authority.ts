@@ -18,7 +18,7 @@ export interface AuthorityCandidate {
   /** Stable authority headword / database title for the entity. */
   primaryName: string;
   /**
-   * Surface shown when LJB creates or labels an entity.  Older packs do not
+   * Surface shown when Grognard creates or labels an entity.  Older packs do not
    * carry this field, in which case `primaryName` remains the display name.
    * This keeps an authority title from being mistaken for a personal name.
    */

@@ -236,7 +236,7 @@ const fileNameOf = (filePath: string): string => {
   return idx === -1 ? filePath : filePath.slice(idx + 1);
 };
 
-const ACTIVE_SOURCE_UNIT_CLASS = 'ljb-translation-active-unit';
+const ACTIVE_SOURCE_UNIT_CLASS = 'grognard-translation-active-unit';
 
 /** Looks up the tagger's schema id attribute name (xml:id or id), matching attributeIdHelpers.ts. */
 const getSchemaIdAttributeName = (): string =>
@@ -688,7 +688,7 @@ export {
 } from './entityFields/mentionSubstitute';
 
 /**
- * Replace every `{{date:N}}` placeholder with an atomic `ref[type="ljb-date"]`
+ * Replace every `{{date:N}}` placeholder with an atomic `ref[type="grognard-date"]`
  * field whose gloss is computed by LJBtero (`formatDateGlossTokens`), never
  * by the LLM. N is the 0-based index from `collectDatesFromSourceUnitXml`.
  */
@@ -1109,8 +1109,8 @@ export const TranslationPane = () => {
     const onPrefs = () => {
       void load().then(apply);
     };
-    window.addEventListener('ljbCommonsUiChanged', onPrefs);
-    return () => window.removeEventListener('ljbCommonsUiChanged', onPrefs);
+    window.addEventListener('grognardCommonsUiChanged', onPrefs);
+    return () => window.removeEventListener('grognardCommonsUiChanged', onPrefs);
   }, []);
 
   useEffect(() => {
@@ -1585,7 +1585,7 @@ export const TranslationPane = () => {
     ) {
       return;
     }
-    const styleId = 'ljb-translation-active-unit-style';
+    const styleId = 'grognard-translation-active-unit-style';
     if (doc.getElementById(styleId)) return;
     const parent = doc.head ?? doc.documentElement ?? doc.body;
     if (!parent) return;
@@ -1603,7 +1603,7 @@ export const TranslationPane = () => {
   // Entity fields live in the plain contentEditable translation pane (not a TinyMCE
   // iframe), so this is a normal top-level style tag, not doc-injection like above.
   useEffect(() => {
-    const styleId = 'ljb-entity-worktype-style';
+    const styleId = 'grognard-entity-worktype-style';
     if (document.getElementById(styleId)) return;
     const style = document.createElement('style');
     style.id = styleId;

@@ -2,7 +2,7 @@
  * The CEDB↔PEDB concordance ("interpretation layer"). A project (PEDB) entity
  * records, per user, the central (CEDB) id it maps to as a TEI idno:
  *
- *   <idno type="ljb-central" subtype="{userStableId}">{centralId}</idno>
+ *   <idno type="grognard-central" subtype="{userStableId}">{centralId}</idno>
  *
  * `subtype` is the stable per-user id (see `userStableId.ts`), so the same
  * scholar on two machines writes the same row, and two collaborators leave two
@@ -19,7 +19,7 @@
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 
 /** `<idno type>` value that marks a per-user central-database mapping. */
-export const CENTRAL_IDNO_TYPE = 'ljb-central';
+export const CENTRAL_IDNO_TYPE = 'grognard-central';
 
 export interface CentralMapping {
   /** Stable user id (the idno's `subtype`). */
