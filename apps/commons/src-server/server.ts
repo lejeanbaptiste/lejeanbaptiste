@@ -12,6 +12,17 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 
 export const server = express();
 
+// AGPL-3.0 §13: if this server is ever hosted for remote users (rather than
+// only forked by the desktop shell for localhost use), those users must be able
+// to obtain the running version's source. Advertise it on every response and
+// redirect `/source` to the repository.
+const SOURCE_REPOSITORY = 'https://github.com/grognard/grognard';
+server.use((_req, res, next) => {
+  res.setHeader('X-Source-Repository', SOURCE_REPOSITORY);
+  next();
+});
+server.get('/source', (_req, res) => res.redirect(302, SOURCE_REPOSITORY));
+
 server.use(express.json({ limit: '5mb' })); // support json encoded bodies
 server.use(compression());
 server.use('/api', api);

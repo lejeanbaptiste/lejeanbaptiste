@@ -19,7 +19,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "license": "GPL-2.0",
+  "license": "AGPL-3.0-only",
   "author": "Daniel Patrick Morgan (CNRS)",
   "contributors": [
     "Andrew MacDonald <andrewjames.code@gmail.com>",

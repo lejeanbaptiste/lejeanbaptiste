@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: 'If you use this software, please cite it using the metadata from this file.'
+title: Grognard
+abstract: >-
+  Grognard is a desktop XML markup editor forked from the in-browser tool
+  LEAF-Writer. It wraps the web app in Electron for offline, individual desktop
+  use and adds workflow changes aimed at local editing and East Asian documents,
+  including local authority packs and plugins for auto-tagging and
+  disambiguation.
+type: software
+authors:
+  - family-names: Morgan
+    given-names: Daniel Patrick
+    affiliation: >-
+      Centre de recherche sur les civilisations de l'Asie orientale (CRCAO),
+      CNRS
+    orcid: https://orcid.org/0000-0001-9115-3931
+repository-code: https://github.com/grognard/grognard
+url: https://github.com/grognard/grognard
+license: AGPL-3.0-only
+version: 0.1.0-beta.13
+date-released: '2026-09-05'
+keywords:
+  - XML
+  - TEI
+  - text encoding
+  - digital humanities
+  - named-entity recognition
+  - authority control
+  - Electron
+  - East Asian studies

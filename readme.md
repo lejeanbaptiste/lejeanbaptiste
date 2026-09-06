@@ -2,13 +2,15 @@
 
 Grognard is a desktop XML markup editor forked from the in-browser tool [LEAF-Writer](https://leaf-writer.leaf-vre.org/), part of [The Linked Editing Academic Framework](https://www.leaf-vre.org/) (LEAF) tool suite. LEAF-Writer is an enhancement of the CWRC-Writer developed by the [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca), and was developed alongside the [Named Entity Recognition Vetting Environment](https://nerve.lincsproject.ca/en) (NERVE). The project website is [github.com/grognard/grognard](https://github.com/grognard/grognard). Grognard wraps the web app in Electron for offline, individual desktop use and includes workflow changes aimed particularly at local editing and East Asian documents.
 
-GPL-2.0 · [Commitizen friendly](http://commitizen.github.io/cz-cli/)
+AGPL-3.0 · [Commitizen friendly](http://commitizen.github.io/cz-cli/)
 
 ## License and attribution
 
-This repository is licensed under `GPL-2.0`. Third-party runtime components keep their own upstream licenses, including the heavily customized `TinyMCE` editor used by LEAF-Writer.
+This repository is licensed under `AGPL-3.0-only`, inherited from LEAF-Writer (whose `LICENSE` is the GNU Affero GPL v3). Third-party runtime components keep their own upstream licenses, including the heavily customized `TinyMCE` editor used by LEAF-Writer.
 
 For a concise list of the major bundled components and where to verify their license terms, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+To cite Grognard, see [CITATION.cff](CITATION.cff) (GitHub's "Cite this repository" button reads it directly).
 
 ## Credits
 

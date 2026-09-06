@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "license": "GPL-2.0",
+  "license": "AGPL-3.0-only",
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.22.0",
     "typescript": "^5.9.3",

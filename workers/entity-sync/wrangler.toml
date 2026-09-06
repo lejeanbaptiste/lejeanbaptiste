@@ -9,6 +9,9 @@ preview_urls = false
 # `wrangler secret put OWNER_GITHUB_ID` if you'd rather not commit it.
 [vars]
 OWNER_GITHUB_ID = "76396963"
+# Commit/tag this deploy was built from, for the AGPL source pointer. Optional;
+# prefer `wrangler deploy --var SOURCE_COMMIT:$(git rev-parse HEAD)` at deploy time.
+# SOURCE_COMMIT = "main"
 
 [[d1_databases]]
 binding = "DB"

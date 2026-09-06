@@ -17,7 +17,7 @@
     "type": "git",
     "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer.git"
   },
-  "license": "GPL-2.0",
+  "license": "AGPL-3.0-only",
   "author": "Daniel Patrick Morgan (CNRS)",
   "main": "src/index.ts",
   "type": "commonjs",

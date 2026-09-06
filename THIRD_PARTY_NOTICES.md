@@ -36,7 +36,7 @@ When shipping releases, keep this document in sync with the actual dependency se
 
 ## Repository licenses
 
-- The repository itself is licensed under `GPL-2.0` as declared in the root `package.json`.
+- The repository itself is licensed under `AGPL-3.0-only` (see `LICENSE`), inherited from LEAF-Writer. AGPL section 13 (source offer to remote network users) applies to any networked component that is deployed and serves remote users — notably `workers/entity-sync/` — not to normal single-user desktop use.
 - Individual upstream dependencies may use different licenses. Their exact terms should be taken from the package metadata that ships with each dependency version.
 
 ## Where to verify

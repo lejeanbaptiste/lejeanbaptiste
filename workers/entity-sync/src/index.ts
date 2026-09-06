@@ -30,7 +30,28 @@ export interface Env {
   OWNER_GITHUB_ID: string;
   /** Test seam: point GitHub identity lookups at a mock. */
   GITHUB_API_BASE?: string;
+  /**
+   * Commit or tag this Worker was deployed from. Optional but recommended:
+   * set it at deploy time (`wrangler deploy --var SOURCE_COMMIT:$(git rev-parse HEAD)`)
+   * so the AGPL source pointer resolves to the exact running code.
+   */
+  SOURCE_COMMIT?: string;
 }
+
+/**
+ * AGPL-3.0 section 13: a remote user of this network service must be able to
+ * obtain the Corresponding Source of the running version. This Worker is a
+ * modified covered work, so every response advertises where its source lives
+ * (`x-source-repository`), `GET /source` redirects to it, and `GET /` reports
+ * it in the body. Keep `SOURCE_REPOSITORY` pointing at the canonical repo.
+ */
+const SOURCE_REPOSITORY = 'https://github.com/grognard/grognard';
+const LICENSE = 'AGPL-3.0-only';
+
+const sourceUrl = (env: Env): string => {
+  const ref = env.SOURCE_COMMIT?.trim();
+  return `${SOURCE_REPOSITORY}/tree/${ref && /^[\w.\-/]+$/.test(ref) ? ref : 'main'}/workers/entity-sync`;
+};
 
 const json = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), {
@@ -320,80 +341,97 @@ export interface WorkerDeps {
 export function createWorker(deps: WorkerDeps = {}) {
   const verifyGitHubUser = deps.verifyGitHubUser ?? defaultVerifyGitHubUser;
 
+  const handle = async (request: Request, env: Env): Promise<Response> => {
+    const url = new URL(request.url);
+
+    if (request.method === 'GET' && url.pathname === '/') {
+      return json({
+        ok: true,
+        service: 'grognard-entity-sync',
+        license: LICENSE,
+        source: sourceUrl(env),
+      });
+    }
+
+    // AGPL-3.0 s.13 source offer — unauthenticated, so any remote user can reach it.
+    if (request.method === 'GET' && url.pathname === '/source') {
+      return new Response(null, { status: 302, headers: { location: sourceUrl(env) } });
+    }
+
+    const auth = await authenticate(request, env, verifyGitHubUser);
+    if (!auth.ok) return auth.response;
+
+    try {
+      if (request.method === 'GET' && url.pathname === '/sync/pull') {
+        const parsed = parsePullQuery(url.searchParams);
+        if (!parsed.ok) return json({ error: parsed.error }, 400);
+        return json(await handlePull(env.DB, auth.ownerId, parsed.value.since, parsed.value.limit));
+      }
+
+      if (request.method === 'POST' && url.pathname === '/sync/push') {
+        let body: unknown;
+        try {
+          body = await request.json();
+        } catch {
+          return json({ error: 'Body must be valid JSON.' }, 400);
+        }
+        const parsed = parsePushRequest(body);
+        if (!parsed.ok) {
+          const tooMany = parsed.error.startsWith('Too many');
+          return json({ error: parsed.error }, tooMany ? 413 : 400);
+        }
+        return json(await handlePush(env.DB, auth.ownerId, parsed.value.entities));
+      }
+
+      if (request.method === 'GET' && url.pathname === '/sync/achievements') {
+        const remote = await handleAchievementsGet(env.DB, auth.ownerId);
+        if (!remote) return json({ error: 'No achievements blob stored yet.' }, 404);
+        return json(remote);
+      }
+
+      if (request.method === 'PUT' && url.pathname === '/sync/achievements') {
+        let body: unknown;
+        try {
+          body = await request.json();
+        } catch {
+          return json({ error: 'Body must be valid JSON.' }, 400);
+        }
+        const parsed = parseAchievementsPut(body);
+        if (!parsed.ok) return json({ error: parsed.error }, 400);
+        return json(
+          await handleAchievementsPut(
+            env.DB,
+            auth.ownerId,
+            parsed.value.baseRevision,
+            parsed.value.blob,
+          ),
+        );
+      }
+    } catch (err) {
+      if (isWriteQuotaError(err)) {
+        return json(
+          {
+            error:
+              'The sync server has reached its database write limit for now — sync will resume automatically.',
+            quota: true,
+          },
+          429,
+        );
+      }
+      return json({ error: err instanceof Error ? err.message : 'Internal error.' }, 500);
+    }
+
+    return json({ error: 'Not found.' }, 404);
+  };
+
   return {
     async fetch(request: Request, env: Env): Promise<Response> {
-      const url = new URL(request.url);
-
-      if (request.method === 'GET' && url.pathname === '/') {
-        return json({ ok: true, service: 'grognard-entity-sync' });
-      }
-
-      const auth = await authenticate(request, env, verifyGitHubUser);
-      if (!auth.ok) return auth.response;
-
-      try {
-        if (request.method === 'GET' && url.pathname === '/sync/pull') {
-          const parsed = parsePullQuery(url.searchParams);
-          if (!parsed.ok) return json({ error: parsed.error }, 400);
-          return json(
-            await handlePull(env.DB, auth.ownerId, parsed.value.since, parsed.value.limit),
-          );
-        }
-
-        if (request.method === 'POST' && url.pathname === '/sync/push') {
-          let body: unknown;
-          try {
-            body = await request.json();
-          } catch {
-            return json({ error: 'Body must be valid JSON.' }, 400);
-          }
-          const parsed = parsePushRequest(body);
-          if (!parsed.ok) {
-            const tooMany = parsed.error.startsWith('Too many');
-            return json({ error: parsed.error }, tooMany ? 413 : 400);
-          }
-          return json(await handlePush(env.DB, auth.ownerId, parsed.value.entities));
-        }
-
-        if (request.method === 'GET' && url.pathname === '/sync/achievements') {
-          const remote = await handleAchievementsGet(env.DB, auth.ownerId);
-          if (!remote) return json({ error: 'No achievements blob stored yet.' }, 404);
-          return json(remote);
-        }
-
-        if (request.method === 'PUT' && url.pathname === '/sync/achievements') {
-          let body: unknown;
-          try {
-            body = await request.json();
-          } catch {
-            return json({ error: 'Body must be valid JSON.' }, 400);
-          }
-          const parsed = parseAchievementsPut(body);
-          if (!parsed.ok) return json({ error: parsed.error }, 400);
-          return json(
-            await handleAchievementsPut(
-              env.DB,
-              auth.ownerId,
-              parsed.value.baseRevision,
-              parsed.value.blob,
-            ),
-          );
-        }
-      } catch (err) {
-        if (isWriteQuotaError(err)) {
-          return json(
-            {
-              error:
-                'The sync server has reached its database write limit for now — sync will resume automatically.',
-              quota: true,
-            },
-            429,
-          );
-        }
-        return json({ error: err instanceof Error ? err.message : 'Internal error.' }, 500);
-      }
-
-      return json({ error: 'Not found.' }, 404);
+      const res = await handle(request, env);
+      // Advertise the source location on every response (AGPL-3.0 s.13).
+      const out = new Response(res.body, res);
+      out.headers.set('x-source-repository', SOURCE_REPOSITORY);
+      out.headers.set('x-license', LICENSE);
+      return out;
     },
   };
 }

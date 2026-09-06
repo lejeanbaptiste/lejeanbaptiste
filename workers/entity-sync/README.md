@@ -67,9 +67,17 @@ npx wrangler d1 create grognard-entity-sync
 # 2. Apply migrations to the remote database.
 npx wrangler d1 migrations apply grognard-entity-sync --remote
 
-# 3. Ship it.
-npx wrangler deploy
+# 3. Ship it. Pass the commit so the AGPL source pointer matches what's running.
+npx wrangler deploy --var SOURCE_COMMIT:"$(git rev-parse HEAD)"
 ```
+
+### Source availability (AGPL-3.0 §13)
+
+This Worker is a deployed, network-facing part of an AGPL-3.0 project, so every
+response carries an `x-source-repository` header, `GET /source` 302-redirects to
+the code, and `GET /` reports `license` and `source` in its body. `SOURCE_COMMIT`
+(optional `[vars]` entry, set at deploy time) pins those links to the exact
+revision you shipped; without it they point at `main`.
 
 `compatibility_date` and bindings live in `wrangler.toml` (gitignored). The
 committed template is `wrangler.toml.example`.

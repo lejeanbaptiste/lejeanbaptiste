@@ -1,6 +1,6 @@
 # LEAF-Writer Commons
 
-![GPL-2.0](https://img.shields.io/badge/license-GPL--2.0-orange)
+![AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-orange)
 ![type definitions](https://img.shields.io/badge/types-TypeScript-blue)
 
 Shared React / Overmind UI for Grognard: project page, side panels,
