@@ -678,6 +678,8 @@ export interface ElectronAPI {
     callback: (progress: AuthorityLifecycleProgress) => void,
   ) => () => void;
   onAuthorityLifecycleUpdated?: (callback: () => void) => () => void;
+  /** Fired after the background updater replaced one or more installed plugins. */
+  onPluginsUpdated?: (callback: () => void) => () => void;
   pluginsEnsureSchemaContribution?: (
     pluginId: string,
     projectFilePath: string,

@@ -502,6 +502,23 @@ CBETA and similar texts often split a running string across milestones, e.g. `ã€
 
 ## Unreleased
 
+### Plugins
+
+- **Installed plugins now update themselves in the background.** The 4-hour
+  companion-update poll (same cadence as the app and authority-pack updaters)
+  previously only _counted_ outdated plugins and raised a "Plugin updates
+  available" notification; the user then had to open the Plugins panel and
+  reinstall each one by hand. It now downloads and installs the newer version
+  in place â€” sha256-verified against the registry, same path the manual
+  install used â€” for every plugin the user already has installed, and shows a
+  "Plugins updated" notification afterward. Per-project enable state is keyed
+  by plugin id, so a plugin stays enabled wherever it was enabled. Bundled
+  contributions (authority packs, Python runtime) and manifest-derived UI
+  (tools menu, auto-tagging producers) refresh immediately; an already-running
+  plugin's JavaScript entry module picks up the new code on the next app
+  start. Auto-update never _adds_ a plugin the user has not chosen to install.
+  The manual "Look for Updates" path still works as a fallback.
+
 ### Packaging
 
 - **The standalone Linux `.deb` now onboards the apt repository.** Installing
@@ -517,4 +534,3 @@ CBETA and similar texts often split a running string across milestones, e.g. `ã€
   leaves the repo in place). The Flatpak, macOS, and Windows builds are
   unaffected.
 - **Updated privacy policy page**
- 

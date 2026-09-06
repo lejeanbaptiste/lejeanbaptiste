@@ -867,6 +867,7 @@ export interface ElectronAPI {
     ) => void,
   ) => () => void;
   onAuthorityLifecycleUpdated?: (callback: () => void) => () => void;
+  onPluginsUpdated?: (callback: () => void) => () => void;
   updateProjectFileConfig: (
     projectFilePath: string,
     patch: Record<string, unknown>,
@@ -1330,6 +1331,11 @@ const electronAPI: ElectronAPI = {
     const listener = () => callback();
     ipcRenderer.on('authorityLifecycle:updated', listener);
     return () => ipcRenderer.removeListener('authorityLifecycle:updated', listener);
+  },
+  onPluginsUpdated: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on('plugins:updated', listener);
+    return () => ipcRenderer.removeListener('plugins:updated', listener);
   },
   updateProjectFileConfig: (projectFilePath: string, patch: Record<string, unknown>) =>
     ipcRenderer.invoke('updateProjectFileConfig', projectFilePath, patch),

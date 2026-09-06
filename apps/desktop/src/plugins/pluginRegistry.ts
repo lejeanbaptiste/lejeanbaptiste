@@ -12,7 +12,7 @@ import {
   parsePluginReleaseIndex,
   type PluginReleaseIndex,
 } from '../../../commons/src/desktop/pluginRegistryTypes';
-import { installPluginFromDirectory } from './pluginHost';
+import { getPluginHostSnapshot, installPluginFromDirectory } from './pluginHost';
 
 const MAX_PLUGIN_DOWNLOAD_BYTES = 1024 * 1024 * 1024;
 const DOWNLOAD_TIMEOUT_MS = 30 * 60 * 1000;
@@ -91,4 +91,65 @@ export async function installRemotePlugin(
     throw new Error('Plugin archive has no matching manifest.');
   await installPluginFromDirectory(sourceDir);
   await fsp.rm(tempRoot, { recursive: true, force: true });
+}
+
+export interface PluginUpdateResult {
+  updated: { id: string; from: string; to: string }[];
+  failed: { id: string; error: string }[];
+}
+
+/**
+ * Remote index entries that would update an already-installed plugin.
+ *
+ * Only installed plugins are considered — background auto-update never adds a
+ * plugin the user has not chosen to install. A plugin folder that failed to
+ * parse (manifestError, sentinel version `?`) is skipped; reinstalling it is a
+ * manual action. Version comparison is exact inequality, matching the
+ * authority-pack channel and the manual "Look for Updates" count (the registry
+ * is the source of truth for the intended version).
+ */
+export const selectPluginUpdates = (
+  installed: { id: string; version: string; manifestError?: string }[],
+  remote: PluginReleaseIndex,
+): PluginReleaseIndex['plugins'] => {
+  const installedById = new Map(
+    installed
+      .filter((plugin) => !plugin.manifestError && plugin.version !== '?')
+      .map((plugin) => [plugin.id, plugin.version] as const),
+  );
+  return remote.plugins.filter((entry) => {
+    const current = installedById.get(entry.id);
+    return current !== undefined && current !== entry.version;
+  });
+};
+
+/**
+ * Download and install newer versions of every installed plugin, in place.
+ *
+ * Per-project enabled state keys on plugin id, not version, so an in-place
+ * update keeps a plugin enabled wherever it was enabled. Bundled contributions
+ * (authority packs, Python runtime) are re-applied by
+ * `installPluginFromDirectory`. One plugin's failure does not block the rest.
+ */
+export async function updateInstalledPlugins(): Promise<PluginUpdateResult> {
+  const [snapshot, remote] = await Promise.all([getPluginHostSnapshot(), fetchRemotePluginIndex()]);
+  const currentById = new Map(snapshot.plugins.map((plugin) => [plugin.id, plugin.version]));
+  const result: PluginUpdateResult = { updated: [], failed: [] };
+
+  for (const entry of selectPluginUpdates(snapshot.plugins, remote)) {
+    try {
+      await installRemotePlugin(entry);
+      result.updated.push({
+        id: entry.id,
+        from: currentById.get(entry.id) ?? '?',
+        to: entry.version,
+      });
+    } catch (error) {
+      result.failed.push({
+        id: entry.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  return result;
 }

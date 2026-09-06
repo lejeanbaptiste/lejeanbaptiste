@@ -4241,10 +4241,14 @@ app.whenReady().then(() => {
   browserImportServer = startBrowserImportBridge(() => mainWindow);
   registerLemminxIpc(() => mainWindow);
   initAutoUpdater({
-    onCompanionNotifyClick: () => sendMenuAction('look-for-updates'),
     onAuthorityUpdated: () => {
       if (!mainWindow || mainWindow.isDestroyed()) return;
       mainWindow.webContents.send('authorityLifecycle:updated');
+    },
+    onPluginsUpdated: () => {
+      buildApplicationMenu();
+      if (!mainWindow || mainWindow.isDestroyed()) return;
+      mainWindow.webContents.send('plugins:updated');
     },
   });
   void (async () => {

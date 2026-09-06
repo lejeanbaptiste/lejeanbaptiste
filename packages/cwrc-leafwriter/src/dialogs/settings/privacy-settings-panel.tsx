@@ -34,6 +34,13 @@ export const PrivacySettingsPanel = () => {
       </Stack>
 
       <Stack spacing={0.75}>
+        <Typography variant="subtitle2">{t('LW.settings.privacy.ai_title')}</Typography>
+        <Typography color="text.secondary" variant="body2">
+          {t('LW.settings.privacy.ai_body')}
+        </Typography>
+      </Stack>
+
+      <Stack spacing={0.75}>
         <Typography variant="subtitle2">{t('LW.settings.privacy.leaderboard_title')}</Typography>
         <Typography color="text.secondary" variant="body2">
           {t('LW.settings.privacy.leaderboard_body')}

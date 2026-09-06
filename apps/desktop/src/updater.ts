@@ -4,8 +4,7 @@ import { autoUpdater } from 'electron-updater';
 import type { AppUpdateCheckResult } from '../../commons/src/desktop/appUpdateTypes';
 import { maybeCheckAuthorityUpdates, runAuthorityLifecyclePipeline } from './authorityLifecycle';
 import { getLocalAuthorityAssetsDir } from './projectPrefs';
-import { getPluginHostSnapshot } from './plugins/pluginHost';
-import { fetchRemotePluginIndex } from './plugins/pluginRegistry';
+import { updateInstalledPlugins } from './plugins/pluginRegistry';
 
 const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;
 
@@ -26,38 +25,21 @@ const configureAutoUpdater = (): void => {
 };
 
 export interface InitAutoUpdaterOptions {
-  /** Invoked when the user clicks a plugin-update notification. */
-  onCompanionNotifyClick?: () => void;
   /** Invoked after authority packs have been replaced in the background. */
   onAuthorityUpdated?: () => void;
+  /** Invoked after one or more installed plugins were updated in the background. */
+  onPluginsUpdated?: () => void;
 }
 
 let lastAuthorityNotifyKey = '';
 let lastPluginNotifyKey = '';
 
-const countPluginUpdates = async (): Promise<{ count: number; key: string }> => {
-  const [installed, remote] = await Promise.all([
-    getPluginHostSnapshot(),
-    fetchRemotePluginIndex(),
-  ]);
-  const installedVersionById = new Map(
-    installed.plugins.map((plugin) => [plugin.id, plugin.version]),
-  );
-  const outdated = remote.plugins.filter((entry) => {
-    const installedVersion = installedVersionById.get(entry.id);
-    return installedVersion === undefined || installedVersion !== entry.version;
-  });
-  const key = outdated
-    .map((entry) => `${entry.id}@${entry.version}`)
-    .sort()
-    .join(',');
-  return { count: outdated.length, key };
-};
-
 /**
  * Background check for authority packs + plugins (same cadence as the app updater).
- * Installed authority packs update themselves; plugin updates still require the
- * user to review and enable the new plugin version. Both are silent on network errors.
+ * Installed authority packs and installed plugins both update themselves in
+ * place; per-project enable state is keyed by id, so it survives. Auto-update
+ * never *adds* a plugin the user has not installed. Both are silent on network
+ * errors.
  */
 export const checkCompanionUpdatesInBackground = async (
   options?: InitAutoUpdaterOptions,
@@ -93,24 +75,38 @@ export const checkCompanionUpdatesInBackground = async (
   }
 
   try {
-    const { count, key } = await countPluginUpdates();
-    if (count > 0 && key !== lastPluginNotifyKey) {
-      lastPluginNotifyKey = key;
+    const { updated, failed } = await updateInstalledPlugins();
+
+    if (updated.length > 0) {
+      options?.onPluginsUpdated?.();
       const notification = new Notification({
-        title: 'Plugin updates available',
+        title: updated.length === 1 ? 'Plugin updated' : 'Plugins updated',
         body:
-          count === 1
-            ? '1 plugin update is available. Choose Look for Updates or open Plugins.'
-            : `${count} plugin updates are available. Choose Look for Updates or open Plugins.`,
+          updated.length === 1
+            ? `${updated[0].id} is now at ${updated[0].to}.`
+            : `${updated.length} plugins were updated to their latest versions.`,
       });
-      if (options?.onCompanionNotifyClick) {
-        notification.on('click', () => options.onCompanionNotifyClick?.());
-      }
       notification.show();
+    }
+
+    if (failed.length > 0) {
+      const key = failed
+        .map((entry) => entry.id)
+        .sort()
+        .join(',');
+      if (key !== lastPluginNotifyKey) {
+        lastPluginNotifyKey = key;
+        console.warn(
+          '[updater] plugin auto-update failed:',
+          failed.map((entry) => `${entry.id}: ${entry.error}`).join('; '),
+        );
+      }
+    } else {
+      lastPluginNotifyKey = '';
     }
   } catch (error) {
     console.warn(
-      '[updater] plugin update check failed:',
+      '[updater] plugin auto-update check failed:',
       error instanceof Error ? error.message : String(error),
     );
   }

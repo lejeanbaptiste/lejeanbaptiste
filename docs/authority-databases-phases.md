@@ -134,7 +134,7 @@ cd leaf-writer && node scripts/sync-authority-packs.mjs /path/to/entityDbFolder
 1. [x] **C3/D3** — GitHub Actions in `authoritypacks`: compile → tarball + `packs-index.json`
 2. [x] Grognard pack fetcher: `authorityPackRegistry.ts` — download bundle from GitHub release assets, verify sha256, extract
 3. [x] **Reference data** checkbox (default off): keep A1 fetcher for `authority-databases/` when enabled
-4. [x] **Look for Updates** (menu) + background poll (same 4h cadence as app updater): force-checks authority packs and plugins; OS notification when available
+4. [x] **Look for Updates** (menu) + background poll (same 4h cadence as app updater): force-checks authority packs and plugins. Authority packs and installed plugins both self-update in the background (per-project enable state is keyed by id, so it survives); an OS notification reports what changed. Auto-update never adds a plugin the user has not installed.
 5. [x] “Update available” via per-bundle sha256; Settings → Update now / Look for Updates snackbar refreshes packs (+ reference if enabled)
 6. [ ] Disable: delete or keep both tiers
 

@@ -30,6 +30,7 @@ import { refreshCbdbConcordanceAfterPackLifecycle } from '../../../../packages/c
 import { clearPackContentCache } from '../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
 import { PROJECT_FILE_NAME } from '@src/desktop/projectFile';
 import { ensureEntityDbFolder } from './entityDbOnboarding';
+import { refreshPluginsInRenderer } from './ensureLanguagePlugins';
 
 const afterAuthorityPackLifecycleSuccess = async (): Promise<void> => {
   clearPackContentCache();
@@ -178,6 +179,19 @@ export const useCommonsUiBridge = () => {
       void refreshAuthorityLifecycle();
     });
   }, [refreshAuthorityLifecycle]);
+
+  useEffect(() => {
+    const api = window.electronAPI;
+    if (!isDesktop() || !api?.onPluginsUpdated) return;
+    // Background updater swapped an installed plugin on disk. Re-read the
+    // snapshot so manifest-derived contributions (authority pack specs, tools
+    // menu, auto-tagging producers) reflect the new version immediately. An
+    // already-loaded plugin's JS entry module is not hot-swapped mid-session;
+    // it picks up the new code on next app start.
+    return api.onPluginsUpdated(() => {
+      void refreshPluginsInRenderer();
+    });
+  }, []);
 
   useEffect(() => {
     if (!isDesktop()) return;
