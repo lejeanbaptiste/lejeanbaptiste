@@ -499,3 +499,22 @@ CBETA and similar texts often split a running string across milestones, e.g. `�
 - **Tag-bomb (bulk auto-tagging) now covers thing sub-types.** Four new packs — PEDB things, CEDB things, Project tags: things, Imported list: things — join the existing person/place/work/office/org quintets. A `thing` candidate's sub-type carries through to the applied `<rs type="...">` attribute; the review panel shows a human-readable `<rs type="Philosophical concept">` chip instead of a bare `<rs>`, and its tag filter offers each sub-type as its own option so same-surface, different-subtype collisions stay distinguishable. Project-crawl (`project-things`) deliberately ships with a generic, untyped `<rs>` fallback rather than trying to recover sub-type identity from already-tagged mentions — fix those up via Lookup afterward.
 - **Central sync (D1) now carries `thing` entities.** Previously `thing` entities were pushed nowhere — `entitySync.ts` explicitly skipped them, and the Worker/D1 schema would have rejected them regardless. The client's sync type, the Worker's protocol validator, and the D1 `central_entities.kind` CHECK constraint are all updated; the live migration ran without touching any of the existing synced rows.
 - **Fixed a latent cross-device sync bug for `office` entities.** Pulling a remote `office` entity onto another device silently failed to apply: the wrapper used to re-import a pulled entity locally shares its element (`<listOrg>`) with `org`, distinguished only by a `type="offices"` attribute the wrapper was never setting, so the entity came back in as `org` and was dropped by the kind-mismatch guard on the write side. Fixed alongside the `thing` sync wiring, since it's the same three-line map.
+
+## Unreleased
+
+### Packaging
+
+- **The standalone Linux `.deb` now onboards the apt repository.** Installing
+  the `.deb` previously left the machine with no update channel at all — the
+  in-app updater is macOS/Windows only, and nothing pointed apt at the signed
+  repo published to GitHub Pages. The package now ships the repository signing
+  key and runs a `postinst` (`deb.afterInstall`) that, on first install,
+  installs the key to `/usr/share/keyrings/grognard.asc` and writes an
+  arch-pinned `signed-by` entry to `/etc/apt/sources.list.d/grognard.list`, so
+  `apt upgrade` keeps Grognard current. It never overwrites an existing
+  sources entry and honours `repo_add_once="false"` in `/etc/default/grognard`;
+  a matching `postrm` removes both files on `apt purge` (a plain `apt remove`
+  leaves the repo in place). The Flatpak, macOS, and Windows builds are
+  unaffected.
+- **Updated privacy policy page**
+ 

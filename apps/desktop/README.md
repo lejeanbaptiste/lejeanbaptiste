@@ -105,6 +105,23 @@ sudo apt update
 sudo apt install grognard-desktop
 ```
 
+The standalone `.deb` does this onboarding for the user via maintainer scripts
+(`deb.afterInstall` / `deb.afterRemove` in the `electron-builder.linux*.json`
+configs):
+
+- `resources/apt/postinst.sh` — on first `configure`, copies the bundled
+  signing key (`resources/apt/grognard-archive-key.asc`, shipped as an
+  `extraResources` entry) to `/usr/share/keyrings/grognard.asc` and writes
+  `/etc/apt/sources.list.d/grognard.list` (arch-pinned, `signed-by` the
+  keyring). It never overwrites an existing `.list`, and honours
+  `repo_add_once="false"` in `/etc/default/grognard`.
+- `resources/apt/postrm.sh` — removes both files on `apt purge` only; a plain
+  `apt remove` leaves the repo in place so reinstalls keep working.
+
+Keep `resources/apt/grognard-archive-key.asc` in sync with the key
+`scripts/build-apt-repo.mjs` signs the repo with (the CI signing subkey in
+`SECURITY.md`); it is a public key, safe to commit.
+
 Platform-specific electron-builder settings live in `electron-builder.mac.json`, `electron-builder.linux.json`, and `electron-builder.win.json`, all extending `electron-builder.base.json`.
 
 The mac packaging hooks also stage LemMinX from `resources/lemminx/` and

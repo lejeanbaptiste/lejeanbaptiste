@@ -12,10 +12,16 @@
         "from": "resources/python",
         "to": "python",
         "filter": ["**/*", "!.deps-installed"]
+      },
+      {
+        "from": "resources/apt/grognard-archive-key.asc",
+        "to": "apt/grognard-archive-key.asc"
       }
     ]
   },
   "deb": {
+    "afterInstall": "resources/apt/postinst.sh",
+    "afterRemove": "resources/apt/postrm.sh",
     "depends": [
       "libgtk-3-0",
       "libnotify4",

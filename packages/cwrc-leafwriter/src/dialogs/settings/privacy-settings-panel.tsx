@@ -27,6 +27,13 @@ export const PrivacySettingsPanel = () => {
       </Stack>
 
       <Stack spacing={0.75}>
+        <Typography variant="subtitle2">{t('LW.settings.privacy.github_title')}</Typography>
+        <Typography color="text.secondary" variant="body2">
+          {t('LW.settings.privacy.github_body')}
+        </Typography>
+      </Stack>
+
+      <Stack spacing={0.75}>
         <Typography variant="subtitle2">{t('LW.settings.privacy.leaderboard_title')}</Typography>
         <Typography color="text.secondary" variant="body2">
           {t('LW.settings.privacy.leaderboard_body')}
@@ -37,13 +44,6 @@ export const PrivacySettingsPanel = () => {
         <Typography variant="subtitle2">{t('LW.settings.privacy.telemetry_title')}</Typography>
         <Typography color="text.secondary" variant="body2">
           {t('LW.settings.privacy.telemetry_body')}
-        </Typography>
-      </Stack>
-
-      <Stack spacing={0.75}>
-        <Typography variant="subtitle2">{t('LW.settings.privacy.web_title')}</Typography>
-        <Typography color="text.secondary" variant="body2">
-          {t('LW.settings.privacy.web_body')}
         </Typography>
       </Stack>
 

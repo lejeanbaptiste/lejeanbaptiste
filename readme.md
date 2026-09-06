@@ -84,6 +84,14 @@ sudo apt install grognard-desktop
 1. Download `Grognard-linux-<version>-amd64.deb` (or `-arm64.deb`).
 2. Install with your package manager: `sudo apt install ./Grognard-linux-<version>-amd64.deb`
 
+The `.deb` also adds the apt repository above (signing key to
+`/usr/share/keyrings/grognard.asc`, source to
+`/etc/apt/sources.list.d/grognard.list`) so `sudo apt upgrade` keeps the app up
+to date — this is the only update channel on Linux, as the in-app updater is
+macOS/Windows only. To opt out, create `/etc/default/grognard` containing
+`repo_add_once="false"` before installing, or just delete the `.list` file
+afterwards. `apt purge grognard-desktop` removes both files.
+
 **Flatpak (x86_64):**
 
 1. Download `Grognard-linux-flatpak-<version>-x86_64.flatpak`.
